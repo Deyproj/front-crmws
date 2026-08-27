@@ -5,10 +5,11 @@ import { proxyJsonResponse } from '@/lib/http/proxyJsonResponse';
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const apiBase = process.env.API_INTERNAL_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
+  const query = request.nextUrl.search;
 
   let upstream: Response;
   try {
-    upstream = await fetch(`${apiBase}/conversations/${id}/messages`, {
+    upstream = await fetch(`${apiBase}/conversations/${id}/messages${query}`, {
       headers: { 'Content-Type': 'application/json', ...forwardAuth(request) },
     });
   } catch (err) {

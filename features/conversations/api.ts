@@ -1,4 +1,8 @@
 import { apiFetch } from '@/lib/http/apiFetch';
+import type { PageResponse } from '@/lib/http/pageResponse';
+
+/** Ver el mismo comentario en features/contacts/api.ts — ventana fija, sin "cargar más" todavía. */
+const DEFAULT_PAGE_SIZE = 100;
 
 export const CONVERSATION_MODES = ['AI', 'HUMAN', 'HYBRID', 'PAUSED'] as const;
 export type ConversationMode = (typeof CONVERSATION_MODES)[number];
@@ -58,8 +62,9 @@ export async function listConversations(filters: ConversationFilters = {}): Prom
   if (filters.mode) params.set('mode', filters.mode);
   if (filters.status) params.set('status', filters.status);
   if (filters.assignedTo) params.set('assignedTo', filters.assignedTo);
-  const query = params.toString();
-  return apiFetch<Conversation[]>(`/api/conversations${query ? `?${query}` : ''}`);
+  params.set('size', String(DEFAULT_PAGE_SIZE));
+  const result = await apiFetch<PageResponse<Conversation>>(`/api/conversations?${params.toString()}`);
+  return result.content;
 }
 
 export async function getConversation(id: string): Promise<Conversation> {
@@ -67,7 +72,10 @@ export async function getConversation(id: string): Promise<Conversation> {
 }
 
 export async function listMessages(conversationId: string): Promise<Message[]> {
-  return apiFetch<Message[]>(`/api/conversations/${conversationId}/messages`);
+  const result = await apiFetch<PageResponse<Message>>(
+    `/api/conversations/${conversationId}/messages?size=${DEFAULT_PAGE_SIZE}`
+  );
+  return result.content;
 }
 
 export async function sendMessage(conversationId: string, text: string): Promise<Message> {

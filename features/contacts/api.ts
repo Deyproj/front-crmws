@@ -1,4 +1,12 @@
 import { apiFetch } from '@/lib/http/apiFetch';
+import type { PageResponse } from '@/lib/http/pageResponse';
+
+/**
+ * Ventana fija sin UI de "cargar más" todavía (ver mvp-roadmap.md, "Trabajo condicional"):
+ * el backend sí pagina de verdad (page/size), pero mientras el piloto no demuestre más
+ * volumen que esto en una sola organización, alcanza con pedir la primera página grande.
+ */
+const DEFAULT_PAGE_SIZE = 100;
 
 export const CONTACT_LIFECYCLE_STAGES = ['LEAD', 'QUALIFIED', 'OPPORTUNITY', 'CUSTOMER', 'LOST'] as const;
 export type ContactLifecycleStage = (typeof CONTACT_LIFECYCLE_STAGES)[number];
@@ -31,7 +39,8 @@ export interface Contact {
 }
 
 export async function listContacts(): Promise<Contact[]> {
-  return apiFetch<Contact[]>('/api/contacts');
+  const result = await apiFetch<PageResponse<Contact>>(`/api/contacts?size=${DEFAULT_PAGE_SIZE}`);
+  return result.content;
 }
 
 /** Refleja ContactStatsResponse (api-crmws, contact/presentation/ContactStatsResponse.java). */
