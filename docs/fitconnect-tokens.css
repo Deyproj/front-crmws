@@ -1,0 +1,160 @@
+/*
+  FitConnect — design tokens as CSS custom properties
+  Extracted from Figma file KETKfuCzhfms9h6Md5Nvrx
+  Drop this file in as globals/tokens.css and consume the variables —
+  do not hardcode hex values in components.
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* Brand */
+  --color-brand: #25d366;
+  --color-brand-hover: #1fb457;
+  --color-brand-pressed: #189c4a;
+  --color-on-brand: #ffffff;
+
+  /* Neutrals */
+  --color-ink-900: #0f172a;   /* sidebar / darkest surface */
+  --color-slate-800: #1e293b; /* primary text */
+  --color-slate-500: #64748b; /* secondary text */
+  --color-slate-400: #94a3b8; /* muted text / inactive nav */
+  --color-slate-200: #e2e8f0; /* borders / dividers */
+  --color-slate-100: #f1f5f9; /* app background */
+  --color-white: #ffffff;     /* card / surface background */
+
+  /* Semantic */
+  --color-success: #10b981;
+  --color-success-bg: #d1fae5;
+  --color-info: #3b82f6;
+  --color-info-bg: #dbeafe;
+  --color-warning: #f59e0b;
+  --color-warning-bg: #fef3c7;
+  --color-danger: #ef4444;
+  --color-danger-bg: #fee2e2;
+  --color-violet: #8b5cf6;
+  --color-violet-bg: #f3e8ff;
+
+  /* Chart palette, in preferred order */
+  --chart-1: #25d366;
+  --chart-2: #3b82f6;
+  --chart-3: #8b5cf6;
+  --chart-4: #f59e0b;
+  --chart-5: #ef4444;
+  --chart-6: #10b981;
+
+  /* Surfaces */
+  --bg-app: var(--color-slate-100);
+  --bg-surface: var(--color-white);
+  --bg-sidebar: var(--color-ink-900);
+
+  /* Text */
+  --text-primary: var(--color-slate-800);
+  --text-secondary: var(--color-slate-500);
+  --text-muted: var(--color-slate-400);
+  --text-on-dark: var(--color-white);
+  --text-on-dark-muted: var(--color-slate-400);
+
+  /* Borders */
+  --border-default: var(--color-slate-200);
+
+  /* Typography */
+  --font-base: 'Geist', -apple-system, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', 'SF Mono', monospace;
+
+  --text-caption: 11px;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-display: 28px;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Spacing scale */
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 10px;
+  --space-6: 12px;
+  --space-7: 16px;
+  --space-8: 20px;
+  --space-9: 24px;
+  --space-10: 32px;
+
+  /* Layout */
+  --sidebar-width: 260px;
+  --topbar-height: 72px;
+}
+
+/* ---- Reference component classes (optional starting point) ---- */
+
+body {
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-base);
+  font-size: var(--text-base);
+}
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.badge--info    { background: var(--color-info-bg);    color: var(--color-info); }
+.badge--violet  { background: var(--color-violet-bg);  color: var(--color-violet); }
+.badge--warning { background: var(--color-warning-bg); color: var(--color-warning); }
+.badge--success { background: var(--color-success-bg); color: var(--color-success); }
+.badge--danger  { background: var(--color-danger-bg);  color: var(--color-danger); }
+
+.btn-primary {
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-7);
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-base);
+}
+.btn-primary:hover { background: var(--color-brand-hover); }
+.btn-primary:active { background: var(--color-brand-pressed); }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-5) var(--space-6);
+  border-radius: var(--radius-md);
+  color: var(--text-on-dark-muted);
+  font-weight: var(--weight-medium);
+  font-size: var(--text-base);
+}
+.nav-item--active {
+  background: var(--color-brand);
+  color: var(--text-on-dark);
+  font-weight: var(--weight-semibold);
+}

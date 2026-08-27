@@ -1,0 +1,7 @@
+/*
+ * El sistema de diseño FitConnect (tokens.css) define un solo tema claro fijo —
+ * la barra lateral oscura es identidad de marca (--bg-sidebar), no un modo oscuro
+ * alternable. No hay variante dark del resto de la UI todavía: si se necesita un
+ * modo oscuro real más adelante, se agrega aquí como overrides de tokens.css bajo
+ * [data-theme="dark"], nunca inventando colores fuera de ese archivo.
+ */

@@ -1,1 +1,5 @@
 @AGENTS.md
+@guia_arquitectura_frontend_nextjs_feature_slices.md
+@guia_completa_sistema_diseno_frontend.md
+@Arquitectura_de_Dashboards_Interactivos_para_Aplicaciones_Web.md
+

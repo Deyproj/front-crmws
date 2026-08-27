@@ -1,0 +1,15 @@
+import { logoutRequest } from '../infrastructure/authApi';
+import { clearSession, getSession } from '@/lib/runtime/tokenStorage';
+
+export async function logoutUser(): Promise<void> {
+  const session = getSession();
+  clearSession();
+  if (!session) return;
+
+  // Revocar en el backend es best-effort: la sesión local ya quedó limpia aunque falle la red.
+  try {
+    await logoutRequest(session.refreshToken);
+  } catch {
+    // Sin acción: el refresh token igual expira solo del lado del servidor.
+  }
+}

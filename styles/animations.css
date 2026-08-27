@@ -1,0 +1,16 @@
+/*
+ * Animaciones y transiciones globales reutilizables.
+ * Vacío por ahora — se agrega contenido cuando una animación se repita en más de un lugar,
+ * no antes. Ver guia_completa_sistema_diseno_frontend.md.
+ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
