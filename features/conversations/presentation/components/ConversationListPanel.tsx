@@ -7,14 +7,27 @@ import { formatRelativeTime } from '@/lib/utils/formatRelativeTime';
 import { initials } from '@/lib/utils/initials';
 import { SearchIcon } from '@/components/ui/icons';
 
+export type QuickFilter = 'ALL' | 'MINE' | 'WAITING' | 'AI';
+
+const QUICK_FILTERS: { value: QuickFilter; label: string }[] = [
+  { value: 'ALL', label: 'Todas' },
+  { value: 'MINE', label: 'Mías' },
+  { value: 'WAITING', label: 'Esperando' },
+  { value: 'AI', label: 'IA' },
+];
+
 export function ConversationListPanel({
   items,
   selectedId,
   onSelect,
+  quickFilter,
+  onQuickFilterChange,
 }: {
   items: ConversationListItem[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  quickFilter: QuickFilter;
+  onQuickFilterChange: (filter: QuickFilter) => void;
 }) {
   const [query, setQuery] = useState('');
 
@@ -30,7 +43,7 @@ export function ConversationListPanel({
 
   return (
     <div className="flex h-full w-[320px] shrink-0 flex-col border-r border-border bg-surface">
-      <div className="border-b border-border p-[var(--space-7)]">
+      <div className="flex flex-col gap-[var(--space-6)] border-b border-border p-[var(--space-7)]">
         <div className="flex items-center gap-[var(--space-4)] rounded-md bg-app p-[var(--space-4)]">
           <SearchIcon className="size-[14px] text-secondary" />
           <input
@@ -39,6 +52,26 @@ export function ConversationListPanel({
             placeholder="Buscar conversación..."
             className="w-full bg-transparent text-xs text-ink placeholder-secondary focus:outline-none"
           />
+        </div>
+
+        <div className="flex flex-wrap gap-[var(--space-3)]" role="tablist" aria-label="Filtrar conversaciones">
+          {QUICK_FILTERS.map((f) => {
+            const active = quickFilter === f.value;
+            return (
+              <button
+                key={f.value}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => onQuickFilterChange(f.value)}
+                className={`rounded-full px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold transition-colors ${
+                  active ? 'bg-brand text-on-brand' : 'bg-app text-secondary hover:text-ink'
+                }`}
+              >
+                {f.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 

@@ -1,17 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useAuth } from '@/features/auth/presentation/context/AuthContext';
 import { useConversationsList } from '../hooks/useConversationsList';
 import { useConversationThread } from '../hooks/useConversationThread';
-import { ConversationListPanel } from '../components/ConversationListPanel';
+import { ConversationListPanel, type QuickFilter } from '../components/ConversationListPanel';
 import { ChatPanel } from '../components/ChatPanel';
 import { ContactPanel } from '../components/ContactPanel';
+import type { ConversationFilters } from '@/features/conversations';
 
 export function ConversationsView() {
   const { user } = useAuth();
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const { items, loading, error, refetch } = useConversationsList();
+  const [quickFilter, setQuickFilter] = useState<QuickFilter>('ALL');
+
+  const filters = useMemo<ConversationFilters>(() => {
+    switch (quickFilter) {
+      case 'MINE':
+        return user?.membershipId ? { assignedTo: user.membershipId } : {};
+      case 'WAITING':
+        return { status: 'WAITING' };
+      case 'AI':
+        return { mode: 'AI' };
+      default:
+        return {};
+    }
+  }, [quickFilter, user]);
+
+  const { items, loading, error, refetch } = useConversationsList(filters);
   const thread = useConversationThread(selectedId, refetch);
 
   const selectedContact = items.find((i) => i.conversation.id === selectedId)?.contact ?? null;
@@ -33,7 +49,13 @@ export function ConversationsView() {
           </div>
         ) : (
           <>
-            <ConversationListPanel items={items} selectedId={selectedId} onSelect={setSelectedId} />
+            <ConversationListPanel
+              items={items}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              quickFilter={quickFilter}
+              onQuickFilterChange={setQuickFilter}
+            />
             <ChatPanel
               conversation={thread.conversation}
               messages={thread.messages}

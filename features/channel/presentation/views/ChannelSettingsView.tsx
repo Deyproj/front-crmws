@@ -44,6 +44,7 @@ export function ChannelSettingsView() {
 function ChannelManager() {
   const { channel, status, loading, actionPending, error, create, connect, disconnect, unlink } = useChannel();
   const [externalAccountId, setExternalAccountId] = useState('');
+  const [confirmingUnlink, setConfirmingUnlink] = useState(false);
 
   if (loading) return <p className="text-sm text-secondary">Cargando...</p>;
 
@@ -61,7 +62,10 @@ function ChannelManager() {
           className="flex flex-col gap-[var(--space-6)]"
         >
           <div>
-            <label htmlFor="externalAccountId" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-secondary">
+            <label
+              htmlFor="externalAccountId"
+              className="mb-[var(--space-3)] block text-xs font-medium uppercase tracking-wide text-secondary"
+            >
               Identificador de cuenta
             </label>
             <input
@@ -69,14 +73,14 @@ function ChannelManager() {
               value={externalAccountId}
               onChange={(e) => setExternalAccountId(e.target.value)}
               placeholder="ej. gym-principal"
-              className="w-full rounded-md border border-border bg-app px-3 py-2.5 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
+              className="w-full rounded-md border border-border bg-app px-[var(--space-6)] py-[var(--space-5)] text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
           {error && <p className="text-sm text-danger">{error}</p>}
           <button
             type="submit"
             disabled={actionPending || !externalAccountId.trim()}
-            className="rounded-md bg-brand px-4 py-2.5 text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:opacity-50"
+            className="rounded-md bg-brand px-[var(--space-7)] py-[var(--space-5)] text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             Crear canal
           </button>
@@ -100,7 +104,7 @@ function ChannelManager() {
       </div>
 
       {error && (
-        <p className="mb-[var(--space-6)] rounded-md border border-danger/30 bg-danger-bg px-3 py-2 text-sm text-danger">
+        <p className="mb-[var(--space-6)] rounded-md border border-danger/30 bg-danger-bg px-[var(--space-6)] py-[var(--space-5)] text-sm text-danger">
           {error}
         </p>
       )}
@@ -118,36 +122,63 @@ function ChannelManager() {
         </p>
       )}
 
-      <div className="flex flex-wrap gap-[var(--space-5)]">
-        {canConnect && (
+      {confirmingUnlink ? (
+        <div className="flex flex-wrap items-center gap-[var(--space-5)] rounded-md border border-danger/30 bg-danger-bg p-[var(--space-6)]">
+          <p className="text-sm text-danger">¿Desvincular? Se cierra la sesión real de WhatsApp.</p>
+          <div className="ml-auto flex gap-[var(--space-4)]">
+            <button
+              type="button"
+              onClick={() => setConfirmingUnlink(false)}
+              disabled={actionPending}
+              className="rounded-md border border-border bg-surface px-[var(--space-6)] py-[var(--space-4)] text-xs font-semibold text-ink hover:bg-app disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                unlink();
+                setConfirmingUnlink(false);
+              }}
+              disabled={actionPending}
+              className="rounded-md bg-danger px-[var(--space-6)] py-[var(--space-4)] text-xs font-semibold text-on-brand hover:opacity-90 disabled:opacity-50"
+            >
+              Sí, desvincular
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-[var(--space-5)]">
+          {canConnect && (
+            <button
+              type="button"
+              onClick={connect}
+              disabled={actionPending}
+              className="rounded-md bg-brand px-[var(--space-7)] py-[var(--space-4)] text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Conectar
+            </button>
+          )}
+          {canDisconnect && (
+            <button
+              type="button"
+              onClick={disconnect}
+              disabled={actionPending}
+              className="rounded-md border border-border px-[var(--space-7)] py-[var(--space-4)] text-sm font-semibold text-ink hover:bg-app disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Desconectar
+            </button>
+          )}
           <button
             type="button"
-            onClick={connect}
+            onClick={() => setConfirmingUnlink(true)}
             disabled={actionPending}
-            className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:opacity-50"
+            className="rounded-md px-[var(--space-7)] py-[var(--space-4)] text-sm font-semibold text-danger hover:bg-danger-bg disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Conectar
+            Desvincular
           </button>
-        )}
-        {canDisconnect && (
-          <button
-            type="button"
-            onClick={disconnect}
-            disabled={actionPending}
-            className="rounded-md border border-border px-4 py-2 text-sm font-semibold text-ink hover:bg-app disabled:opacity-50"
-          >
-            Desconectar
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={unlink}
-          disabled={actionPending}
-          className="rounded-md px-4 py-2 text-sm font-semibold text-danger hover:bg-danger-bg disabled:opacity-50"
-        >
-          Desvincular
-        </button>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

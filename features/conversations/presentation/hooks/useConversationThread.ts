@@ -78,16 +78,19 @@ export function useConversationThread(conversationId: string | null, onConversat
     await runAction(() => releaseConversationToAi(conversationId));
   }
 
-  async function send(text: string) {
-    if (!conversationId || !text.trim()) return;
+  /** Devuelve si el envío tuvo éxito, para que el borrador no se limpie si falla. */
+  async function send(text: string): Promise<boolean> {
+    if (!conversationId || !text.trim()) return false;
     setActionPending(true);
     setActionError(null);
     try {
       const message = await sendMessage(conversationId, text.trim());
       setMessages((prev) => [...prev, message]);
       onConversationChanged?.();
+      return true;
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'No se pudo enviar el mensaje');
+      return false;
     } finally {
       setActionPending(false);
     }

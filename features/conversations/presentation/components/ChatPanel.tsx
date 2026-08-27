@@ -26,7 +26,7 @@ export function ChatPanel({
   actionError: string | null;
   onTakeOver: () => void;
   onRelease: () => void;
-  onSend: (text: string) => void;
+  onSend: (text: string) => Promise<boolean>;
 }) {
   const [draft, setDraft] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -49,11 +49,12 @@ export function ChatPanel({
   const canSend = conversation.mode === 'HUMAN' && isMine;
   const label = contact?.name || contact?.phone || 'Contacto sin nombre';
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!draft.trim()) return;
-    onSend(draft);
-    setDraft('');
+    const sent = await onSend(draft);
+    // Solo se limpia si de verdad se envió — si falla, el asesor no pierde lo que escribió.
+    if (sent) setDraft('');
   }
 
   return (
