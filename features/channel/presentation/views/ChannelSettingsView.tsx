@@ -5,6 +5,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '@/features/auth/presentation/context/AuthContext';
 import { useChannel } from '../hooks/useChannel';
 import { STATUS_LABELS } from '@/features/channel';
+import { AutomationToggle } from '@/features/organization/presentation/components/AutomationToggle';
 
 const MANAGER_ROLES = new Set(['OWNER', 'ADMIN']);
 
@@ -15,14 +16,24 @@ export function ChannelSettingsView() {
   return (
     <div className="flex h-full flex-col">
       <header className="flex h-[var(--topbar-height)] shrink-0 items-center border-b border-border bg-surface px-[var(--space-9)]">
-        <h1 className="text-xl font-bold text-ink">Configuración · Canal de WhatsApp</h1>
+        <h1 className="text-xl font-bold text-ink">Configuración</h1>
       </header>
       <div className="flex-1 overflow-y-auto p-[var(--space-9)]">
         {canManage ? (
-          <ChannelManager />
+          <div className="flex flex-col gap-[var(--space-9)]">
+            <section className="flex flex-col gap-[var(--space-5)]">
+              <h2 className="text-sm font-semibold uppercase text-muted">Automatización</h2>
+              <AutomationToggle />
+            </section>
+            <section className="flex flex-col gap-[var(--space-5)]">
+              <h2 className="text-sm font-semibold uppercase text-muted">Canal de WhatsApp</h2>
+              <ChannelManager />
+            </section>
+          </div>
         ) : (
           <p className="text-sm text-secondary">
-            Solo el propietario o un administrador de la organización puede vincular o gestionar el canal de WhatsApp.
+            Solo el propietario o un administrador de la organización puede gestionar la automatización o el canal de
+            WhatsApp.
           </p>
         )}
       </div>
