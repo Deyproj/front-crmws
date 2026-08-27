@@ -84,3 +84,12 @@ export async function takeOverConversation(conversationId: string): Promise<Conv
 export async function releaseConversationToAi(conversationId: string): Promise<Conversation> {
   return apiFetch<Conversation>(`/api/conversations/${conversationId}/release-to-ai`, { method: 'POST' });
 }
+
+/** Refleja ConversationStatsResponse (api-crmws, conversation/presentation/ConversationStatsResponse.java). */
+export interface ConversationStats {
+  total: number;
+}
+
+export async function getConversationStats(): Promise<ConversationStats> {
+  return apiFetch<ConversationStats>('/api/conversations/stats');
+}

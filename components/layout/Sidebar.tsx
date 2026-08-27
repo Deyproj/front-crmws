@@ -27,7 +27,7 @@ export function Sidebar() {
           <NavItem href="/" icon={<MessageSquareIcon className="size-[18px]" />} active={pathname === '/'}>
             Conversaciones
           </NavItem>
-          <NavItem icon={<UsersIcon className="size-[18px]" />} disabled>
+          <NavItem href="/contacts" icon={<UsersIcon className="size-[18px]" />} active={pathname === '/contacts'}>
             Clientes
           </NavItem>
           <NavItem href="/settings" icon={<SettingsIcon className="size-[18px]" />} active={pathname === '/settings'}>

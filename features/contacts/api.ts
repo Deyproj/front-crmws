@@ -34,6 +34,19 @@ export async function listContacts(): Promise<Contact[]> {
   return apiFetch<Contact[]>('/api/contacts');
 }
 
+/** Refleja ContactStatsResponse (api-crmws, contact/presentation/ContactStatsResponse.java). */
+export interface ContactStats {
+  leads: number;
+  qualified: number;
+  opportunities: number;
+  customers: number;
+  lost: number;
+}
+
+export async function getContactStats(): Promise<ContactStats> {
+  return apiFetch<ContactStats>('/api/contacts/stats');
+}
+
 /** targetStage no admite LEAD (ChangeLifecycleStageRequest usa OpportunityStage) — ver ContactController. */
 export async function changeLifecycleStage(
   contactId: string,

@@ -2,6 +2,7 @@ export type {
   Conversation,
   ConversationFilters,
   ConversationMode,
+  ConversationStats,
   ConversationStatus,
   Message,
   MessageDirection,
@@ -14,6 +15,7 @@ export {
   sendMessage,
   takeOverConversation,
   releaseConversationToAi,
+  getConversationStats,
   MODE_LABELS,
   STATUS_LABELS,
 } from './api';
