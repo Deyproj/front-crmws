@@ -32,6 +32,8 @@ export const LOST_REASONS = [
 export interface Contact {
   id: string;
   name: string | null;
+  /** Nombre autodeclarado en el perfil de WhatsApp — señal débil, nunca verificada (el usuario lo pone a su gusto). */
+  pushName: string | null;
   phone: string;
   email: string | null;
   lifecycleStage: ContactLifecycleStage;
@@ -61,6 +63,14 @@ export async function getContactStats(): Promise<ContactStats> {
 }
 
 /** targetStage no admite LEAD (ChangeLifecycleStageRequest usa OpportunityStage) — ver ContactController. */
+/** Actualiza nombre/correo del contacto — invocable desde el panel del asesor (ver ContactController#update). */
+export async function updateContactProfile(contactId: string, name: string, email?: string | null): Promise<Contact> {
+  return apiFetch<Contact>(`/api/contacts/${contactId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ name, email: email ?? null }),
+  });
+}
+
 export async function changeLifecycleStage(
   contactId: string,
   targetStage: Exclude<ContactLifecycleStage, 'LEAD'>,

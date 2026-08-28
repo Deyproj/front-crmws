@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { Contact } from '@/features/contacts';
-import { LIFECYCLE_STAGE_LABELS } from '@/features/contacts';
+import { LIFECYCLE_STAGE_LABELS, updateContactProfile } from '@/features/contacts';
 import type { Conversation } from '@/features/conversations';
 import { initials } from '@/lib/utils/initials';
 import { StageActions } from '@/features/opportunities/presentation/components/StageActions';
@@ -47,7 +47,7 @@ export function ContactPanel({
         <div className="flex size-20 items-center justify-center rounded-full bg-brand text-2xl font-semibold text-on-brand">
           {initials(contact.name, contact.phone)}
         </div>
-        <p className="text-base font-bold text-ink">{contact.name || contact.phone}</p>
+        <ContactName contact={contact} onContactChanged={onContactChanged} />
         <span className="rounded-full bg-info-bg px-[var(--space-5)] py-1 text-xs font-semibold uppercase text-info">
           {LIFECYCLE_STAGE_LABELS[contact.lifecycleStage]}
         </span>
@@ -114,6 +114,114 @@ export function ContactPanel({
         <OpportunityHistory contactId={contact.id} refreshKey={historyRefreshKey} />
       </div>
     </aside>
+  );
+}
+
+/**
+ * Nombre del contacto con edición en línea para el asesor — el mismo dato
+ * que el agente de IA puede confirmar y guardar automáticamente durante la
+ * conversación (ver AgentMessagePersistenceService#recordReply en el
+ * backend), pero aquí el asesor puede corregirlo o completarlo a mano.
+ */
+function ContactName({
+  contact,
+  onContactChanged,
+}: {
+  contact: Contact;
+  onContactChanged: (contact: Contact) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(contact.name ?? '');
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const showPushNameHint = !!contact.pushName && contact.pushName !== contact.name;
+
+  if (!editing) {
+    return (
+      <div className="flex flex-col items-center gap-[2px]">
+        <button
+          type="button"
+          onClick={() => {
+            setName(contact.name ?? '');
+            setError(null);
+            setEditing(true);
+          }}
+          className="text-base font-bold text-ink hover:underline"
+          title="Editar nombre"
+        >
+          {contact.name || contact.phone}
+        </button>
+        {showPushNameHint && (
+          <button
+            type="button"
+            onClick={() => {
+              setName(contact.pushName ?? '');
+              setError(null);
+              setEditing(true);
+            }}
+            className="text-xs text-muted hover:underline"
+            title="Usar este nombre"
+          >
+            En WhatsApp aparece como &ldquo;{contact.pushName}&rdquo;
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  async function save() {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setError('El nombre no puede estar vacío');
+      return;
+    }
+    setPending(true);
+    setError(null);
+    try {
+      const updated = await updateContactProfile(contact.id, trimmed, contact.email);
+      onContactChanged(updated);
+      setEditing(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo actualizar el nombre');
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className="flex w-full flex-col gap-[var(--space-4)]">
+      <input
+        autoFocus
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') save();
+          if (e.key === 'Escape') setEditing(false);
+        }}
+        disabled={pending}
+        className="rounded-md border border-border bg-app px-3 py-2 text-center text-sm font-semibold text-ink focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
+      />
+      {error && <p className="text-xs text-danger">{error}</p>}
+      <div className="flex justify-center gap-[var(--space-4)]">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={save}
+          className="rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-on-brand hover:bg-brand-hover disabled:opacity-50"
+        >
+          {pending ? 'Guardando...' : 'Guardar'}
+        </button>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => setEditing(false)}
+          className="rounded-md border border-border px-3 py-1.5 text-xs font-semibold text-ink hover:bg-app disabled:opacity-50"
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
   );
 }
 
