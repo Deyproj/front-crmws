@@ -2,9 +2,17 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import {
+  activateMember,
+  changeMemberRole,
+  changeOrganizationStatus,
   createOrganization,
   createTeamMember,
+  listMembers,
   listOrganizations,
+  revokeMember,
+  type MembershipRole,
+  type OrganizationStatus,
+  type PlatformMember,
   type PlatformOrganization,
   type ProvisionOrganizationPayload,
   type ProvisionTeamMemberPayload,
@@ -68,6 +76,64 @@ export function usePlatformDashboard() {
     }
   }
 
+  const loadMembers = useCallback(async (organizationId: string): Promise<PlatformMember[]> => {
+    return listMembers(organizationId);
+  }, []);
+
+  async function changeRole(organizationId: string, membershipId: string, role: MembershipRole) {
+    setActionPending(true);
+    setError(null);
+    try {
+      return await changeMemberRole(organizationId, membershipId, role);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo cambiar el rol');
+      throw err;
+    } finally {
+      setActionPending(false);
+    }
+  }
+
+  async function revoke(organizationId: string, membershipId: string) {
+    setActionPending(true);
+    setError(null);
+    try {
+      await revokeMember(organizationId, membershipId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo revocar el miembro');
+      throw err;
+    } finally {
+      setActionPending(false);
+    }
+  }
+
+  async function changeStatus(organizationId: string, status: OrganizationStatus) {
+    setActionPending(true);
+    setError(null);
+    try {
+      const result = await changeOrganizationStatus(organizationId, status);
+      await load();
+      return result;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo cambiar el estado de la organización');
+      throw err;
+    } finally {
+      setActionPending(false);
+    }
+  }
+
+  async function activate(organizationId: string, membershipId: string) {
+    setActionPending(true);
+    setError(null);
+    try {
+      return await activateMember(organizationId, membershipId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo reactivar el miembro');
+      throw err;
+    } finally {
+      setActionPending(false);
+    }
+  }
+
   return {
     organizations,
     loading,
@@ -77,5 +143,10 @@ export function usePlatformDashboard() {
     dismissTemporaryPassword: () => setLastTemporaryPassword(null),
     provisionOrganization,
     provisionTeamMember,
+    loadMembers,
+    changeRole,
+    revoke,
+    activate,
+    changeStatus,
   };
 }

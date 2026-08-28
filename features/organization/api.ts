@@ -3,7 +3,7 @@ import { apiFetch } from '@/lib/http/apiFetch';
 export const ORGANIZATION_STATUSES = ['ACTIVE', 'SUSPENDED', 'INACTIVE'] as const;
 export type OrganizationStatus = (typeof ORGANIZATION_STATUSES)[number];
 
-export const MEMBERSHIP_ROLES = ['OWNER', 'ADMIN', 'SUPERVISOR', 'ADVISOR', 'VIEWER'] as const;
+export const MEMBERSHIP_ROLES = ['OWNER', 'ADVISOR'] as const;
 export type MembershipRole = (typeof MEMBERSHIP_ROLES)[number];
 
 /** Refleja OrganizationResponse (api-crmws, organization/presentation/OrganizationResponse.java). */

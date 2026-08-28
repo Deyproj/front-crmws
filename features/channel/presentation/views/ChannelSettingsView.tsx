@@ -11,7 +11,7 @@ import { AgentConfigForm } from '@/features/agent/presentation/components/AgentC
 import { AgentSimulator } from '@/features/agent/presentation/components/AgentSimulator';
 import { KnowledgeEntriesManager } from '@/features/agent/presentation/components/KnowledgeEntriesManager';
 
-const MANAGER_ROLES = new Set(['OWNER', 'ADMIN']);
+const MANAGER_ROLES = new Set(['OWNER']);
 
 export function ChannelSettingsView() {
   const { user } = useAuth();

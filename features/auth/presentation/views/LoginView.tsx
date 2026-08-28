@@ -101,7 +101,7 @@ export function LoginView() {
             </div>
           </div>
 
-          <div>
+          {/* <div>
             <label
               htmlFor="organizationSlug"
               className="mb-[var(--space-3)] block text-xs font-medium uppercase tracking-wide text-secondary"
@@ -117,7 +117,7 @@ export function LoginView() {
               className="w-full rounded-md border border-border bg-app px-[var(--space-6)] py-[var(--space-5)] text-sm text-ink placeholder-muted transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand"
               placeholder="Solo si perteneces a más de una"
             />
-          </div>
+          </div> */}
 
           {error && (
             <p role="alert" className="rounded-md border border-danger/30 bg-danger-bg px-[var(--space-6)] py-[var(--space-5)] text-sm text-danger">

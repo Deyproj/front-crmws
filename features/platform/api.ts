@@ -1,6 +1,6 @@
 import { apiFetch } from '@/lib/http/apiFetch';
 
-export const MEMBERSHIP_ROLES = ['OWNER', 'ADMIN', 'SUPERVISOR', 'ADVISOR', 'VIEWER'] as const;
+export const MEMBERSHIP_ROLES = ['OWNER', 'ADVISOR'] as const;
 export type MembershipRole = (typeof MEMBERSHIP_ROLES)[number];
 
 export const ORGANIZATION_STATUSES = ['ACTIVE', 'SUSPENDED', 'INACTIVE'] as const;
@@ -44,6 +44,16 @@ export interface ProvisionTeamMemberResult {
   temporaryPassword: string;
 }
 
+/** Refleja PlatformMembershipResponse (api-crmws, identity/presentation). */
+export interface PlatformMember {
+  id: string;
+  userId: string;
+  name: string | null;
+  email: string | null;
+  role: MembershipRole;
+  active: boolean;
+}
+
 export async function listOrganizations(): Promise<PlatformOrganization[]> {
   return apiFetch<PlatformOrganization[]>('/api/platform/organizations');
 }
@@ -64,5 +74,42 @@ export async function createTeamMember(
   return apiFetch<ProvisionTeamMemberResult>(`/api/platform/organizations/${organizationId}/team-members`, {
     method: 'POST',
     body: JSON.stringify(payload),
+  });
+}
+
+export async function listMembers(organizationId: string): Promise<PlatformMember[]> {
+  return apiFetch<PlatformMember[]>(`/api/platform/organizations/${organizationId}/members`);
+}
+
+export async function changeMemberRole(
+  organizationId: string,
+  membershipId: string,
+  role: MembershipRole
+): Promise<PlatformMember> {
+  return apiFetch<PlatformMember>(`/api/platform/organizations/${organizationId}/members/${membershipId}/role`, {
+    method: 'PATCH',
+    body: JSON.stringify({ role }),
+  });
+}
+
+export async function revokeMember(organizationId: string, membershipId: string): Promise<void> {
+  await apiFetch<void>(`/api/platform/organizations/${organizationId}/members/${membershipId}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function activateMember(organizationId: string, membershipId: string): Promise<PlatformMember> {
+  return apiFetch<PlatformMember>(`/api/platform/organizations/${organizationId}/members/${membershipId}/activate`, {
+    method: 'PATCH',
+  });
+}
+
+export async function changeOrganizationStatus(
+  organizationId: string,
+  status: OrganizationStatus
+): Promise<PlatformOrganization> {
+  return apiFetch<PlatformOrganization>(`/api/platform/organizations/${organizationId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
   });
 }

@@ -8,10 +8,7 @@ import { MessageSquareIcon, UsersIcon, CalendarIcon, ClockIcon, SettingsIcon, Lo
 /** Refleja MembershipRole (api-crmws, organization/domain/MembershipRole.java) — ver docs/01-product/actors-and-roles.md. */
 const ROLE_LABELS: Record<string, string> = {
   OWNER: 'Propietario',
-  ADMIN: 'Administrador',
-  SUPERVISOR: 'Supervisor',
   ADVISOR: 'Asesor',
-  VIEWER: 'Solo lectura',
 };
 
 export function Sidebar() {

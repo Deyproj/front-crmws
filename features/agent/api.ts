@@ -72,7 +72,7 @@ export interface SimulateAgentResult {
   knowledgeQuestionsUsed: string[];
 }
 
-/** "Probar agente" (Paso 5) — no persiste nada en conversation/contact. Rol OWNER/ADMIN. */
+/** "Probar agente" (Paso 5) — no persiste nada en conversation/contact. Rol OWNER. */
 export async function simulateAgent(turns: SimulatedTurn[]): Promise<SimulateAgentResult> {
   return apiFetch<SimulateAgentResult>('/api/agent/simulate', {
     method: 'POST',

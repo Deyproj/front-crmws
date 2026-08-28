@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const MANAGER_ROLES = new Set(['OWNER', 'ADMIN']);
+const MANAGER_ROLES = new Set(['OWNER']);
 
 /**
  * Decodifica el claim "role" del JWT sin verificar la firma — la autorización real
