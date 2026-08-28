@@ -67,7 +67,7 @@ export function ConversationsView() {
               onRelease={thread.release}
               onSend={thread.send}
             />
-            <ContactPanel contact={selectedContact} onContactChanged={() => refetch()} />
+            <ContactPanel contact={selectedContact} conversation={thread.conversation} onContactChanged={() => refetch()} />
           </>
         )}
       </div>

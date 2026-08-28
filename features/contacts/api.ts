@@ -36,6 +36,10 @@ export interface Contact {
   email: string | null;
   lifecycleStage: ContactLifecycleStage;
   lastInteractionAt: string;
+  qualificationGoal: string | null;
+  qualificationSchedule: string | null;
+  qualificationPlanOfInterest: string | null;
+  qualificationIntent: string | null;
 }
 
 export async function listContacts(): Promise<Contact[]> {

@@ -3,18 +3,29 @@
 import { useState } from 'react';
 import type { Contact } from '@/features/contacts';
 import { LIFECYCLE_STAGE_LABELS } from '@/features/contacts';
+import type { Conversation } from '@/features/conversations';
 import { initials } from '@/lib/utils/initials';
 import { StageActions } from '@/features/opportunities/presentation/components/StageActions';
 import { OpportunityHistory } from '@/features/opportunities/presentation/components/OpportunityHistory';
+import { useConversationSummary } from '../hooks/useConversationSummary';
+
+const INTENT_LABELS: Record<string, string> = {
+  INFO: 'Busca información',
+  VISITA: 'Quiere agendar una visita',
+  INSCRIPCION: 'Quiere inscribirse',
+};
 
 export function ContactPanel({
   contact,
+  conversation,
   onContactChanged,
 }: {
   contact: Contact | null;
+  conversation: Conversation | null;
   onContactChanged: (contact: Contact) => void;
 }) {
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
+  const summaryState = useConversationSummary(conversation?.id ?? null);
 
   if (!contact) {
     return <aside className="hidden w-[280px] shrink-0 border-l border-border bg-surface lg:block" />;
@@ -24,6 +35,10 @@ export function ContactPanel({
     onContactChanged(updated);
     setHistoryRefreshKey((k) => k + 1);
   }
+
+  const hasQualification =
+    contact.qualificationGoal || contact.qualificationSchedule || contact.qualificationPlanOfInterest || contact.qualificationIntent;
+  const canSummarize = !!conversation && conversation.mode !== 'AI';
 
   return (
     <aside className="hidden w-[280px] shrink-0 flex-col gap-[var(--space-9)] overflow-y-auto border-l border-border bg-surface p-[var(--space-8)] lg:flex">
@@ -51,6 +66,37 @@ export function ContactPanel({
           })}
         />
       </div>
+
+      {hasQualification && (
+        <div className="flex flex-col gap-[var(--space-6)]">
+          <p className="text-xs font-semibold uppercase text-muted">Calificación</p>
+          {contact.qualificationGoal && <Field label="Objetivo" value={contact.qualificationGoal} />}
+          {contact.qualificationSchedule && <Field label="Horario" value={contact.qualificationSchedule} />}
+          {contact.qualificationPlanOfInterest && <Field label="Plan de interés" value={contact.qualificationPlanOfInterest} />}
+          {contact.qualificationIntent && (
+            <Field label="Intención" value={INTENT_LABELS[contact.qualificationIntent] ?? contact.qualificationIntent} />
+          )}
+        </div>
+      )}
+
+      {canSummarize && (
+        <div className="flex flex-col gap-[var(--space-5)]">
+          <p className="text-xs font-semibold uppercase text-muted">Resumen para el asesor</p>
+          {summaryState.summary ? (
+            <p className="rounded-md bg-app p-[var(--space-6)] text-sm text-ink">{summaryState.summary}</p>
+          ) : (
+            <button
+              type="button"
+              onClick={summaryState.generate}
+              disabled={summaryState.loading}
+              className="rounded-md border border-border px-[var(--space-6)] py-[var(--space-4)] text-xs font-semibold text-ink hover:bg-app disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {summaryState.loading ? 'Generando...' : 'Generar resumen'}
+            </button>
+          )}
+          {summaryState.error && <p className="text-xs text-danger">{summaryState.error}</p>}
+        </div>
+      )}
 
       <div className="flex flex-col gap-[var(--space-6)]">
         <p className="text-xs font-semibold uppercase text-muted">Etapa comercial</p>

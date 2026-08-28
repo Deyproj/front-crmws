@@ -101,3 +101,13 @@ export interface ConversationStats {
 export async function getConversationStats(): Promise<ConversationStats> {
   return apiFetch<ConversationStats>('/api/conversations/stats');
 }
+
+/** Refleja ConversationSummaryResponse (api-crmws, conversation/presentation/ConversationSummaryResponse.java). */
+export interface ConversationSummary {
+  summary: string | null;
+}
+
+/** Resumen de traspaso bajo demanda (Paso 5) — null si no hay proveedor de IA configurado o no hay mensajes todavía. */
+export async function getConversationSummary(conversationId: string): Promise<ConversationSummary> {
+  return apiFetch<ConversationSummary>(`/api/conversations/${conversationId}/summary`);
+}
