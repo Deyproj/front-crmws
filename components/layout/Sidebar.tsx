@@ -3,12 +3,15 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/features/auth/presentation/context/AuthContext';
-import { MessageSquareIcon, UsersIcon, ClockIcon, SettingsIcon, LogOutIcon } from '@/components/ui/icons';
+import { MessageSquareIcon, UsersIcon, CalendarIcon, ClockIcon, SettingsIcon, LogOutIcon } from '@/components/ui/icons';
 
+/** Refleja MembershipRole (api-crmws, organization/domain/MembershipRole.java) — ver docs/01-product/actors-and-roles.md. */
 const ROLE_LABELS: Record<string, string> = {
   OWNER: 'Propietario',
   ADMIN: 'Administrador',
-  MEMBER: 'Asesor',
+  SUPERVISOR: 'Supervisor',
+  ADVISOR: 'Asesor',
+  VIEWER: 'Solo lectura',
 };
 
 export function Sidebar() {
@@ -29,6 +32,9 @@ export function Sidebar() {
           </NavItem>
           <NavItem href="/contacts" icon={<UsersIcon className="size-[18px]" />} active={pathname === '/contacts'}>
             Clientes
+          </NavItem>
+          <NavItem href="/agenda" icon={<CalendarIcon className="size-[18px]" />} active={pathname === '/agenda'}>
+            Agenda
           </NavItem>
           <NavItem href="/followups" icon={<ClockIcon className="size-[18px]" />} active={pathname === '/followups'}>
             Seguimientos

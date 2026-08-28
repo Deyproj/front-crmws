@@ -6,11 +6,15 @@ export type {
   SimulatedTurn,
   SimulatedTurnRole,
   SimulateAgentResult,
+  KnowledgeEntry,
 } from './api';
 export {
   getAgentConfig,
   updateAgentConfig,
   simulateAgent,
+  listKnowledgeEntries,
+  createKnowledgeEntry,
+  updateKnowledgeEntry,
   AGENT_TONES,
   TONE_LABELS,
   RESPONSE_LENGTHS,

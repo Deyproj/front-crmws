@@ -1,6 +1,7 @@
 export type { Appointment, AppointmentStatus, AppointmentStats } from './api';
 export {
   listAppointments,
+  listAppointmentsByRange,
   scheduleAppointment,
   cancelAppointment,
   rescheduleAppointment,

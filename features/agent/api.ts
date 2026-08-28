@@ -79,3 +79,36 @@ export async function simulateAgent(turns: SimulatedTurn[]): Promise<SimulateAge
     body: JSON.stringify({ turns }),
   });
 }
+
+/** Refleja KnowledgeEntryResponse (api-crmws, agent/presentation/KnowledgeEntryResponse.java). */
+export interface KnowledgeEntry {
+  id: string;
+  question: string;
+  answer: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function listKnowledgeEntries(): Promise<KnowledgeEntry[]> {
+  return apiFetch<KnowledgeEntry[]>('/api/agent/knowledge-entries');
+}
+
+export async function createKnowledgeEntry(question: string, answer: string): Promise<KnowledgeEntry> {
+  return apiFetch<KnowledgeEntry>('/api/agent/knowledge-entries', {
+    method: 'POST',
+    body: JSON.stringify({ question, answer }),
+  });
+}
+
+export async function updateKnowledgeEntry(
+  id: string,
+  question: string,
+  answer: string,
+  active: boolean
+): Promise<KnowledgeEntry> {
+  return apiFetch<KnowledgeEntry>(`/api/agent/knowledge-entries/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ question, answer, active }),
+  });
+}

@@ -25,6 +25,17 @@ export async function listAppointments(contactId: string): Promise<Appointment[]
   return apiFetch<Appointment[]>(`/api/contacts/${contactId}/appointments`);
 }
 
+/** Vista "Agenda" — cortesías de toda la organización en un rango, ordenadas por hora. */
+export async function listAppointmentsByRange(
+  from: string,
+  to: string,
+  status?: AppointmentStatus
+): Promise<Appointment[]> {
+  const params = new URLSearchParams({ from, to });
+  if (status) params.set('status', status);
+  return apiFetch<Appointment[]>(`/api/appointments?${params.toString()}`);
+}
+
 export async function scheduleAppointment(contactId: string, scheduledAt: string, notes: string): Promise<Appointment> {
   return apiFetch<Appointment>(`/api/contacts/${contactId}/appointments`, {
     method: 'POST',

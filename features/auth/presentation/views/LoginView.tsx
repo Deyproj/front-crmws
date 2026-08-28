@@ -1,13 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { EyeIcon, EyeOffIcon } from '@/components/ui/icons';
+
+/** Solo rutas internas ("/algo") — nunca un host externo, evita un open redirect vía ?from=. */
+function safeRedirectTarget(from: string | null): string {
+  if (from && from.startsWith('/') && !from.startsWith('//')) return from;
+  return '/';
+}
 
 export function LoginView() {
   const { login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,7 +33,7 @@ export function LoginView() {
         password,
         organizationSlug: organizationSlug.trim() || undefined,
       });
-      router.replace('/');
+      router.replace(safeRedirectTarget(searchParams.get('from')));
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al iniciar sesión';
       setError(msg.includes('401') ? 'Correo o contraseña incorrectos' : msg);
