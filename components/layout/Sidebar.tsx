@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/features/auth/presentation/context/AuthContext';
-import { MessageSquareIcon, UsersIcon, SettingsIcon, LogOutIcon } from '@/components/ui/icons';
+import { MessageSquareIcon, UsersIcon, ClockIcon, SettingsIcon, LogOutIcon } from '@/components/ui/icons';
 
 const ROLE_LABELS: Record<string, string> = {
   OWNER: 'Propietario',
@@ -29,6 +29,9 @@ export function Sidebar() {
           </NavItem>
           <NavItem href="/contacts" icon={<UsersIcon className="size-[18px]" />} active={pathname === '/contacts'}>
             Clientes
+          </NavItem>
+          <NavItem href="/followups" icon={<ClockIcon className="size-[18px]" />} active={pathname === '/followups'}>
+            Seguimientos
           </NavItem>
           <NavItem href="/settings" icon={<SettingsIcon className="size-[18px]" />} active={pathname === '/settings'}>
             Configuración
