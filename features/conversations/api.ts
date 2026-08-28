@@ -96,6 +96,10 @@ export async function releaseConversationToAi(conversationId: string): Promise<C
 /** Refleja ConversationStatsResponse (api-crmws, conversation/presentation/ConversationStatsResponse.java). */
 export interface ConversationStats {
   total: number;
+  transferred: number;
+  transferredPercentage: number;
+  averageFirstResponseSeconds: number | null;
+  medianFirstResponseSeconds: number | null;
 }
 
 export async function getConversationStats(): Promise<ConversationStats> {

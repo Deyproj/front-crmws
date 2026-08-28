@@ -7,6 +7,7 @@ import { useChannel } from '../hooks/useChannel';
 import { STATUS_LABELS } from '@/features/channel';
 import { AutomationToggle } from '@/features/organization/presentation/components/AutomationToggle';
 import { AgentConfigForm } from '@/features/agent/presentation/components/AgentConfigForm';
+import { AgentSimulator } from '@/features/agent/presentation/components/AgentSimulator';
 
 const MANAGER_ROLES = new Set(['OWNER', 'ADMIN']);
 
@@ -29,6 +30,10 @@ export function ChannelSettingsView() {
             <section className="flex flex-col gap-[var(--space-5)]">
               <h2 className="text-sm font-semibold uppercase text-muted">Personalización del agente</h2>
               <AgentConfigForm />
+            </section>
+            <section className="flex flex-col gap-[var(--space-5)]">
+              <h2 className="text-sm font-semibold uppercase text-muted">Probar agente</h2>
+              <AgentSimulator />
             </section>
             <section className="flex flex-col gap-[var(--space-5)]">
               <h2 className="text-sm font-semibold uppercase text-muted">Canal de WhatsApp</h2>

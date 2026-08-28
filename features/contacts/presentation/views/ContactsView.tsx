@@ -5,7 +5,7 @@ import { ContactStatsCards } from '../components/ContactStatsCards';
 import { ContactsTable } from '../components/ContactsTable';
 
 export function ContactsView() {
-  const { contacts, contactStats, conversationsTotal, loading, error } = useContactsOverview();
+  const { contacts, contactStats, conversationStats, appointmentStats, loading, error } = useContactsOverview();
 
   return (
     <div className="flex h-full flex-col">
@@ -20,7 +20,7 @@ export function ContactsView() {
             {error && (
               <p className="rounded-md border border-danger/30 bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>
             )}
-            <ContactStatsCards stats={contactStats} conversationsTotal={conversationsTotal} />
+            <ContactStatsCards stats={contactStats} conversationStats={conversationStats} appointmentStats={appointmentStats} />
             <ContactsTable contacts={contacts} />
           </div>
         )}

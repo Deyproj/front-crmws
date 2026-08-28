@@ -52,3 +52,15 @@ export async function recordAppointmentOutcome(
     body: JSON.stringify({ outcome }),
   });
 }
+
+/** Refleja AppointmentStatsResponse (api-crmws, schedule/presentation/AppointmentStatsResponse.java). */
+export interface AppointmentStats {
+  confirmed: number;
+  cancelled: number;
+  completed: number;
+  noShow: number;
+}
+
+export async function getAppointmentStats(): Promise<AppointmentStats> {
+  return apiFetch<AppointmentStats>('/api/appointments/stats');
+}

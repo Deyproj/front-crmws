@@ -52,3 +52,30 @@ export async function updateAgentConfig(input: UpdateAgentConfigInput): Promise<
     body: JSON.stringify(input),
   });
 }
+
+export type SimulatedTurnRole = 'CUSTOMER' | 'ASSISTANT';
+
+export interface SimulatedTurn {
+  role: SimulatedTurnRole;
+  text: string;
+}
+
+/** Refleja SimulateAgentResponse (api-crmws, agent/presentation/SimulateAgentResponse.java). */
+export interface SimulateAgentResult {
+  text: string | null;
+  escalate: boolean;
+  escalationReason: string | null;
+  qualificationGoal: string | null;
+  qualificationSchedule: string | null;
+  qualificationPlanOfInterest: string | null;
+  qualificationIntent: string | null;
+  knowledgeQuestionsUsed: string[];
+}
+
+/** "Probar agente" (Paso 5) — no persiste nada en conversation/contact. Rol OWNER/ADMIN. */
+export async function simulateAgent(turns: SimulatedTurn[]): Promise<SimulateAgentResult> {
+  return apiFetch<SimulateAgentResult>('/api/agent/simulate', {
+    method: 'POST',
+    body: JSON.stringify({ turns }),
+  });
+}

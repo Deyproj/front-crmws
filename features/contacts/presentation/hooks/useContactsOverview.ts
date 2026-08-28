@@ -2,28 +2,32 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { listContacts, getContactStats, type Contact, type ContactStats } from '@/features/contacts';
-import { getConversationStats } from '@/features/conversations';
+import { getConversationStats, type ConversationStats } from '@/features/conversations';
+import { getAppointmentStats, type AppointmentStats } from '@/features/appointments';
 
 const POLL_INTERVAL_MS = 20000;
 
 export function useContactsOverview() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactStats, setContactStats] = useState<ContactStats | null>(null);
-  const [conversationsTotal, setConversationsTotal] = useState<number | null>(null);
+  const [conversationStats, setConversationStats] = useState<ConversationStats | null>(null);
+  const [appointmentStats, setAppointmentStats] = useState<AppointmentStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async (opts?: { silent?: boolean }) => {
     if (!opts?.silent) setLoading(true);
     try {
-      const [contactsList, stats, conversationStats] = await Promise.all([
+      const [contactsList, stats, convStats, apptStats] = await Promise.all([
         listContacts(),
         getContactStats(),
         getConversationStats(),
+        getAppointmentStats(),
       ]);
       setContacts(contactsList);
       setContactStats(stats);
-      setConversationsTotal(conversationStats.total);
+      setConversationStats(convStats);
+      setAppointmentStats(apptStats);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo cargar la información de clientes');
@@ -41,5 +45,5 @@ export function useContactsOverview() {
     return () => clearInterval(interval);
   }, [load]);
 
-  return { contacts, contactStats, conversationsTotal, loading, error, refetch: () => load({ silent: true }) };
+  return { contacts, contactStats, conversationStats, appointmentStats, loading, error, refetch: () => load({ silent: true }) };
 }
