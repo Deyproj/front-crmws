@@ -5,11 +5,12 @@ export interface AuthResponsePayload {
   accessToken: string;
   tokenType: string;
   accessTokenExpiresAt: string;
-  refreshToken: string;
+  refreshToken: string | null;
   userId: string;
-  organizationId: string;
-  membershipId: string;
+  organizationId: string | null;
+  membershipId: string | null;
   role: string;
+  mustChangePassword: boolean;
 }
 
 /** Forma cruda de RefreshResponse (api-crmws, identity/presentation/RefreshResponse.java). */
@@ -53,3 +54,4 @@ export async function logoutRequest(refreshToken: string): Promise<void> {
     body: JSON.stringify({ refreshToken }),
   });
 }
+

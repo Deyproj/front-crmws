@@ -1,2 +1,9 @@
-export type { Organization, OrganizationStatus } from './api';
-export { getOrganization, setAutomationEnabled } from './api';
+export type { Membership, MembershipRole, Organization, OrganizationStatus } from './api';
+export {
+  MEMBERSHIP_ROLES,
+  getOrganization,
+  setAutomationEnabled,
+  listMembers,
+  changeMembershipRole,
+  revokeMembership,
+} from './api';

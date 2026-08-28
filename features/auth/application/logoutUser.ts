@@ -4,7 +4,8 @@ import { clearSession, getSession } from '@/lib/runtime/tokenStorage';
 export async function logoutUser(): Promise<void> {
   const session = getSession();
   clearSession();
-  if (!session) return;
+  // Una sesión de admin de plataforma no tiene refreshToken que revocar (ver AuthSession).
+  if (!session || !session.refreshToken) return;
 
   // Revocar en el backend es best-effort: la sesión local ya quedó limpia aunque falle la red.
   try {

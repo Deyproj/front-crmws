@@ -6,8 +6,10 @@ import { useAuth } from '@/features/auth/presentation/context/AuthContext';
 import { useChannel } from '../hooks/useChannel';
 import { STATUS_LABELS } from '@/features/channel';
 import { AutomationToggle } from '@/features/organization/presentation/components/AutomationToggle';
+import { TeamManager } from '@/features/organization/presentation/components/TeamManager';
 import { AgentConfigForm } from '@/features/agent/presentation/components/AgentConfigForm';
 import { AgentSimulator } from '@/features/agent/presentation/components/AgentSimulator';
+import { KnowledgeEntriesManager } from '@/features/agent/presentation/components/KnowledgeEntriesManager';
 
 const MANAGER_ROLES = new Set(['OWNER', 'ADMIN']);
 
@@ -24,12 +26,20 @@ export function ChannelSettingsView() {
         {canManage ? (
           <div className="flex flex-col gap-[var(--space-9)]">
             <section className="flex flex-col gap-[var(--space-5)]">
+              <h2 className="text-sm font-semibold uppercase text-muted">Equipo</h2>
+              <TeamManager />
+            </section>
+            <section className="flex flex-col gap-[var(--space-5)]">
               <h2 className="text-sm font-semibold uppercase text-muted">Automatización</h2>
               <AutomationToggle />
             </section>
             <section className="flex flex-col gap-[var(--space-5)]">
               <h2 className="text-sm font-semibold uppercase text-muted">Personalización del agente</h2>
               <AgentConfigForm />
+            </section>
+            <section className="flex flex-col gap-[var(--space-5)]">
+              <h2 className="text-sm font-semibold uppercase text-muted">Conocimiento del agente</h2>
+              <KnowledgeEntriesManager />
             </section>
             <section className="flex flex-col gap-[var(--space-5)]">
               <h2 className="text-sm font-semibold uppercase text-muted">Probar agente</h2>

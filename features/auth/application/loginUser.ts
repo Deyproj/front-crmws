@@ -14,6 +14,7 @@ export async function loginUser(credentials: LoginCredentials): Promise<AuthSess
       organizationId: response.organizationId,
       membershipId: response.membershipId,
       role: response.role,
+      mustChangePassword: response.mustChangePassword,
     },
   };
 
