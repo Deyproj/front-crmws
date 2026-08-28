@@ -7,6 +7,7 @@ import type { Conversation } from '@/features/conversations';
 import { initials } from '@/lib/utils/initials';
 import { StageActions } from '@/features/opportunities/presentation/components/StageActions';
 import { OpportunityHistory } from '@/features/opportunities/presentation/components/OpportunityHistory';
+import { AppointmentsSection } from '@/features/appointments/presentation/components/AppointmentsSection';
 import { useConversationSummary } from '../hooks/useConversationSummary';
 
 const INTENT_LABELS: Record<string, string> = {
@@ -101,6 +102,11 @@ export function ContactPanel({
       <div className="flex flex-col gap-[var(--space-6)]">
         <p className="text-xs font-semibold uppercase text-muted">Etapa comercial</p>
         <StageActions contact={contact} onChanged={handleStageChanged} />
+      </div>
+
+      <div className="flex flex-col gap-[var(--space-6)]">
+        <p className="text-xs font-semibold uppercase text-muted">Cortesías</p>
+        <AppointmentsSection contactId={contact.id} refreshKey={historyRefreshKey} />
       </div>
 
       <div className="flex flex-col gap-[var(--space-6)]">
