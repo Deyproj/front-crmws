@@ -1,18 +1,24 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useAgentConfig } from '../hooks/useAgentConfig';
 import {
   AGENT_TONES,
   RESPONSE_LENGTHS,
   TONE_LABELS,
   RESPONSE_LENGTH_LABELS,
+  WEEK_DAYS,
+  WEEK_DAY_LABELS,
+  emptyWeeklySchedule,
+  parseHumanHoursSchedule,
+  serializeHumanHoursSchedule,
   type AgentTone,
   type ResponseLength,
   type UpdateAgentConfigInput,
+  type WeeklySchedule,
 } from '@/features/agent';
 
-const EMPTY_FORM: UpdateAgentConfigInput = {
+const EMPTY_FORM: Omit<UpdateAgentConfigInput, 'humanHoursSchedule'> = {
   agentName: 'Asistente',
   tone: 'PROFESSIONAL',
   emojisAllowed: false,
@@ -20,12 +26,12 @@ const EMPTY_FORM: UpdateAgentConfigInput = {
   greetingStyle: '',
   farewellStyle: '',
   forbiddenWords: '',
-  humanHoursNote: '',
 };
 
 export function AgentConfigForm() {
   const { config, loading, saving, error, save } = useAgentConfig();
-  const [form, setForm] = useState<UpdateAgentConfigInput>(EMPTY_FORM);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [schedule, setSchedule] = useState<WeeklySchedule>(emptyWeeklySchedule());
   const [savedMessage, setSavedMessage] = useState(false);
 
   useEffect(() => {
@@ -41,8 +47,8 @@ export function AgentConfigForm() {
       greetingStyle: config.greetingStyle ?? '',
       farewellStyle: config.farewellStyle ?? '',
       forbiddenWords: config.forbiddenWords ?? '',
-      humanHoursNote: config.humanHoursNote ?? '',
     });
+    setSchedule(parseHumanHoursSchedule(config.humanHoursSchedule));
   }, [config]);
 
   if (loading) return <p className="text-sm text-secondary">Cargando...</p>;
@@ -50,11 +56,19 @@ export function AgentConfigForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSavedMessage(false);
-    const ok = await save(form);
+    const ok = await save({ ...form, humanHoursSchedule: serializeHumanHoursSchedule(schedule) });
     if (ok) {
       setSavedMessage(true);
       setTimeout(() => setSavedMessage(false), 3000);
     }
+  }
+
+  function toggleDay(day: keyof WeeklySchedule, enabled: boolean) {
+    setSchedule({ ...schedule, [day]: { ...schedule[day], enabled } });
+  }
+
+  function updateDayTime(day: keyof WeeklySchedule, field: 'start' | 'end', value: string) {
+    setSchedule({ ...schedule, [day]: { ...schedule[day], [field]: value } });
   }
 
   const inputClass =
@@ -62,7 +76,7 @@ export function AgentConfigForm() {
   const labelClass = 'mb-[var(--space-3)] block text-xs font-medium uppercase tracking-wide text-secondary';
 
   return (
-    <div className="flex max-w-3xl flex-col gap-[var(--space-7)] lg:flex-row">
+    <div className="flex w-full flex-col gap-[var(--space-7)] lg:flex-row">
       <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-[var(--space-6)] rounded-lg border border-border bg-surface p-[var(--space-8)]">
         <div>
           <label htmlFor="agentName" className={labelClass}>
@@ -164,16 +178,41 @@ export function AgentConfigForm() {
         </div>
 
         <div>
-          <label htmlFor="humanHoursNote" className={labelClass}>
-            Horario de atención humana (opcional)
-          </label>
-          <input
-            id="humanHoursNote"
-            value={form.humanHoursNote}
-            onChange={(e) => setForm({ ...form, humanHoursNote: e.target.value })}
-            className={inputClass}
-            placeholder="ej. Un asesor responde de 6am a 9pm"
-          />
+          <label className={labelClass}>Horario de atención humana (opcional)</label>
+          <p className="mb-[var(--space-3)] text-xs text-secondary">
+            Si el agente escala una conversación fuera de este horario, se le avisa al contacto cuándo será atendido en
+            vez del aviso genérico de transferencia.
+          </p>
+          <div className="grid grid-cols-[9rem_1fr_auto_1fr] items-center gap-x-[var(--space-4)] gap-y-[var(--space-3)]">
+            {WEEK_DAYS.map((day) => (
+              <Fragment key={day}>
+                <label className="flex items-center gap-[var(--space-3)] text-sm text-ink">
+                  <input
+                    type="checkbox"
+                    checked={schedule[day].enabled}
+                    onChange={(e) => toggleDay(day, e.target.checked)}
+                    className="size-4 shrink-0 rounded border-border accent-[var(--color-brand)]"
+                  />
+                  {WEEK_DAY_LABELS[day]}
+                </label>
+                <input
+                  type="time"
+                  value={schedule[day].start}
+                  onChange={(e) => updateDayTime(day, 'start', e.target.value)}
+                  disabled={!schedule[day].enabled}
+                  className={`${inputClass} disabled:opacity-40`}
+                />
+                <span className="text-center text-sm text-secondary">a</span>
+                <input
+                  type="time"
+                  value={schedule[day].end}
+                  onChange={(e) => updateDayTime(day, 'end', e.target.value)}
+                  disabled={!schedule[day].enabled}
+                  className={`${inputClass} disabled:opacity-40`}
+                />
+              </Fragment>
+            ))}
+          </div>
         </div>
 
         {error && <p className="text-sm text-danger">{error}</p>}
@@ -188,16 +227,23 @@ export function AgentConfigForm() {
         </button>
       </form>
 
-      <AgentConfigPreview form={form} />
+      <AgentConfigPreview form={form} schedule={schedule} />
     </div>
   );
 }
 
-function AgentConfigPreview({ form }: { form: UpdateAgentConfigInput }) {
+function AgentConfigPreview({
+  form,
+  schedule,
+}: {
+  form: Omit<UpdateAgentConfigInput, 'humanHoursSchedule'>;
+  schedule: WeeklySchedule;
+}) {
   const forbidden = form.forbiddenWords
     .split(',')
     .map((w) => w.trim())
     .filter(Boolean);
+  const activeDays = WEEK_DAYS.filter((day) => schedule[day].enabled);
 
   return (
     <aside className="flex w-full flex-col gap-[var(--space-5)] rounded-lg border border-border bg-app p-[var(--space-8)] lg:w-[280px]">
@@ -223,9 +269,10 @@ function AgentConfigPreview({ form }: { form: UpdateAgentConfigInput }) {
           <span className="font-semibold text-ink">Nunca dirá:</span> {forbidden.join(', ')}
         </p>
       )}
-      {form.humanHoursNote && (
+      {activeDays.length > 0 && (
         <p className="text-xs text-secondary">
-          <span className="font-semibold text-ink">Horario humano:</span> {form.humanHoursNote}
+          <span className="font-semibold text-ink">Horario humano:</span>{' '}
+          {activeDays.map((day) => `${WEEK_DAY_LABELS[day]} ${schedule[day].start}-${schedule[day].end}`).join(', ')}
         </p>
       )}
     </aside>

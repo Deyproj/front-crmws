@@ -27,7 +27,8 @@ export interface AgentConfig {
   greetingStyle: string | null;
   farewellStyle: string | null;
   forbiddenWords: string | null;
-  humanHoursNote: string | null;
+  /** Formato `DIA=HH:mm-HH:mm` separado por comas — ver features/agent/humanHoursSchedule.ts. */
+  humanHoursSchedule: string | null;
   updatedAt: string;
 }
 
@@ -39,7 +40,7 @@ export interface UpdateAgentConfigInput {
   greetingStyle: string;
   farewellStyle: string;
   forbiddenWords: string;
-  humanHoursNote: string;
+  humanHoursSchedule: string;
 }
 
 export async function getAgentConfig(): Promise<AgentConfig> {
