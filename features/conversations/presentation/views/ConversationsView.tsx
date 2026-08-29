@@ -27,10 +27,14 @@ export function ConversationsView() {
     }
   }, [quickFilter, user]);
 
-  const { items, loading, error, refetch } = useConversationsList(filters);
+  const { items, contactsById, loading, error, refetch } = useConversationsList(filters);
   const thread = useConversationThread(selectedId, refetch);
 
-  const selectedContact = items.find((i) => i.conversation.id === selectedId)?.contact ?? null;
+  // Se resuelve contra contactsById (sin filtrar por quickFilter) y no contra `items`:
+  // si la conversación abierta deja de estar en la pestaña activa (p. ej. ya se tomó y
+  // desaparece de "Esperando"), el chat sigue mostrando el contacto correcto en vez de
+  // "Contacto sin nombre".
+  const selectedContact = thread.conversation ? (contactsById.get(thread.conversation.contactId) ?? null) : null;
 
   return (
     <div className="flex h-full flex-col">

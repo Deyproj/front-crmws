@@ -14,6 +14,9 @@ export interface ConversationListItem {
 export function useConversationsList(filters: ConversationFilters = {}) {
   const { mode, status, assignedTo } = filters;
   const [items, setItems] = useState<ConversationListItem[]>([]);
+  // Contactos completos (sin filtrar por quickFilter) — a diferencia de `items`, no
+  // desaparece cuando la conversación abierta deja de estar en la pestaña activa.
+  const [contactsById, setContactsById] = useState<Map<string, Contact>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,15 +28,16 @@ export function useConversationsList(filters: ConversationFilters = {}) {
           listConversations({ mode, status, assignedTo }),
           listContacts(),
         ]);
-        const contactsById = new Map(contacts.map((c) => [c.id, c]));
+        const byId = new Map(contacts.map((c) => [c.id, c]));
         const merged = conversations
-          .map((conversation) => ({ conversation, contact: contactsById.get(conversation.contactId) ?? null }))
+          .map((conversation) => ({ conversation, contact: byId.get(conversation.contactId) ?? null }))
           .sort((a, b) => {
             const at = a.conversation.lastMessageAt ? new Date(a.conversation.lastMessageAt).getTime() : 0;
             const bt = b.conversation.lastMessageAt ? new Date(b.conversation.lastMessageAt).getTime() : 0;
             return bt - at;
           });
         setItems(merged);
+        setContactsById(byId);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'No se pudo cargar la bandeja');
@@ -54,5 +58,5 @@ export function useConversationsList(filters: ConversationFilters = {}) {
     return () => clearInterval(interval);
   }, [load]);
 
-  return { items, loading, error, refetch: () => load({ silent: true }) };
+  return { items, contactsById, loading, error, refetch: () => load({ silent: true }) };
 }
