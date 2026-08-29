@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Conversation, Message } from '@/features/conversations';
 import { MODE_LABELS, STATUS_LABELS } from '@/features/conversations';
 import { useAgentConfig } from '@/features/agent/presentation/hooks/useAgentConfig';
+import { useTeamMembers } from '@/features/organization/presentation/hooks/useTeamMembers';
 import type { Contact } from '@/features/contacts';
 import { initials } from '@/lib/utils/initials';
-import { SendIcon, BotIcon } from '@/components/ui/icons';
+import { SendIcon, BotIcon, UserIcon } from '@/components/ui/icons';
 
 export function ChatPanel({
   conversation,
@@ -33,6 +34,14 @@ export function ChatPanel({
   const bottomRef = useRef<HTMLDivElement>(null);
   const { config: agentConfig } = useAgentConfig();
   const agentName = agentConfig?.agentName || 'IA';
+  // Un mismo contacto puede pasar por varios asesores distintos (uno responde, se
+  // libera a la IA, se escala de nuevo y lo toma otro) — se identifica cada mensaje
+  // ADVISOR con el nombre de quien lo envió, no solo con la etiqueta genérica.
+  const { members } = useTeamMembers();
+  const advisorNameById = useMemo(
+    () => new Map(members.map((m) => [m.id, m.name || m.email || 'Asesor'])),
+    [members]
+  );
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' });
@@ -111,7 +120,12 @@ export function ChatPanel({
       <div className="flex-1 overflow-y-auto px-[var(--space-8)] py-[var(--space-7)]">
         <div className="flex flex-col gap-[var(--space-7)]">
           {messages.map((message) => (
-            <ChatBubble key={message.id} message={message} agentName={agentName} />
+            <ChatBubble
+              key={message.id}
+              message={message}
+              agentName={agentName}
+              advisorName={message.senderMembershipId ? (advisorNameById.get(message.senderMembershipId) ?? 'Asesor') : null}
+            />
           ))}
           <div ref={bottomRef} />
         </div>
@@ -148,13 +162,22 @@ export function ChatPanel({
   );
 }
 
-function ChatBubble({ message, agentName }: { message: Message; agentName: string }) {
+function ChatBubble({
+  message,
+  agentName,
+  advisorName,
+}: {
+  message: Message;
+  agentName: string;
+  advisorName: string | null;
+}) {
   const time = new Date(message.sentAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
 
   const isInbound = message.direction === 'INBOUND';
   // SYSTEM es el aviso de transferencia que el propio agente envía al escalar — es su
   // decisión, aunque el texto sea fijo, así que se muestra igual que una respuesta de IA.
   const isAi = message.senderType === 'AI' || message.senderType === 'SYSTEM';
+  const isAdvisor = message.senderType === 'ADVISOR';
 
   const bubbleClass = isInbound
     ? 'bg-surface border border-border text-ink self-start rounded-tl-[var(--radius-sm)]'
@@ -167,6 +190,11 @@ function ChatBubble({ message, agentName }: { message: Message; agentName: strin
       {isAi && (
         <span className="flex items-center gap-1 text-[10px] font-semibold uppercase text-info">
           <BotIcon className="size-3" /> {agentName}
+        </span>
+      )}
+      {isAdvisor && advisorName && (
+        <span className="flex items-center gap-1 text-[10px] font-semibold uppercase text-success">
+          <UserIcon className="size-3" /> {advisorName}
         </span>
       )}
       <p className="whitespace-pre-wrap text-sm">{message.content}</p>

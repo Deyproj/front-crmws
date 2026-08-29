@@ -49,6 +49,8 @@ export interface Message {
   senderType: SenderType;
   content: string;
   sentAt: string;
+  /** Solo presente en mensajes senderType=ADVISOR — qué asesor lo envió. */
+  senderMembershipId: string | null;
 }
 
 export interface ConversationFilters {
