@@ -133,7 +133,9 @@ export function ChatPanel({
         ) : (
           <p className="text-center text-xs text-secondary">
             {conversation.mode === 'HUMAN' && !isMine
-              ? 'Otro asesor tiene esta conversación asignada.'
+              ? conversation.currentAssigneeMembershipId
+                ? 'Otro asesor tiene esta conversación asignada.'
+                : 'Esperando respuesta de un asesor. Toma la conversación para responder manualmente.'
               : 'Toma la conversación para responder manualmente.'}
           </p>
         )}
