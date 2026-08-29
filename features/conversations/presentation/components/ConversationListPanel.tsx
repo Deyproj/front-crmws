@@ -76,7 +76,7 @@ export function ConversationListPanel({
                 {f.label}
                 {badgeCount > 0 && (
                   <span
-                    className="flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-[3px] text-[10px] font-bold leading-none text-on-brand"
+                    className="flex h-4 min-w-4 items-center justify-center rounded-full bg-danger p-[4px] text-[10px] font-bold leading-none text-on-brand"
                     title={`${badgeCount} conversación${badgeCount === 1 ? '' : 'es'} esperando respuesta`}
                   >
                     {badgeCount > 99 ? '99+' : badgeCount}
