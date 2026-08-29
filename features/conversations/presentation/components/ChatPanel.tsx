@@ -7,6 +7,7 @@ import { useAgentConfig } from '@/features/agent/presentation/hooks/useAgentConf
 import { useTeamMembers } from '@/features/organization/presentation/hooks/useTeamMembers';
 import type { Contact } from '@/features/contacts';
 import { initials } from '@/lib/utils/initials';
+import { formatWhatsAppText } from '@/lib/utils/formatWhatsAppText';
 import { SendIcon, BotIcon, UserIcon } from '@/components/ui/icons';
 
 export function ChatPanel({
@@ -197,7 +198,7 @@ function ChatBubble({
           <UserIcon className="size-3" /> {advisorName}
         </span>
       )}
-      <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+      <p className="whitespace-pre-wrap text-sm">{formatWhatsAppText(message.content)}</p>
       <p className="self-end text-[10px] text-secondary">{time}</p>
     </div>
   );
