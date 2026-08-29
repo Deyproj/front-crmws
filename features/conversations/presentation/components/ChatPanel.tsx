@@ -43,7 +43,10 @@ export function ChatPanel({
     );
   }
 
-  const canTakeOver = conversation.mode === 'AI' || conversation.mode === 'HYBRID';
+  // Cuando el agente escala (Conversation.escalateToHuman en el backend), el mode ya
+  // queda en HUMAN pero sin asesor asignado (status WAITING) — sigue siendo tomable.
+  const isUnassignedHuman = conversation.mode === 'HUMAN' && !conversation.currentAssigneeMembershipId;
+  const canTakeOver = conversation.mode === 'AI' || conversation.mode === 'HYBRID' || isUnassignedHuman;
   const canRelease = conversation.mode !== 'AI';
   const isMine = conversation.currentAssigneeMembershipId === myMembershipId;
   const canSend = conversation.mode === 'HUMAN' && isMine;
@@ -142,18 +145,10 @@ export function ChatPanel({
 function ChatBubble({ message }: { message: Message }) {
   const time = new Date(message.sentAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
 
-  if (message.senderType === 'SYSTEM') {
-    return (
-      <div className="flex justify-center">
-        <p className="max-w-[80%] rounded-full bg-app px-[var(--space-6)] py-[var(--space-3)] text-center text-xs text-secondary">
-          {message.content}
-        </p>
-      </div>
-    );
-  }
-
   const isInbound = message.direction === 'INBOUND';
-  const isAi = message.senderType === 'AI';
+  // SYSTEM es el aviso de transferencia que el propio agente envía al escalar — es su
+  // decisión, aunque el texto sea fijo, así que se muestra igual que una respuesta de IA.
+  const isAi = message.senderType === 'AI' || message.senderType === 'SYSTEM';
 
   const bubbleClass = isInbound
     ? 'bg-surface border border-border text-ink self-start rounded-tl-[var(--radius-sm)]'
