@@ -96,7 +96,7 @@ export function ChatPanel({
               className="flex items-center gap-[var(--space-3)] rounded-md border border-border px-[var(--space-6)] py-[var(--space-4)] text-xs font-semibold text-ink hover:bg-app disabled:opacity-50"
             >
               <BotIcon className="size-3" />
-              Liberar a IA
+              Liberar a {agentName}
             </button>
           )}
         </div>
