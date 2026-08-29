@@ -21,7 +21,7 @@ export function AgentSimulator() {
   }
 
   return (
-    <div className="flex max-w-3xl flex-col gap-[var(--space-7)] lg:flex-row">
+    <div className="flex w-full flex-col gap-[var(--space-7)] lg:flex-row">
       <div className="flex flex-1 flex-col rounded-lg border border-border bg-surface">
         <div className="flex items-center justify-between border-b border-border px-[var(--space-7)] py-[var(--space-5)]">
           <p className="text-xs font-semibold uppercase text-muted">Chat de prueba</p>

@@ -5,6 +5,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '@/features/auth/presentation/context/AuthContext';
 import { useChannel } from '../hooks/useChannel';
 import { STATUS_LABELS } from '@/features/channel';
+import { Tabs } from '@/components/ui/Tabs';
 import { AutomationToggle } from '@/features/organization/presentation/components/AutomationToggle';
 import { TeamManager } from '@/features/organization/presentation/components/TeamManager';
 import { AgentConfigForm } from '@/features/agent/presentation/components/AgentConfigForm';
@@ -13,50 +14,61 @@ import { KnowledgeEntriesManager } from '@/features/agent/presentation/component
 
 const MANAGER_ROLES = new Set(['OWNER']);
 
+const MAIN_TABS = [
+  { id: 'agent', label: 'Agente' },
+  { id: 'channel', label: 'Canal de WhatsApp' },
+  { id: 'team', label: 'Equipo' },
+];
+
+const AGENT_TABS = [
+  { id: 'automation', label: 'Automatización' },
+  { id: 'personalization', label: 'Personalización' },
+  { id: 'knowledge', label: 'Conocimiento' },
+  { id: 'simulator', label: 'Probar agente' },
+];
+
 export function ChannelSettingsView() {
   const { user } = useAuth();
   const canManage = !!user && MANAGER_ROLES.has(user.role);
+  const [mainTab, setMainTab] = useState(MAIN_TABS[0].id);
+  const [agentTab, setAgentTab] = useState(AGENT_TABS[0].id);
 
   return (
     <div className="flex h-full flex-col">
       <header className="flex h-[var(--topbar-height)] shrink-0 items-center border-b border-border bg-surface px-[var(--space-9)]">
         <h1 className="text-xl font-bold text-ink">Configuración</h1>
       </header>
-      <div className="flex-1 overflow-y-auto p-[var(--space-9)]">
-        {canManage ? (
-          <div className="flex flex-col gap-[var(--space-9)]">
-            <section className="flex flex-col gap-[var(--space-5)]">
-              <h2 className="text-sm font-semibold uppercase text-muted">Equipo</h2>
-              <TeamManager />
-            </section>
-            <section className="flex flex-col gap-[var(--space-5)]">
-              <h2 className="text-sm font-semibold uppercase text-muted">Automatización</h2>
-              <AutomationToggle />
-            </section>
-            <section className="flex flex-col gap-[var(--space-5)]">
-              <h2 className="text-sm font-semibold uppercase text-muted">Personalización del agente</h2>
-              <AgentConfigForm />
-            </section>
-            <section className="flex flex-col gap-[var(--space-5)]">
-              <h2 className="text-sm font-semibold uppercase text-muted">Conocimiento del agente</h2>
-              <KnowledgeEntriesManager />
-            </section>
-            <section className="flex flex-col gap-[var(--space-5)]">
-              <h2 className="text-sm font-semibold uppercase text-muted">Probar agente</h2>
-              <AgentSimulator />
-            </section>
-            <section className="flex flex-col gap-[var(--space-5)]">
-              <h2 className="text-sm font-semibold uppercase text-muted">Canal de WhatsApp</h2>
-              <ChannelManager />
-            </section>
+      {canManage ? (
+        <>
+          <div className="shrink-0 border-b border-border bg-surface px-[var(--space-9)]">
+            <Tabs tabs={MAIN_TABS} activeId={mainTab} onChange={setMainTab} label="Secciones de configuración" />
           </div>
-        ) : (
+          <div className="flex-1 overflow-y-auto p-[var(--space-9)]">
+            <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-[var(--space-7)]">
+              {mainTab === 'agent' && (
+                <div className="flex w-full flex-col items-center gap-[var(--space-7)]">
+                  <Tabs tabs={AGENT_TABS} activeId={agentTab} onChange={setAgentTab} size="sm" label="Secciones del agente" />
+                  <div className="w-full">
+                    {agentTab === 'automation' && <AutomationToggle />}
+                    {agentTab === 'personalization' && <AgentConfigForm />}
+                    {agentTab === 'knowledge' && <KnowledgeEntriesManager />}
+                    {agentTab === 'simulator' && <AgentSimulator />}
+                  </div>
+                </div>
+              )}
+              {mainTab === 'channel' && <ChannelManager />}
+              {mainTab === 'team' && <TeamManager />}
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="flex-1 overflow-y-auto p-[var(--space-9)]">
           <p className="text-sm text-secondary">
             Solo el propietario o un administrador de la organización puede gestionar la automatización o el canal de
             WhatsApp.
           </p>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

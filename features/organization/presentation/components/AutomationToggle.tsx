@@ -17,7 +17,7 @@ export function AutomationToggle() {
   const enabled = organization.automationEnabled;
 
   return (
-    <div className="max-w-md rounded-lg border border-border bg-surface p-[var(--space-8)]">
+    <div className="w-full rounded-lg border border-border bg-surface p-[var(--space-8)]">
       <div className="mb-[var(--space-6)] flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold text-ink">Respuestas automáticas</p>

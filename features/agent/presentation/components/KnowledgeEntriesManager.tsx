@@ -8,28 +8,78 @@ const inputClass =
   'w-full rounded-md border border-border bg-app px-[var(--space-6)] py-[var(--space-5)] text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand';
 const labelClass = 'mb-[var(--space-3)] block text-xs font-medium uppercase tracking-wide text-secondary';
 
+type StatusFilter = 'all' | 'active' | 'inactive';
+
+const STATUS_FILTERS: { id: StatusFilter; label: string }[] = [
+  { id: 'all', label: 'Todas' },
+  { id: 'active', label: 'Activas' },
+  { id: 'inactive', label: 'Inactivas' },
+];
+
 export function KnowledgeEntriesManager() {
   const { entries, loading, saving, error, create, update } = useKnowledgeEntries();
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+
+  const filteredEntries = entries.filter((entry) => {
+    if (statusFilter === 'active' && !entry.active) return false;
+    if (statusFilter === 'inactive' && entry.active) return false;
+    const q = search.trim().toLowerCase();
+    if (q && !entry.question.toLowerCase().includes(q) && !entry.answer.toLowerCase().includes(q)) return false;
+    return true;
+  });
 
   return (
-    <div className="flex max-w-3xl flex-col gap-[var(--space-6)]">
-      <p className="text-sm text-secondary">
+    <div className="flex w-full flex-col gap-[var(--space-6)]">
+      <p className="max-w-3xl text-sm text-secondary">
         Preguntas y respuestas que el agente puede usar para responder. Nunca inventa condiciones fuera de esta
         lista — si una pregunta no está aquí, escala a un asesor.
       </p>
 
       {error && <p className="text-sm text-danger">{error}</p>}
 
+      <div className="flex flex-wrap items-center gap-[var(--space-5)]">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar por pregunta o respuesta..."
+          className="w-full max-w-xs rounded-md border border-border bg-app px-[var(--space-6)] py-[var(--space-4)] text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
+        />
+        <div className="flex gap-[var(--space-3)]" role="tablist" aria-label="Filtrar por estado">
+          {STATUS_FILTERS.map((f) => {
+            const active = statusFilter === f.id;
+            return (
+              <button
+                key={f.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setStatusFilter(f.id)}
+                className={`rounded-full px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold transition-colors ${
+                  active ? 'bg-brand text-on-brand' : 'bg-app text-secondary hover:text-ink'
+                }`}
+              >
+                {f.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {loading ? (
         <p className="text-sm text-secondary">Cargando...</p>
       ) : (
-        <div className="flex flex-col gap-[var(--space-5)]">
-          {entries.length === 0 && !creating && (
-            <p className="text-sm text-secondary">Todavía no hay conocimiento cargado.</p>
+        <div className="grid grid-cols-1 gap-[var(--space-5)] sm:grid-cols-2 xl:grid-cols-3">
+          {filteredEntries.length === 0 && !creating && (
+            <p className="text-sm text-secondary">
+              {entries.length === 0
+                ? 'Todavía no hay conocimiento cargado.'
+                : 'Ninguna entrada coincide con la búsqueda o el filtro.'}
+            </p>
           )}
-          {entries.map((entry) =>
+          {filteredEntries.map((entry) =>
             editingId === entry.id ? (
               <KnowledgeEntryForm
                 key={entry.id}
