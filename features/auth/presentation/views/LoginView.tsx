@@ -28,12 +28,19 @@ export function LoginView() {
     setError(null);
     setLoading(true);
     try {
-      await login({
+      const newSession = await login({
         email: email.trim(),
         password,
         organizationSlug: organizationSlug.trim() || undefined,
       });
-      router.replace(safeRedirectTarget(searchParams.get('from')));
+      // Si requiere cambio de contraseña, AuthContext ya se encarga de redirigir a
+      // /change-password (efecto disparado por el cambio de sesión). Navegar también
+      // desde aquí dispara dos router.replace() concurrentes y provoca un crash de
+      // React ("Cannot read properties of null (reading 'enqueueModel')") por dos
+      // fetches RSC compitiendo en el App Router.
+      if (!newSession.user.mustChangePassword) {
+        router.replace(safeRedirectTarget(searchParams.get('from')));
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al iniciar sesión';
       setError(msg.includes('401') ? 'Correo o contraseña incorrectos' : msg);
