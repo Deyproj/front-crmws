@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import type { ConversationListItem } from '../hooks/useConversationsList';
+import { useWaitingConversationsCount } from '../hooks/useWaitingConversationsCount';
 import { MODE_LABELS, STATUS_LABELS } from '@/features/conversations';
 import { formatRelativeTime } from '@/lib/utils/formatRelativeTime';
 import { initials } from '@/lib/utils/initials';
@@ -30,6 +31,9 @@ export function ConversationListPanel({
   onQuickFilterChange: (filter: QuickFilter) => void;
 }) {
   const [query, setQuery] = useState('');
+  // Independiente de quickFilter a propósito: debe verse aunque el asesor esté en otra
+  // pestaña (Todas, Mías, IA) — es la señal de "hay gente esperando respuesta".
+  const waitingCount = useWaitingConversationsCount();
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -57,6 +61,7 @@ export function ConversationListPanel({
         <div className="flex flex-wrap gap-[var(--space-3)]" role="tablist" aria-label="Filtrar conversaciones">
           {QUICK_FILTERS.map((f) => {
             const active = quickFilter === f.value;
+            const badgeCount = f.value === 'WAITING' ? waitingCount : 0;
             return (
               <button
                 key={f.value}
@@ -64,11 +69,19 @@ export function ConversationListPanel({
                 role="tab"
                 aria-selected={active}
                 onClick={() => onQuickFilterChange(f.value)}
-                className={`rounded-full px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold transition-colors ${
+                className={`flex items-center gap-[var(--space-3)] rounded-full px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold transition-colors ${
                   active ? 'bg-brand text-on-brand' : 'bg-app text-secondary hover:text-ink'
                 }`}
               >
                 {f.label}
+                {badgeCount > 0 && (
+                  <span
+                    className="flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-[3px] text-[10px] font-bold leading-none text-on-brand"
+                    title={`${badgeCount} conversación${badgeCount === 1 ? '' : 'es'} esperando respuesta`}
+                  >
+                    {badgeCount > 99 ? '99+' : badgeCount}
+                  </span>
+                )}
               </button>
             );
           })}

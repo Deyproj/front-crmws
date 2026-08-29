@@ -57,14 +57,30 @@ export interface ConversationFilters {
   assignedTo?: string;
 }
 
-export async function listConversations(filters: ConversationFilters = {}): Promise<Conversation[]> {
+function buildConversationFilterParams(filters: ConversationFilters): URLSearchParams {
   const params = new URLSearchParams();
   if (filters.mode) params.set('mode', filters.mode);
   if (filters.status) params.set('status', filters.status);
   if (filters.assignedTo) params.set('assignedTo', filters.assignedTo);
+  return params;
+}
+
+export async function listConversations(filters: ConversationFilters = {}): Promise<Conversation[]> {
+  const params = buildConversationFilterParams(filters);
   params.set('size', String(DEFAULT_PAGE_SIZE));
   const result = await apiFetch<PageResponse<Conversation>>(`/api/conversations?${params.toString()}`);
   return result.content;
+}
+
+/**
+ * Solo el total, sin traer contenido — para badges/indicadores que no necesitan
+ * la lista completa (p. ej. cuántas conversaciones están "Esperando" un asesor).
+ */
+export async function countConversations(filters: ConversationFilters = {}): Promise<number> {
+  const params = buildConversationFilterParams(filters);
+  params.set('size', '1');
+  const result = await apiFetch<PageResponse<Conversation>>(`/api/conversations?${params.toString()}`);
+  return result.totalElements;
 }
 
 export async function getConversation(id: string): Promise<Conversation> {

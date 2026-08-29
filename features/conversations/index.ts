@@ -11,6 +11,7 @@ export type {
 } from './api';
 export {
   listConversations,
+  countConversations,
   getConversation,
   listMessages,
   sendMessage,

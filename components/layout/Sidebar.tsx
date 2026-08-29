@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/features/auth/presentation/context/AuthContext';
+import { useWaitingConversationsCount } from '@/features/conversations/presentation/hooks/useWaitingConversationsCount';
 import { MessageSquareIcon, UsersIcon, CalendarIcon, ClockIcon, SettingsIcon, LogOutIcon } from '@/components/ui/icons';
 
 /** Refleja MembershipRole (api-crmws, organization/domain/MembershipRole.java) — ver docs/01-product/actors-and-roles.md. */
@@ -14,6 +15,7 @@ const ROLE_LABELS: Record<string, string> = {
 export function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const waitingCount = useWaitingConversationsCount();
 
   return (
     <aside className="flex h-full w-[var(--sidebar-width)] shrink-0 flex-col justify-between bg-sidebar p-[var(--space-8)]">
@@ -24,7 +26,7 @@ export function Sidebar() {
         </div>
 
         <nav className="flex flex-col gap-[var(--space-3)]">
-          <NavItem href="/" icon={<MessageSquareIcon className="size-[18px]" />} active={pathname === '/'}>
+          <NavItem href="/" icon={<MessageSquareIcon className="size-[18px]" />} active={pathname === '/'} badgeCount={waitingCount}>
             Conversaciones
           </NavItem>
           <NavItem href="/contacts" icon={<UsersIcon className="size-[18px]" />} active={pathname === '/contacts'}>
@@ -68,31 +70,50 @@ function NavItem({
   icon,
   active,
   disabled,
+  badgeCount,
   children,
 }: {
   href?: string;
   icon: React.ReactNode;
   active?: boolean;
   disabled?: boolean;
+  badgeCount?: number;
   children: React.ReactNode;
 }) {
   const className = `flex items-center gap-[var(--space-6)] rounded-md px-[var(--space-6)] py-[var(--space-5)] text-sm font-medium transition-colors ${
     active ? 'bg-brand text-on-dark font-semibold' : 'text-on-dark-muted'
   } ${disabled ? 'cursor-not-allowed opacity-40' : 'hover:text-on-dark'}`;
+  const content = (
+    <>
+      {icon}
+      <span className="flex-1">{children}</span>
+      {!!badgeCount && <NavBadge count={badgeCount} />}
+    </>
+  );
 
   if (disabled || !href) {
     return (
       <span className={className} aria-disabled title="Próximamente">
-        {icon}
-        {children}
+        {content}
       </span>
     );
   }
 
   return (
     <Link href={href} className={className}>
-      {icon}
-      {children}
+      {content}
     </Link>
+  );
+}
+
+/** Aviso de urgencia: conversaciones esperando respuesta de un asesor (status WAITING). */
+function NavBadge({ count }: { count: number }) {
+  return (
+    <span
+      className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-danger px-[var(--space-3)] text-[11px] font-bold leading-none text-on-brand"
+      title={`${count} conversación${count === 1 ? '' : 'es'} esperando respuesta`}
+    >
+      {count > 99 ? '99+' : count}
+    </span>
   );
 }
