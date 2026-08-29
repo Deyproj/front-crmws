@@ -8,7 +8,7 @@ import { useTeamMembers } from '@/features/organization/presentation/hooks/useTe
 import type { Contact } from '@/features/contacts';
 import { initials } from '@/lib/utils/initials';
 import { formatWhatsAppText } from '@/lib/utils/formatWhatsAppText';
-import { SendIcon, BotIcon, UserIcon } from '@/components/ui/icons';
+import { SendIcon, BotIcon, UserIcon, ChevronLeftIcon, InfoIcon } from '@/components/ui/icons';
 
 export function ChatPanel({
   conversation,
@@ -20,6 +20,9 @@ export function ChatPanel({
   onTakeOver,
   onRelease,
   onSend,
+  className = 'flex',
+  onBack,
+  onOpenContact,
 }: {
   conversation: Conversation | null;
   messages: Message[];
@@ -30,6 +33,9 @@ export function ChatPanel({
   onTakeOver: () => void;
   onRelease: () => void;
   onSend: (text: string) => Promise<boolean>;
+  className?: string;
+  onBack?: () => void;
+  onOpenContact?: () => void;
 }) {
   const [draft, setDraft] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -50,7 +56,7 @@ export function ChatPanel({
 
   if (!conversation) {
     return (
-      <div className="flex flex-1 items-center justify-center bg-app">
+      <div className={`flex-1 items-center justify-center bg-app ${className}`}>
         <p className="text-sm text-secondary">Selecciona una conversación</p>
       </div>
     );
@@ -74,20 +80,38 @@ export function ChatPanel({
   }
 
   return (
-    <div className="flex h-full flex-1 flex-col bg-app">
-      <div className="flex items-center justify-between border-b border-border bg-surface px-[var(--space-8)] py-[var(--space-6)]">
-        <div className="flex items-center gap-[var(--space-6)]">
-          <div className="flex size-9 items-center justify-center rounded-full bg-brand text-sm font-semibold text-on-brand">
-            {initials(contact?.name, contact?.phone ?? '?')}
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-ink">{label}</p>
-            <p className="text-xs text-secondary">
-              {MODE_LABELS[conversation.mode]} · {STATUS_LABELS[conversation.status]}
-            </p>
+    <div className={`h-full flex-1 flex-col bg-app ${className}`}>
+      <div className="flex flex-wrap items-center justify-between gap-y-[var(--space-4)] border-b border-border bg-surface px-[var(--space-8)] py-[var(--space-6)]">
+        <div className="flex min-w-0 items-center gap-[var(--space-4)]">
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Volver a la bandeja"
+            className="-ml-2 shrink-0 rounded-md p-2 text-secondary hover:bg-app hover:text-ink lg:hidden"
+          >
+            <ChevronLeftIcon className="size-[18px]" />
+          </button>
+          <div className="flex min-w-0 items-center gap-[var(--space-6)]">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-semibold text-on-brand">
+              {initials(contact?.name, contact?.phone ?? '?')}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-ink">{label}</p>
+              <p className="truncate text-xs text-secondary">
+                {MODE_LABELS[conversation.mode]} · {STATUS_LABELS[conversation.status]}
+              </p>
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-[var(--space-5)]">
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-[var(--space-5)]">
+          <button
+            type="button"
+            onClick={onOpenContact}
+            aria-label="Ver información del contacto"
+            className="rounded-md p-2 text-secondary hover:bg-app hover:text-ink lg:hidden"
+          >
+            <InfoIcon className="size-[18px]" />
+          </button>
           {canTakeOver && (
             <button
               type="button"

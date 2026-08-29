@@ -35,7 +35,7 @@ export function ChannelSettingsView() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex h-[var(--topbar-height)] shrink-0 items-center border-b border-border bg-surface px-[var(--space-9)]">
+      <header className="flex h-[var(--topbar-height)] shrink-0 items-center border-b border-border bg-surface px-[var(--space-7)] sm:px-[var(--space-9)]">
         <h1 className="text-xl font-bold text-ink">Configuración</h1>
       </header>
       {canManage ? (

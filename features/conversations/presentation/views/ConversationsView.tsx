@@ -13,6 +13,15 @@ export function ConversationsView() {
   const { user } = useAuth();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [quickFilter, setQuickFilter] = useState<QuickFilter>('ALL');
+  // Por debajo de lg solo cabe una columna a la vez: la bandeja arranca mostrando la
+  // lista y pasa a "chat" al elegir una conversación (con botón de volver en ChatPanel).
+  const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
+  const [contactPanelOpen, setContactPanelOpen] = useState(false);
+
+  function handleSelect(id: string) {
+    setSelectedId(id);
+    setMobileView('chat');
+  }
 
   const filters = useMemo<ConversationFilters>(() => {
     switch (quickFilter) {
@@ -38,7 +47,7 @@ export function ConversationsView() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex h-[var(--topbar-height)] shrink-0 items-center border-b border-border bg-surface px-[var(--space-9)]">
+      <header className="flex h-[var(--topbar-height)] shrink-0 items-center border-b border-border bg-surface px-[var(--space-7)] sm:px-[var(--space-9)]">
         <h1 className="text-xl font-bold text-ink">Bandeja de conversaciones</h1>
       </header>
 
@@ -56,9 +65,10 @@ export function ConversationsView() {
             <ConversationListPanel
               items={items}
               selectedId={selectedId}
-              onSelect={setSelectedId}
+              onSelect={handleSelect}
               quickFilter={quickFilter}
               onQuickFilterChange={setQuickFilter}
+              className={mobileView === 'chat' ? 'hidden lg:flex' : 'flex'}
             />
             <ChatPanel
               conversation={thread.conversation}
@@ -70,8 +80,17 @@ export function ConversationsView() {
               onTakeOver={thread.takeOver}
               onRelease={thread.release}
               onSend={thread.send}
+              className={mobileView === 'list' ? 'hidden lg:flex' : 'flex'}
+              onBack={() => setMobileView('list')}
+              onOpenContact={() => setContactPanelOpen(true)}
             />
-            <ContactPanel contact={selectedContact} conversation={thread.conversation} onContactChanged={() => refetch()} />
+            <ContactPanel
+              contact={selectedContact}
+              conversation={thread.conversation}
+              onContactChanged={() => refetch()}
+              mobileOpen={contactPanelOpen}
+              onClose={() => setContactPanelOpen(false)}
+            />
           </>
         )}
       </div>

@@ -9,7 +9,7 @@ export function FollowUpsView() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex h-[var(--topbar-height)] shrink-0 items-center justify-between border-b border-border bg-surface px-[var(--space-9)]">
+      <header className="flex min-h-[var(--topbar-height)] shrink-0 flex-wrap items-center justify-between gap-y-[var(--space-4)] border-b border-border bg-surface px-[var(--space-7)] py-[var(--space-4)] sm:px-[var(--space-9)]">
         <h1 className="text-xl font-bold text-ink">Seguimientos</h1>
         <button
           type="button"
@@ -41,7 +41,7 @@ export function FollowUpsView() {
             {items.map(({ task, contact }) => (
               <div
                 key={task.id}
-                className="flex items-center gap-[var(--space-6)] rounded-lg border border-border bg-surface p-[var(--space-7)]"
+                className="flex flex-wrap items-center gap-[var(--space-6)] rounded-lg border border-border bg-surface p-[var(--space-7)]"
               >
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-semibold text-on-brand">
                   {initials(contact?.name, contact?.phone ?? '?')}

@@ -33,7 +33,7 @@ export function PlatformDashboardView() {
 
   return (
     <div className="flex h-full min-h-screen flex-col bg-app">
-      <header className="flex h-[var(--topbar-height)] shrink-0 items-center justify-between border-b border-border bg-surface px-[var(--space-9)]">
+      <header className="flex min-h-[var(--topbar-height)] shrink-0 flex-wrap items-center justify-between gap-y-[var(--space-4)] border-b border-border bg-surface px-[var(--space-7)] py-[var(--space-4)] sm:px-[var(--space-9)]">
         <h1 className="text-xl font-bold text-ink">Admin de plataforma</h1>
         <button
           type="button"
@@ -326,7 +326,7 @@ function OrganizationRow({
   return (
     <div className="rounded-lg border border-border bg-surface p-[var(--space-7)]">
       {statusError && <p className="mb-[var(--space-4)] text-sm text-danger">{statusError}</p>}
-      <div className="flex items-center justify-between gap-[var(--space-5)]">
+      <div className="flex flex-wrap items-center justify-between gap-[var(--space-5)]">
         <div>
           <p className="text-sm font-semibold text-ink">{organization.name}</p>
           <p className="text-xs text-secondary">{organization.slug}</p>

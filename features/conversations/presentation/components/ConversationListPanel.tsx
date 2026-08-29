@@ -23,12 +23,14 @@ export function ConversationListPanel({
   onSelect,
   quickFilter,
   onQuickFilterChange,
+  className = 'flex',
 }: {
   items: ConversationListItem[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   quickFilter: QuickFilter;
   onQuickFilterChange: (filter: QuickFilter) => void;
+  className?: string;
 }) {
   const [query, setQuery] = useState('');
   // Independiente de quickFilter a propósito: debe verse aunque el asesor esté en otra
@@ -46,7 +48,7 @@ export function ConversationListPanel({
   }, [items, query]);
 
   return (
-    <div className="flex h-full w-[320px] shrink-0 flex-col border-r border-border bg-surface">
+    <div className={`h-full w-full shrink-0 flex-col border-r border-border bg-surface lg:w-[320px] ${className}`}>
       <div className="flex flex-col gap-[var(--space-6)] border-b border-border p-[var(--space-7)]">
         <div className="flex items-center gap-[var(--space-4)] rounded-md bg-app p-[var(--space-4)]">
           <SearchIcon className="size-[14px] text-secondary" />

@@ -9,7 +9,7 @@ export function ContactsView() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex h-[var(--topbar-height)] shrink-0 items-center border-b border-border bg-surface px-[var(--space-9)]">
+      <header className="flex h-[var(--topbar-height)] shrink-0 items-center border-b border-border bg-surface px-[var(--space-7)] sm:px-[var(--space-9)]">
         <h1 className="text-xl font-bold text-ink">Clientes</h1>
       </header>
       <div className="flex-1 overflow-y-auto p-[var(--space-9)]">

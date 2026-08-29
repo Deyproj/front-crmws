@@ -183,7 +183,7 @@ export function AgentConfigForm() {
             Si el agente escala una conversación fuera de este horario, se le avisa al contacto cuándo será atendido en
             vez del aviso genérico de transferencia.
           </p>
-          <div className="grid grid-cols-[9rem_1fr_auto_1fr] items-center gap-x-[var(--space-4)] gap-y-[var(--space-3)]">
+          <div className="grid grid-cols-1 items-center gap-x-[var(--space-4)] gap-y-[var(--space-4)] sm:grid-cols-[9rem_1fr_auto_1fr] sm:gap-y-[var(--space-3)]">
             {WEEK_DAYS.map((day) => (
               <Fragment key={day}>
                 <label className="flex items-center gap-[var(--space-3)] text-sm text-ink">
@@ -202,7 +202,7 @@ export function AgentConfigForm() {
                   disabled={!schedule[day].enabled}
                   className={`${inputClass} disabled:opacity-40`}
                 />
-                <span className="text-center text-sm text-secondary">a</span>
+                <span className="hidden text-center text-sm text-secondary sm:block">a</span>
                 <input
                   type="time"
                   value={schedule[day].end}

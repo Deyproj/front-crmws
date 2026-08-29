@@ -9,6 +9,7 @@ import { StageActions } from '@/features/opportunities/presentation/components/S
 import { OpportunityHistory } from '@/features/opportunities/presentation/components/OpportunityHistory';
 import { AppointmentsSection } from '@/features/appointments/presentation/components/AppointmentsSection';
 import { useConversationSummary } from '../hooks/useConversationSummary';
+import { XIcon } from '@/components/ui/icons';
 
 const INTENT_LABELS: Record<string, string> = {
   INFO: 'Busca información',
@@ -16,14 +17,23 @@ const INTENT_LABELS: Record<string, string> = {
   INSCRIPCION: 'Quiere inscribirse',
 };
 
+/**
+ * En pantallas <lg es un drawer que se desliza desde la derecha (controlado por
+ * `mobileOpen`/`onClose`, disparado por el botón de info de ChatPanel); en lg+ vuelve
+ * a ser la columna fija de siempre. Ver docs/07-frontend/00-vision-and-scope.md#responsive.
+ */
 export function ContactPanel({
   contact,
   conversation,
   onContactChanged,
+  mobileOpen = false,
+  onClose,
 }: {
   contact: Contact | null;
   conversation: Conversation | null;
   onContactChanged: (contact: Contact) => void;
+  mobileOpen?: boolean;
+  onClose?: () => void;
 }) {
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const summaryState = useConversationSummary(conversation?.id ?? null);
@@ -42,78 +52,93 @@ export function ContactPanel({
   const canSummarize = !!conversation && conversation.mode !== 'AI';
 
   return (
-    <aside className="hidden w-[280px] shrink-0 flex-col gap-[var(--space-9)] overflow-y-auto border-l border-border bg-surface p-[var(--space-8)] lg:flex">
-      <div className="flex flex-col items-center gap-[var(--space-6)] text-center">
-        <div className="flex size-20 items-center justify-center rounded-full bg-brand text-2xl font-semibold text-on-brand">
-          {initials(contact.name, contact.phone)}
+    <>
+      {mobileOpen && <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={onClose} aria-hidden="true" />}
+      <aside
+        className={`fixed inset-y-0 right-0 z-50 flex w-[85%] max-w-[320px] translate-x-full flex-col gap-[var(--space-9)] overflow-y-auto border-l border-border bg-surface p-[var(--space-8)] transition-transform duration-200 lg:static lg:z-auto lg:flex lg:w-[280px] lg:translate-x-0 ${
+          mobileOpen ? 'translate-x-0' : ''
+        }`}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Cerrar información del contacto"
+          className="self-end rounded-md p-2 text-secondary hover:bg-app hover:text-ink lg:hidden"
+        >
+          <XIcon className="size-[18px]" />
+        </button>
+        <div className="flex flex-col items-center gap-[var(--space-6)] text-center">
+          <div className="flex size-20 items-center justify-center rounded-full bg-brand text-2xl font-semibold text-on-brand">
+            {initials(contact.name, contact.phone)}
+          </div>
+          <ContactName contact={contact} onContactChanged={onContactChanged} />
+          <span className="rounded-full bg-info-bg px-[var(--space-5)] py-1 text-xs font-semibold uppercase text-info">
+            {LIFECYCLE_STAGE_LABELS[contact.lifecycleStage]}
+          </span>
         </div>
-        <ContactName contact={contact} onContactChanged={onContactChanged} />
-        <span className="rounded-full bg-info-bg px-[var(--space-5)] py-1 text-xs font-semibold uppercase text-info">
-          {LIFECYCLE_STAGE_LABELS[contact.lifecycleStage]}
-        </span>
-      </div>
 
-      <div className="flex flex-col gap-[var(--space-6)]">
-        <p className="text-xs font-semibold uppercase text-muted">Detalle del contacto</p>
-        <Field label="Teléfono" value={contact.phone} />
-        {contact.email && <Field label="Correo" value={contact.email} />}
-        <Field
-          label="Último contacto"
-          value={new Date(contact.lastInteractionAt).toLocaleString('es-CO', {
-            day: '2-digit',
-            month: 'short',
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        />
-      </div>
-
-      {hasQualification && (
         <div className="flex flex-col gap-[var(--space-6)]">
-          <p className="text-xs font-semibold uppercase text-muted">Calificación</p>
-          {contact.qualificationGoal && <Field label="Objetivo" value={contact.qualificationGoal} />}
-          {contact.qualificationSchedule && <Field label="Horario" value={contact.qualificationSchedule} />}
-          {contact.qualificationPlanOfInterest && <Field label="Plan de interés" value={contact.qualificationPlanOfInterest} />}
-          {contact.qualificationIntent && (
-            <Field label="Intención" value={INTENT_LABELS[contact.qualificationIntent] ?? contact.qualificationIntent} />
-          )}
+          <p className="text-xs font-semibold uppercase text-muted">Detalle del contacto</p>
+          <Field label="Teléfono" value={contact.phone} />
+          {contact.email && <Field label="Correo" value={contact.email} />}
+          <Field
+            label="Último contacto"
+            value={new Date(contact.lastInteractionAt).toLocaleString('es-CO', {
+              day: '2-digit',
+              month: 'short',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          />
         </div>
-      )}
 
-      {canSummarize && (
-        <div className="flex flex-col gap-[var(--space-5)]">
-          <p className="text-xs font-semibold uppercase text-muted">Resumen para el asesor</p>
-          {summaryState.summary ? (
-            <p className="rounded-md bg-app p-[var(--space-6)] text-sm text-ink">{summaryState.summary}</p>
-          ) : (
-            <button
-              type="button"
-              onClick={summaryState.generate}
-              disabled={summaryState.loading}
-              className="rounded-md border border-border px-[var(--space-6)] py-[var(--space-4)] text-xs font-semibold text-ink hover:bg-app disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {summaryState.loading ? 'Generando...' : 'Generar resumen'}
-            </button>
-          )}
-          {summaryState.error && <p className="text-xs text-danger">{summaryState.error}</p>}
+        {hasQualification && (
+          <div className="flex flex-col gap-[var(--space-6)]">
+            <p className="text-xs font-semibold uppercase text-muted">Calificación</p>
+            {contact.qualificationGoal && <Field label="Objetivo" value={contact.qualificationGoal} />}
+            {contact.qualificationSchedule && <Field label="Horario" value={contact.qualificationSchedule} />}
+            {contact.qualificationPlanOfInterest && <Field label="Plan de interés" value={contact.qualificationPlanOfInterest} />}
+            {contact.qualificationIntent && (
+              <Field label="Intención" value={INTENT_LABELS[contact.qualificationIntent] ?? contact.qualificationIntent} />
+            )}
+          </div>
+        )}
+
+        {canSummarize && (
+          <div className="flex flex-col gap-[var(--space-5)]">
+            <p className="text-xs font-semibold uppercase text-muted">Resumen para el asesor</p>
+            {summaryState.summary ? (
+              <p className="rounded-md bg-app p-[var(--space-6)] text-sm text-ink">{summaryState.summary}</p>
+            ) : (
+              <button
+                type="button"
+                onClick={summaryState.generate}
+                disabled={summaryState.loading}
+                className="rounded-md border border-border px-[var(--space-6)] py-[var(--space-4)] text-xs font-semibold text-ink hover:bg-app disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {summaryState.loading ? 'Generando...' : 'Generar resumen'}
+              </button>
+            )}
+            {summaryState.error && <p className="text-xs text-danger">{summaryState.error}</p>}
+          </div>
+        )}
+
+        <div className="flex flex-col gap-[var(--space-6)]">
+          <p className="text-xs font-semibold uppercase text-muted">Etapa comercial</p>
+          <StageActions contact={contact} onChanged={handleStageChanged} />
         </div>
-      )}
 
-      <div className="flex flex-col gap-[var(--space-6)]">
-        <p className="text-xs font-semibold uppercase text-muted">Etapa comercial</p>
-        <StageActions contact={contact} onChanged={handleStageChanged} />
-      </div>
+        <div className="flex flex-col gap-[var(--space-6)]">
+          <p className="text-xs font-semibold uppercase text-muted">Cortesías</p>
+          <AppointmentsSection contactId={contact.id} refreshKey={historyRefreshKey} />
+        </div>
 
-      <div className="flex flex-col gap-[var(--space-6)]">
-        <p className="text-xs font-semibold uppercase text-muted">Cortesías</p>
-        <AppointmentsSection contactId={contact.id} refreshKey={historyRefreshKey} />
-      </div>
-
-      <div className="flex flex-col gap-[var(--space-6)]">
-        <p className="text-xs font-semibold uppercase text-muted">Historial de oportunidades</p>
-        <OpportunityHistory contactId={contact.id} refreshKey={historyRefreshKey} />
-      </div>
-    </aside>
+        <div className="flex flex-col gap-[var(--space-6)]">
+          <p className="text-xs font-semibold uppercase text-muted">Historial de oportunidades</p>
+          <OpportunityHistory contactId={contact.id} refreshKey={historyRefreshKey} />
+        </div>
+      </aside>
+    </>
   );
 }
 
