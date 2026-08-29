@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Conversation, Message } from '@/features/conversations';
 import { MODE_LABELS, STATUS_LABELS } from '@/features/conversations';
+import { useAgentConfig } from '@/features/agent/presentation/hooks/useAgentConfig';
 import type { Contact } from '@/features/contacts';
 import { initials } from '@/lib/utils/initials';
 import { SendIcon, BotIcon } from '@/components/ui/icons';
@@ -30,6 +31,8 @@ export function ChatPanel({
 }) {
   const [draft, setDraft] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
+  const { config: agentConfig } = useAgentConfig();
+  const agentName = agentConfig?.agentName || 'IA';
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' });
@@ -90,8 +93,9 @@ export function ChatPanel({
               type="button"
               onClick={onRelease}
               disabled={actionPending}
-              className="rounded-md border border-border px-[var(--space-6)] py-[var(--space-4)] text-xs font-semibold text-ink hover:bg-app disabled:opacity-50"
+              className="flex items-center gap-[var(--space-3)] rounded-md border border-border px-[var(--space-6)] py-[var(--space-4)] text-xs font-semibold text-ink hover:bg-app disabled:opacity-50"
             >
+              <BotIcon className="size-3" />
               Liberar a IA
             </button>
           )}
@@ -107,7 +111,7 @@ export function ChatPanel({
       <div className="flex-1 overflow-y-auto px-[var(--space-8)] py-[var(--space-7)]">
         <div className="flex flex-col gap-[var(--space-7)]">
           {messages.map((message) => (
-            <ChatBubble key={message.id} message={message} />
+            <ChatBubble key={message.id} message={message} agentName={agentName} />
           ))}
           <div ref={bottomRef} />
         </div>
@@ -144,7 +148,7 @@ export function ChatPanel({
   );
 }
 
-function ChatBubble({ message }: { message: Message }) {
+function ChatBubble({ message, agentName }: { message: Message; agentName: string }) {
   const time = new Date(message.sentAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
 
   const isInbound = message.direction === 'INBOUND';
@@ -162,7 +166,7 @@ function ChatBubble({ message }: { message: Message }) {
     <div className={`flex max-w-[70%] flex-col gap-1 rounded-[var(--radius-lg)] p-[var(--space-6)] ${bubbleClass}`}>
       {isAi && (
         <span className="flex items-center gap-1 text-[10px] font-semibold uppercase text-info">
-          <BotIcon className="size-3" /> IA
+          <BotIcon className="size-3" /> {agentName}
         </span>
       )}
       <p className="whitespace-pre-wrap text-sm">{message.content}</p>
