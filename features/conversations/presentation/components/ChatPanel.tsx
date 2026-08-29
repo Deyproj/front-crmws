@@ -140,9 +140,20 @@ export function ChatPanel({
 }
 
 function ChatBubble({ message }: { message: Message }) {
+  const time = new Date(message.sentAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+
+  if (message.senderType === 'SYSTEM') {
+    return (
+      <div className="flex justify-center">
+        <p className="max-w-[80%] rounded-full bg-app px-[var(--space-6)] py-[var(--space-3)] text-center text-xs text-secondary">
+          {message.content}
+        </p>
+      </div>
+    );
+  }
+
   const isInbound = message.direction === 'INBOUND';
   const isAi = message.senderType === 'AI';
-  const time = new Date(message.sentAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
 
   const bubbleClass = isInbound
     ? 'bg-surface border border-border text-ink self-start rounded-tl-[var(--radius-sm)]'
