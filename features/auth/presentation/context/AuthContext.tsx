@@ -8,6 +8,12 @@ import { logoutUser } from '../../application/logoutUser';
 import { refreshSession } from '../../application/refreshSession';
 import { clearSession, getSession, setSession } from '@/lib/runtime/tokenStorage';
 
+/** Solo rutas internas ("/algo") — nunca un host externo, evita un open redirect vía ?from=. */
+function safeRedirectTarget(from: string | null): string {
+  if (from && from.startsWith('/') && !from.startsWith('//')) return from;
+  return '/';
+}
+
 interface AuthContextType {
   user: AuthUser | null;
   accessToken: string | null;
@@ -66,10 +72,22 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
     return () => clearTimeout(timer);
   }, [session]);
 
+  // Única fuente de navegación post-sesión: si el submit de LoginView disparara su propio
+  // router.replace() además de este efecto, dos fetches RSC del App Router compiten y el
+  // decodificador Flight de React revienta con "chunk.reason.enqueueModel is not a function"
+  // (mismo síntoma, causa distinta, que el bug ya visto y documentado en LoginView.tsx). Este
+  // efecto corre después de que React confirma el nuevo `session`, así que cuando AppShell monte
+  // la ruta destino ya lo ve autenticado y no dispara su propio redirect a /login.
   useEffect(() => {
-    if (!session?.user.mustChangePassword) return;
-    if (pathname === '/change-password') return;
-    router.replace('/change-password');
+    if (!session) return;
+    if (session.user.mustChangePassword) {
+      if (pathname !== '/change-password') router.replace('/change-password');
+      return;
+    }
+    if (pathname === '/login') {
+      const from = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('from') : null;
+      router.replace(safeRedirectTarget(from));
+    }
   }, [session, pathname, router]);
 
   const login = useCallback(async (credentials: LoginCredentials) => {

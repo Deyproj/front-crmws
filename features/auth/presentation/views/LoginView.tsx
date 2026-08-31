@@ -1,20 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { EyeIcon, EyeOffIcon } from '@/components/ui/icons';
 
-/** Solo rutas internas ("/algo") — nunca un host externo, evita un open redirect vía ?from=. */
-function safeRedirectTarget(from: string | null): string {
-  if (from && from.startsWith('/') && !from.startsWith('//')) return from;
-  return '/';
-}
-
 export function LoginView() {
   const { login } = useAuth();
-  const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,19 +19,16 @@ export function LoginView() {
     setError(null);
     setLoading(true);
     try {
-      const newSession = await login({
+      // No navegamos desde acá: AuthContext ya se encarga de redirigir (a /change-password
+      // o al destino post-login) en un efecto disparado por el cambio de sesión. Hacerlo
+      // también desde aquí dispara dos router.replace() concurrentes y provoca un crash de
+      // React ("chunk.reason.enqueueModel is not a function") por dos fetches RSC
+      // compitiendo en el App Router.
+      await login({
         email: email.trim(),
         password,
         organizationSlug: organizationSlug.trim() || undefined,
       });
-      // Si requiere cambio de contraseña, AuthContext ya se encarga de redirigir a
-      // /change-password (efecto disparado por el cambio de sesión). Navegar también
-      // desde aquí dispara dos router.replace() concurrentes y provoca un crash de
-      // React ("Cannot read properties of null (reading 'enqueueModel')") por dos
-      // fetches RSC compitiendo en el App Router.
-      if (!newSession.user.mustChangePassword) {
-        router.replace(safeRedirectTarget(searchParams.get('from')));
-      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al iniciar sesión';
       setError(msg.includes('401') ? 'Correo o contraseña incorrectos' : msg);
