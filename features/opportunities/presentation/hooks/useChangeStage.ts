@@ -5,16 +5,17 @@ import { changeLifecycleStage, type Contact, type ContactLifecycleStage } from '
 
 /** Próximas etapas válidas desde la etapa actual del contacto — mismas reglas que
  * Opportunity.ALLOWED_TRANSITIONS en el backend, más el reingreso confirmado con el negocio
- * (ver docs/02-requirements/opportunity-stages-draft-dinamo-fitness.md, pregunta 5). */
+ * (ver docs/02-requirements/opportunity-stages-draft-dinamo-fitness.md, pregunta 5).
+ * 'QUALIFIED' no es una acción que el asesor elija aparte — es un paso de tránsito interno del
+ * backend (decisión de producto 2026-08-31: un botón "Calificar" separado se consideró
+ * sobreingeniería). Por eso ni LEAD ni un reingreso ofrecen 'QUALIFIED': el asesor califica
+ * directo al elegir una de las 3 acciones reales. */
 const NEXT_STAGES: Record<ContactLifecycleStage, Exclude<ContactLifecycleStage, 'LEAD'>[]> = {
-  // 'QUALIFIED' exige plan y horario confirmados (ver ChangeOpportunityStageHandler en el
-  // backend); 'LOST' es la salida directa para un lead que nunca da esos datos porque deja de
-  // responder o dice explícitamente que no le interesa — no necesita "calificarse" primero.
-  LEAD: ['QUALIFIED', 'LOST'],
+  LEAD: ['OPPORTUNITY', 'CUSTOMER', 'LOST'],
   QUALIFIED: ['OPPORTUNITY', 'CUSTOMER', 'LOST'],
   OPPORTUNITY: ['CUSTOMER', 'LOST'],
-  CUSTOMER: ['QUALIFIED'],
-  LOST: ['QUALIFIED'],
+  CUSTOMER: ['OPPORTUNITY', 'CUSTOMER', 'LOST'],
+  LOST: ['OPPORTUNITY', 'CUSTOMER', 'LOST'],
 };
 
 export function nextStages(current: ContactLifecycleStage): Exclude<ContactLifecycleStage, 'LEAD'>[] {
