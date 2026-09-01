@@ -68,6 +68,7 @@ export function ConversationsView() {
               onSelect={handleSelect}
               quickFilter={quickFilter}
               onQuickFilterChange={setQuickFilter}
+              myMembershipId={user?.membershipId}
               className={mobileView === 'chat' ? 'hidden lg:flex' : 'flex'}
             />
             <ChatPanel

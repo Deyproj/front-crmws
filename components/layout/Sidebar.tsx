@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/features/auth/presentation/context/AuthContext';
 import { useWaitingConversationsCount } from '@/features/conversations/presentation/hooks/useWaitingConversationsCount';
+import { useMineConversationsCount } from '@/features/conversations/presentation/hooks/useMineConversationsCount';
 import { MessageSquareIcon, UsersIcon, CalendarIcon, ClockIcon, SettingsIcon, LogOutIcon, XIcon } from '@/components/ui/icons';
 
 /** Refleja MembershipRole (api-crmws, organization/domain/MembershipRole.java) — ver docs/01-product/actors-and-roles.md. */
@@ -21,6 +22,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const waitingCount = useWaitingConversationsCount();
+  const mineCount = useMineConversationsCount(user?.membershipId);
 
   return (
     <>
@@ -53,7 +55,16 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
           </div>
 
           <nav className="flex flex-col gap-[var(--space-3)]">
-            <NavItem href="/" icon={<MessageSquareIcon className="size-[18px]" />} active={pathname === '/'} badgeCount={waitingCount} onNavigate={onClose}>
+            <NavItem
+              href="/"
+              icon={<MessageSquareIcon className="size-[18px]" />}
+              active={pathname === '/'}
+              badges={[
+                { count: waitingCount, variant: 'solid', title: `${waitingCount} conversación${waitingCount === 1 ? '' : 'es'} esperando respuesta` },
+                { count: mineCount, variant: 'tonal', title: `${mineCount} conversación${mineCount === 1 ? '' : 'es'} asignada${mineCount === 1 ? '' : 's'} a mí` },
+              ]}
+              onNavigate={onClose}
+            >
               Conversaciones
             </NavItem>
             <NavItem href="/contacts" icon={<UsersIcon className="size-[18px]" />} active={pathname === '/contacts'} onNavigate={onClose}>
@@ -98,7 +109,7 @@ function NavItem({
   icon,
   active,
   disabled,
-  badgeCount,
+  badges,
   onNavigate,
   children,
 }: {
@@ -106,7 +117,7 @@ function NavItem({
   icon: React.ReactNode;
   active?: boolean;
   disabled?: boolean;
-  badgeCount?: number;
+  badges?: { count: number; variant: 'solid' | 'tonal'; title: string }[];
   onNavigate?: () => void;
   children: React.ReactNode;
 }) {
@@ -117,7 +128,9 @@ function NavItem({
     <>
       {icon}
       <span className="flex-1">{children}</span>
-      {!!badgeCount && <NavBadge count={badgeCount} />}
+      {badges?.filter((b) => b.count > 0).map((b) => (
+        <NavBadge key={b.variant} count={b.count} variant={b.variant} title={b.title} />
+      ))}
     </>
   );
 
@@ -136,12 +149,18 @@ function NavItem({
   );
 }
 
-/** Aviso de urgencia: conversaciones esperando respuesta de un asesor (status WAITING). */
-function NavBadge({ count }: { count: number }) {
+/**
+ * Contador junto al ítem de navegación. `solid` (rojo, alto contraste) se reserva para
+ * lo urgente — "Esperando"; `tonal` (fondo claro, texto de color) es la variante de
+ * menor peso visual para indicadores informativos como "Mías", así el ojo va primero
+ * a lo que necesita acción.
+ */
+function NavBadge({ count, variant, title }: { count: number; variant: 'solid' | 'tonal'; title: string }) {
+  const variantClass = variant === 'solid' ? 'bg-danger text-on-brand' : 'bg-info-bg text-info';
   return (
     <span
-      className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-danger px-[var(--space-3)] text-[11px] font-bold leading-none text-on-brand"
-      title={`${count} conversación${count === 1 ? '' : 'es'} esperando respuesta`}
+      className={`flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full ${variantClass} px-[var(--space-3)] text-[11px] font-bold leading-none`}
+      title={title}
     >
       {count > 99 ? '99+' : count}
     </span>

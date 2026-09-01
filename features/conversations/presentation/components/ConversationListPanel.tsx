@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import type { ConversationListItem } from '../hooks/useConversationsList';
 import { useWaitingConversationsCount } from '../hooks/useWaitingConversationsCount';
+import { useMineConversationsCount } from '../hooks/useMineConversationsCount';
 import { MODE_LABELS, STATUS_LABELS } from '@/features/conversations';
 import { formatRelativeTime } from '@/lib/utils/formatRelativeTime';
 import { initials } from '@/lib/utils/initials';
@@ -23,6 +24,7 @@ export function ConversationListPanel({
   onSelect,
   quickFilter,
   onQuickFilterChange,
+  myMembershipId,
   className = 'flex',
 }: {
   items: ConversationListItem[];
@@ -30,12 +32,14 @@ export function ConversationListPanel({
   onSelect: (id: string) => void;
   quickFilter: QuickFilter;
   onQuickFilterChange: (filter: QuickFilter) => void;
+  myMembershipId?: string | null;
   className?: string;
 }) {
   const [query, setQuery] = useState('');
   // Independiente de quickFilter a propósito: debe verse aunque el asesor esté en otra
   // pestaña (Todas, Mías, IA) — es la señal de "hay gente esperando respuesta".
   const waitingCount = useWaitingConversationsCount();
+  const mineCount = useMineConversationsCount(myMembershipId);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -63,7 +67,14 @@ export function ConversationListPanel({
         <div className="flex flex-wrap gap-[var(--space-3)]" role="tablist" aria-label="Filtrar conversaciones">
           {QUICK_FILTERS.map((f) => {
             const active = quickFilter === f.value;
-            const badgeCount = f.value === 'WAITING' ? waitingCount : 0;
+            const badgeCount = f.value === 'WAITING' ? waitingCount : f.value === 'MINE' ? mineCount : 0;
+            // Sólido (alto contraste) solo para lo urgente — "Esperando"; tonal para "Mías",
+            // un indicador informativo que no debe competir en atención con lo urgente.
+            const badgeVariantClass = f.value === 'WAITING' ? 'bg-danger text-on-brand' : 'bg-info-bg text-info';
+            const badgeTitle =
+              f.value === 'WAITING'
+                ? `${badgeCount} conversación${badgeCount === 1 ? '' : 'es'} esperando respuesta`
+                : `${badgeCount} conversación${badgeCount === 1 ? '' : 'es'} asignada${badgeCount === 1 ? '' : 's'} a mí`;
             return (
               <button
                 key={f.value}
@@ -78,8 +89,8 @@ export function ConversationListPanel({
                 {f.label}
                 {badgeCount > 0 && (
                   <span
-                    className="flex h-4 min-w-4 items-center justify-center rounded-full bg-danger p-[4px] text-[10px] font-bold leading-none text-on-brand"
-                    title={`${badgeCount} conversación${badgeCount === 1 ? '' : 'es'} esperando respuesta`}
+                    className={`flex h-4 min-w-4 items-center justify-center rounded-full ${badgeVariantClass} p-[4px] text-[10px] font-bold leading-none`}
+                    title={badgeTitle}
                   >
                     {badgeCount > 99 ? '99+' : badgeCount}
                   </span>
