@@ -55,8 +55,8 @@ export function ContactPanel({
     <>
       {mobileOpen && <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={onClose} aria-hidden="true" />}
       <aside
-        className={`fixed inset-y-0 right-0 z-50 flex w-[85%] max-w-[320px] translate-x-full flex-col gap-[var(--space-9)] overflow-y-auto border-l border-border bg-surface p-[var(--space-8)] transition-transform duration-[var(--duration-base)] ease-[var(--ease-expressive)] lg:static lg:z-auto lg:flex lg:w-[280px] lg:translate-x-0 ${
-          mobileOpen ? 'translate-x-0' : ''
+        className={`fixed inset-y-0 right-0 z-50 flex w-[85%] max-w-[320px] flex-col gap-[var(--space-9)] overflow-y-auto border-l border-border bg-surface p-[var(--space-8)] transition-transform duration-[var(--duration-base)] ease-[var(--ease-expressive)] lg:static lg:z-auto lg:flex lg:w-[280px] lg:translate-x-0 ${
+          mobileOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         <button
