@@ -38,7 +38,8 @@ export default function ChangePasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-1 items-center justify-center bg-app px-[var(--space-7)]">
+    // dvh, no screen: 100vh no descuenta la barra de direcciones en móvil (ver LoginView.tsx)
+    <div className="flex min-h-dvh flex-1 items-center justify-center bg-app px-[var(--space-7)]">
       <div className="w-full max-w-sm">
         <div className="mb-[var(--space-10)] flex flex-col items-center text-center">
           <div className="mb-[var(--space-6)] flex size-8 items-center justify-center rounded-md bg-brand text-on-brand font-bold">

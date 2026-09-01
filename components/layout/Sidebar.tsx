@@ -8,6 +8,7 @@ import { useAuth } from '@/features/auth/presentation/context/AuthContext';
 import { useWaitingConversationsCount } from '@/features/conversations/presentation/hooks/useWaitingConversationsCount';
 import { useMineConversationsCount } from '@/features/conversations/presentation/hooks/useMineConversationsCount';
 import { MessageSquareIcon, UsersIcon, CalendarIcon, ClockIcon, SettingsIcon, LogOutIcon, XIcon } from '@/components/ui/icons';
+import { BASE_PATH } from '@/lib/runtime/basePath';
 
 /** Refleja MembershipRole (api-crmws, organization/domain/MembershipRole.java) — ver docs/01-product/actors-and-roles.md. */
 const ROLE_LABELS: Record<string, string> = {
@@ -43,7 +44,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
         <div className="flex flex-col gap-[var(--space-10)]">
           <div className="flex items-center justify-between gap-[var(--space-5)]">
             <div className="flex items-center gap-[var(--space-5)]">
-              <Image src="/logo-dinamo-fitness.png" alt="Dinamo Fitness" width={282} height={81} className="h-7 w-auto" priority />
+              <Image src={`${BASE_PATH}/logo-dinamo-fitness.png`} alt="Dinamo Fitness" width={282} height={81} className="h-7 w-auto" priority />
               <p className="text-lg font-bold text-on-dark">Dinabot</p>
             </div>
             <button

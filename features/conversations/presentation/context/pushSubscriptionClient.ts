@@ -1,8 +1,9 @@
 import { getSession } from '@/lib/runtime/tokenStorage';
+import { BASE_PATH } from '@/lib/runtime/basePath';
 
-const PUSH_SW_PATH = '/push-sw.js';
-const PUBLIC_KEY_PATH = '/api/conversations/events/push/public-key';
-const SUBSCRIPTIONS_PATH = '/api/conversations/events/push/subscriptions';
+const PUSH_SW_PATH = `${BASE_PATH}/push-sw.js`;
+const PUBLIC_KEY_PATH = `${BASE_PATH}/api/conversations/events/push/public-key`;
+const SUBSCRIPTIONS_PATH = `${BASE_PATH}/api/conversations/events/push/subscriptions`;
 
 // Convierte la clave VAPID (base64url) al formato que espera pushManager.subscribe.
 function urlBase64ToUint8Array(base64String: string): Uint8Array {

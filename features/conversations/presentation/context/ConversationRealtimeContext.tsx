@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { getSession } from '@/lib/runtime/tokenStorage';
+import { BASE_PATH } from '@/lib/runtime/basePath';
 import { subscribeToPush } from './pushSubscriptionClient';
 
 interface RealtimeSignals {
@@ -121,7 +122,7 @@ export function ConversationRealtimeProvider({ children }: { children: React.Rea
       if (cancelled) return;
       controller = new AbortController();
       try {
-        const response = await fetch('/api/conversations/events/stream', {
+        const response = await fetch(`${BASE_PATH}/api/conversations/events/stream`, {
           headers: { Authorization: `Bearer ${session!.accessToken}` },
           signal: controller.signal,
         });

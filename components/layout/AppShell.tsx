@@ -7,6 +7,7 @@ import { useAuth } from '@/features/auth/presentation/context/AuthContext';
 import { ConversationRealtimeProvider } from '@/features/conversations/presentation/context/ConversationRealtimeContext';
 import { Sidebar } from './Sidebar';
 import { MenuIcon } from '@/components/ui/icons';
+import { BASE_PATH } from '@/lib/runtime/basePath';
 
 /**
  * Envuelve toda pantalla autenticada: redirige a /login sin sesión, monta el sidebar
@@ -35,7 +36,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <ConversationRealtimeProvider>
-      <div className="flex h-screen w-full overflow-hidden">
+      {/* dvh, no screen: 100vh no descuenta la barra de direcciones en móvil (ver LoginView.tsx) */}
+      <div className="flex h-dvh w-full overflow-hidden">
         <Sidebar open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex h-12 shrink-0 items-center gap-[var(--space-6)] border-b border-border bg-surface px-[var(--space-7)] lg:hidden">
@@ -51,7 +53,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 motivo que en LoginView). */}
             <div className="flex items-center gap-[var(--space-4)]">
               <div className="flex items-center rounded-md bg-sidebar px-[var(--space-3)] py-1">
-                <Image src="/logo-dinamo-fitness.png" alt="Dinamo Fitness" width={282} height={81} className="h-4 w-auto" />
+                <Image src={`${BASE_PATH}/logo-dinamo-fitness.png`} alt="Dinamo Fitness" width={282} height={81} className="h-4 w-auto" />
               </div>
               <p className="text-sm font-bold text-ink">Dinabot</p>
             </div>

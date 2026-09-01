@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useAuth } from '../context/AuthContext';
 import { EyeIcon, EyeOffIcon } from '@/components/ui/icons';
+import { BASE_PATH } from '@/lib/runtime/basePath';
 
 export function LoginView() {
   const { login } = useAuth();
@@ -39,7 +40,9 @@ export function LoginView() {
   }
 
   return (
-    <div className="relative flex min-h-screen flex-1 items-center justify-center overflow-hidden bg-app px-[var(--space-7)]">
+    // dvh, no screen (100vh fijo): en móvil 100vh no descuenta la barra de
+    // direcciones/navegación, dejando el formulario cortado o mal centrado.
+    <div className="relative flex min-h-dvh flex-1 items-center justify-center overflow-hidden bg-app px-[var(--space-7)]">
       {/* Forma orgánica decorativa — motivo de marca Dinamo Fitness, ver styles/utilities.css#shape-blob */}
       <div
         aria-hidden="true"
@@ -55,7 +58,7 @@ export function LoginView() {
           {/* Logo real de Dinamo Fitness es blanco — necesita el chip oscuro de fondo para verse
               sobre la tarjeta clara del login (mismo motivo por el que el sidebar sí es oscuro). */}
           <div className="mb-[var(--space-6)] flex items-center justify-center rounded-xl bg-sidebar px-[var(--space-7)] py-[var(--space-5)]">
-            <Image src="/logo-dinamo-fitness.png" alt="Dinamo Fitness" width={282} height={81} className="h-9 w-auto" priority />
+            <Image src={`${BASE_PATH}/logo-dinamo-fitness.png`} alt="Dinamo Fitness" width={282} height={81} className="h-9 w-auto" priority />
           </div>
           <h1 className="text-2xl font-black tracking-tight text-ink">Dinabot</h1>
           <p className="mt-1 text-sm text-secondary">Inicia sesión para continuar</p>

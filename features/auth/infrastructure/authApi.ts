@@ -1,4 +1,5 @@
 import type { LoginCredentials } from '../domain/types';
+import { BASE_PATH } from '@/lib/runtime/basePath';
 
 /** Forma cruda de AuthResponse (api-crmws, identity/presentation/AuthResponse.java). */
 export interface AuthResponsePayload {
@@ -30,7 +31,7 @@ async function parseOrThrow<T>(res: Response): Promise<T> {
 }
 
 export async function loginRequest(credentials: LoginCredentials): Promise<AuthResponsePayload> {
-  const res = await fetch('/api/auth/login', {
+  const res = await fetch(`${BASE_PATH}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(credentials),
@@ -39,7 +40,7 @@ export async function loginRequest(credentials: LoginCredentials): Promise<AuthR
 }
 
 export async function refreshRequest(refreshToken: string): Promise<RefreshResponsePayload> {
-  const res = await fetch('/api/auth/refresh', {
+  const res = await fetch(`${BASE_PATH}/api/auth/refresh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refreshToken }),
@@ -48,7 +49,7 @@ export async function refreshRequest(refreshToken: string): Promise<RefreshRespo
 }
 
 export async function logoutRequest(refreshToken: string): Promise<void> {
-  await fetch('/api/auth/logout', {
+  await fetch(`${BASE_PATH}/api/auth/logout`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refreshToken }),

@@ -1,4 +1,5 @@
 import { clearSession, getSession } from '@/lib/runtime/tokenStorage';
+import { BASE_PATH } from '@/lib/runtime/basePath';
 
 function buildAuthHeaders(): Record<string, string> {
   const session = getSession();
@@ -11,7 +12,7 @@ function handleUnauthorized(): never {
   // implica que el estado en memoria de toda la app (React Query-less, sin store global) ya no
   // es confiable — mismo patrón que front-guardian (lib/http/apiFetch.ts).
   // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-  if (typeof window !== 'undefined') window.location.href = '/login';
+  if (typeof window !== 'undefined') window.location.href = `${BASE_PATH}/login`;
   throw new Error('Sesión expirada');
 }
 
@@ -36,7 +37,7 @@ function extractErrorMessage(text: string, status: number): string {
  * al cargar la página.
  */
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
+  const res = await fetch(`${BASE_PATH}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
