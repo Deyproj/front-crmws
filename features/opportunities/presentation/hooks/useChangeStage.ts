@@ -7,7 +7,10 @@ import { changeLifecycleStage, type Contact, type ContactLifecycleStage } from '
  * Opportunity.ALLOWED_TRANSITIONS en el backend, más el reingreso confirmado con el negocio
  * (ver docs/02-requirements/opportunity-stages-draft-dinamo-fitness.md, pregunta 5). */
 const NEXT_STAGES: Record<ContactLifecycleStage, Exclude<ContactLifecycleStage, 'LEAD'>[]> = {
-  LEAD: ['QUALIFIED'],
+  // 'QUALIFIED' exige plan y horario confirmados (ver ChangeOpportunityStageHandler en el
+  // backend); 'LOST' es la salida directa para un lead que nunca da esos datos porque deja de
+  // responder o dice explícitamente que no le interesa — no necesita "calificarse" primero.
+  LEAD: ['QUALIFIED', 'LOST'],
   QUALIFIED: ['OPPORTUNITY', 'CUSTOMER', 'LOST'],
   OPPORTUNITY: ['CUSTOMER', 'LOST'],
   CUSTOMER: ['QUALIFIED'],
