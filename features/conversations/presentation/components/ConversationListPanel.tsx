@@ -7,7 +7,8 @@ import { useMineConversationsCount } from '../hooks/useMineConversationsCount';
 import { MODE_LABELS, STATUS_LABELS } from '@/features/conversations';
 import { formatRelativeTime } from '@/lib/utils/formatRelativeTime';
 import { initials } from '@/lib/utils/initials';
-import { SearchIcon } from '@/components/ui/icons';
+import { SearchIcon, MessageSquareIcon } from '@/components/ui/icons';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 export type QuickFilter = 'ALL' | 'MINE' | 'WAITING' | 'AI';
 
@@ -101,9 +102,13 @@ export function ConversationListPanel({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex flex-1 flex-col overflow-y-auto">
         {filtered.length === 0 && (
-          <p className="p-[var(--space-7)] text-sm text-secondary">Sin conversaciones.</p>
+          <EmptyState
+            icon={<MessageSquareIcon className="size-6" />}
+            title="Sin conversaciones"
+            description={query ? 'Nada coincide con tu búsqueda.' : 'No hay conversaciones en este filtro todavía.'}
+          />
         )}
         {filtered.map(({ conversation, contact }) => {
           const active = conversation.id === selectedId;

@@ -48,7 +48,7 @@ export function ConversationsView() {
   return (
     <div className="flex h-full flex-col">
       <header className="flex h-[var(--topbar-height)] shrink-0 items-center border-b border-border bg-surface px-[var(--space-7)] sm:px-[var(--space-9)]">
-        <h1 className="text-xl font-bold text-ink">Bandeja de conversaciones</h1>
+        <h1 className="text-2xl font-black tracking-tight text-ink">Bandeja de conversaciones</h1>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
@@ -69,7 +69,7 @@ export function ConversationsView() {
               quickFilter={quickFilter}
               onQuickFilterChange={setQuickFilter}
               myMembershipId={user?.membershipId}
-              className={mobileView === 'chat' ? 'hidden lg:flex' : 'flex'}
+              className={mobileView === 'chat' ? 'hidden lg:flex' : 'flex animate-panel-slide-in lg:animate-none'}
             />
             <ChatPanel
               conversation={thread.conversation}
@@ -80,8 +80,9 @@ export function ConversationsView() {
               actionError={thread.actionError}
               onTakeOver={thread.takeOver}
               onRelease={thread.release}
+              onTransfer={thread.transfer}
               onSend={thread.send}
-              className={mobileView === 'list' ? 'hidden lg:flex' : 'flex'}
+              className={mobileView === 'list' ? 'hidden lg:flex' : 'flex animate-panel-slide-in lg:animate-none'}
               onBack={() => setMobileView('list')}
               onOpenContact={() => setContactPanelOpen(true)}
             />

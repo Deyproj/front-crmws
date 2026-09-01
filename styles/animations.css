@@ -1,8 +1,62 @@
 /*
  * Animaciones y transiciones globales reutilizables.
- * Vacío por ahora — se agrega contenido cuando una animación se repita en más de un lugar,
- * no antes. Ver guia_completa_sistema_diseno_frontend.md.
+ * Agregado 2026-08-31 (rediseño de personalidad): tokens de motion "expresivo" (curva con
+ * ligero overshoot, en vez del ease lineal que usaba el proyecto) y la animación de aparición
+ * de badges — ambos se repiten en más de un lugar (drawer del Sidebar, transición lista/chat
+ * en móvil, ConfirmDialog, badges de conteo en Sidebar y ConversationListPanel), lo que ya
+ * justifica sacarlos de aquí en vez de inline. Ver guia_completa_sistema_diseno_frontend.md.
  */
+
+:root {
+  --ease-expressive: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+}
+
+@keyframes badge-pop {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-badge-pop {
+  animation: badge-pop var(--duration-base) var(--ease-expressive);
+}
+
+@keyframes dialog-pop {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-dialog-pop {
+  animation: dialog-pop var(--duration-base) var(--ease-expressive);
+}
+
+@keyframes panel-slide-in {
+  from {
+    transform: translateX(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-panel-slide-in {
+  animation: panel-slide-in var(--duration-base) var(--ease-expressive);
+}
 
 @media (prefers-reduced-motion: reduce) {
   *,

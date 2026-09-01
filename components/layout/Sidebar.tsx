@@ -1,5 +1,7 @@
 'use client';
 
+import { cloneElement } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/features/auth/presentation/context/AuthContext';
@@ -34,15 +36,15 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-full w-[var(--sidebar-width)] shrink-0 -translate-x-full flex-col justify-between bg-sidebar p-[var(--space-8)] transition-transform duration-200 lg:static lg:z-auto lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-full w-[var(--sidebar-width)] shrink-0 -translate-x-full flex-col justify-between bg-sidebar p-[var(--space-8)] transition-transform duration-[var(--duration-base)] ease-[var(--ease-expressive)] lg:static lg:z-auto lg:translate-x-0 ${
           open ? 'translate-x-0' : ''
         }`}
       >
         <div className="flex flex-col gap-[var(--space-10)]">
           <div className="flex items-center justify-between gap-[var(--space-5)]">
             <div className="flex items-center gap-[var(--space-5)]">
-              <div className="flex size-8 items-center justify-center rounded-md bg-brand text-on-brand font-bold">C</div>
-              <p className="text-lg font-bold text-on-dark">CRMWS</p>
+              <Image src="/logo-dinamo-fitness.png" alt="Dinamo Fitness" width={282} height={81} className="h-7 w-auto" priority />
+              <p className="text-lg font-bold text-on-dark">Dinabot</p>
             </div>
             <button
               type="button"
@@ -76,9 +78,11 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
             <NavItem href="/followups" icon={<ClockIcon className="size-[18px]" />} active={pathname === '/followups'} onNavigate={onClose}>
               Seguimientos
             </NavItem>
-            <NavItem href="/settings" icon={<SettingsIcon className="size-[18px]" />} active={pathname === '/settings'} onNavigate={onClose}>
-              Configuración
-            </NavItem>
+            {user?.role === 'OWNER' && (
+              <NavItem href="/settings" icon={<SettingsIcon className="size-[18px]" />} active={pathname === '/settings'} onNavigate={onClose}>
+                Configuración
+              </NavItem>
+            )}
           </nav>
         </div>
 
@@ -88,7 +92,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-on-dark">{user ? (ROLE_LABELS[user.role] ?? user.role) : ''}</p>
-            <p className="truncate text-xs text-on-dark-muted">{user?.organizationId ?? ''}</p>
+            {/* <p className="truncate text-xs text-on-dark-muted">{user?.organizationId ?? ''}</p> */}
           </div>
           <button
             type="button"
@@ -114,7 +118,7 @@ function NavItem({
   children,
 }: {
   href?: string;
-  icon: React.ReactNode;
+  icon: React.ReactElement<React.SVGProps<SVGSVGElement>>;
   active?: boolean;
   disabled?: boolean;
   badges?: { count: number; variant: 'solid' | 'tonal'; title: string }[];
@@ -124,9 +128,11 @@ function NavItem({
   const className = `flex items-center gap-[var(--space-6)] rounded-md px-[var(--space-6)] py-[var(--space-5)] text-sm font-medium transition-colors ${
     active ? 'bg-brand text-on-dark font-semibold' : 'text-on-dark-muted'
   } ${disabled ? 'cursor-not-allowed opacity-40' : 'hover:text-on-dark'}`;
+  // El ítem activo también refuerza el trazo del ícono (no solo el fondo) — parte de la
+  // escala de contraste más expresiva del rediseño 2026-08-31.
   const content = (
     <>
-      {icon}
+      {active ? cloneElement(icon, { strokeWidth: 2.5 }) : icon}
       <span className="flex-1">{children}</span>
       {badges?.filter((b) => b.count > 0).map((b) => (
         <NavBadge key={b.variant} count={b.count} variant={b.variant} title={b.title} />
@@ -159,7 +165,7 @@ function NavBadge({ count, variant, title }: { count: number; variant: 'solid' |
   const variantClass = variant === 'solid' ? 'bg-danger text-on-brand' : 'bg-info-bg text-info';
   return (
     <span
-      className={`flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full ${variantClass} px-[var(--space-3)] text-[11px] font-bold leading-none`}
+      className={`flex h-5 min-w-5 shrink-0 animate-badge-pop items-center justify-center rounded-full ${variantClass} px-[var(--space-3)] text-[11px] font-bold leading-none`}
       title={title}
     >
       {count > 99 ? '99+' : count}

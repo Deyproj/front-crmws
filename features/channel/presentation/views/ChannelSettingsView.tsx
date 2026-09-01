@@ -36,7 +36,7 @@ export function ChannelSettingsView() {
   return (
     <div className="flex h-full flex-col">
       <header className="flex h-[var(--topbar-height)] shrink-0 items-center border-b border-border bg-surface px-[var(--space-7)] sm:px-[var(--space-9)]">
-        <h1 className="text-xl font-bold text-ink">Configuración</h1>
+        <h1 className="text-2xl font-black tracking-tight text-ink">Configuración</h1>
       </header>
       {canManage ? (
         <>
@@ -82,7 +82,7 @@ function ChannelManager() {
 
   if (!channel) {
     return (
-      <div className="max-w-md rounded-lg border border-border bg-surface p-[var(--space-8)]">
+      <div className="max-w-md rounded-xl border border-border bg-surface p-[var(--space-8)]">
         <p className="mb-[var(--space-6)] text-sm text-secondary">
           Todavía no hay un canal de WhatsApp creado para esta organización.
         </p>
@@ -126,7 +126,7 @@ function ChannelManager() {
   const canDisconnect = s === 'CONNECTED' || s === 'CONNECTING' || s === 'RECONNECTING';
 
   return (
-    <div className="max-w-md rounded-lg border border-border bg-surface p-[var(--space-8)]">
+    <div className="max-w-md rounded-xl border border-border bg-surface p-[var(--space-8)]">
       <div className="mb-[var(--space-6)] flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold text-ink">{channel.externalAccountId}</p>
@@ -142,7 +142,7 @@ function ChannelManager() {
       )}
 
       {s === 'PAIRING_REQUIRED' && status?.qrCode && (
-        <div className="mb-[var(--space-7)] flex flex-col items-center gap-[var(--space-5)] rounded-md bg-app p-[var(--space-8)]">
+        <div className="mb-[var(--space-7)] flex flex-col items-center gap-[var(--space-5)] rounded-xl bg-app p-[var(--space-8)]">
           <QRCodeSVG value={status.qrCode} size={200} />
           <p className="text-center text-xs text-secondary">Escanea con WhatsApp: Dispositivos vinculados → Vincular dispositivo</p>
         </div>

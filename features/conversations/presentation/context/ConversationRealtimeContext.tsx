@@ -4,23 +4,30 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { getSession } from '@/lib/runtime/tokenStorage';
 import { subscribeToPush } from './pushSubscriptionClient';
 
-const ConversationRealtimeContext = createContext<number>(0);
+interface RealtimeSignals {
+  /** Se incrementa con cada aviso `conversation.waiting` (broadcast, cualquier asesor puede tomarla). */
+  waitingSignal: number;
+  /**
+   * Se incrementa con cada aviso `conversation.transferred`, sin filtrar por destinatario —
+   * tanto quien recibe como quien pierde la conversación deben refrescar su "Mías" al toque.
+   */
+  mineSignal: number;
+}
+
+const ConversationRealtimeContext = createContext<RealtimeSignals>({ waitingSignal: 0, mineSignal: 0 });
 
 const RECONNECT_DELAY_MS = 4000;
 
-function notifyBrowser() {
+function notifyBrowser(title: string, body: string, tag: string) {
   if (typeof window === 'undefined' || !('Notification' in window)) return;
   if (Notification.permission !== 'granted') return;
-  // La pestaña visible ya se entera por el badge/lista (useConversationWaitingSignal) —
-  // evita duplicar el aviso con una notificación del sistema encima.
+  // La pestaña visible ya se entera por el badge/lista (useConversationWaitingSignal /
+  // useConversationMineSignal) — evita duplicar el aviso con una notificación del sistema encima.
   if (document.visibilityState === 'visible') return;
 
   // `tag` colapsa avisos repetidos en una sola notificación en vez de apilarlos si
-  // escalan varias conversaciones seguidas.
-  const notification = new Notification('Conversación en espera', {
-    body: 'Un contacto necesita la atención de un asesor.',
-    tag: 'conversation-waiting',
-  });
+  // escalan/transfieren varias conversaciones seguidas.
+  const notification = new Notification(title, { body, tag });
   notification.onclick = () => {
     window.focus();
     notification.close();
@@ -49,7 +56,8 @@ function notifyBrowser() {
  * `app.push.vapid.*` configurado.
  */
 export function ConversationRealtimeProvider({ children }: { children: React.ReactNode }) {
-  const [signal, setSignal] = useState(0);
+  const [waitingSignal, setWaitingSignal] = useState(0);
+  const [mineSignal, setMineSignal] = useState(0);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !('Notification' in window)) return;
@@ -74,6 +82,7 @@ export function ConversationRealtimeProvider({ children }: { children: React.Rea
   useEffect(() => {
     const session = getSession();
     if (!session) return;
+    const myMembershipId = session.user.membershipId;
 
     let cancelled = false;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -81,12 +90,30 @@ export function ConversationRealtimeProvider({ children }: { children: React.Rea
 
     function handleRawEvent(rawEvent: string) {
       let eventName = 'message';
+      let data = '';
       for (const line of rawEvent.split('\n')) {
         if (line.startsWith('event:')) eventName = line.slice(6).trim();
+        if (line.startsWith('data:')) data += line.slice(5).trim();
       }
+
       if (eventName === 'conversation.waiting') {
-        setSignal((n) => n + 1);
-        notifyBrowser();
+        setWaitingSignal((n) => n + 1);
+        notifyBrowser('Conversación en espera', 'Un contacto necesita la atención de un asesor.', 'conversation-waiting');
+        return;
+      }
+
+      if (eventName === 'conversation.transferred') {
+        // Indiscriminado a propósito: tanto quien recibe como quien pierde la
+        // conversación deben refrescar su contador de "Mías" al toque.
+        setMineSignal((n) => n + 1);
+        try {
+          const payload = JSON.parse(data) as { targetMembershipId?: string };
+          if (myMembershipId && payload.targetMembershipId === myMembershipId) {
+            notifyBrowser('Conversación transferida', 'Te transfirieron una conversación.', 'conversation-transferred');
+          }
+        } catch {
+          // payload inesperado — sin notificación puntual, el refresco de "Mías" ya cubrió el aviso
+        }
       }
     }
 
@@ -132,10 +159,19 @@ export function ConversationRealtimeProvider({ children }: { children: React.Rea
     };
   }, []);
 
-  return <ConversationRealtimeContext.Provider value={signal}>{children}</ConversationRealtimeContext.Provider>;
+  return (
+    <ConversationRealtimeContext.Provider value={{ waitingSignal, mineSignal }}>
+      {children}
+    </ConversationRealtimeContext.Provider>
+  );
 }
 
 /** Cambia cada vez que llega un aviso `conversation.waiting` por SSE — ver {@link ConversationRealtimeProvider}. */
 export function useConversationWaitingSignal(): number {
-  return useContext(ConversationRealtimeContext);
+  return useContext(ConversationRealtimeContext).waitingSignal;
+}
+
+/** Cambia cada vez que llega un aviso `conversation.transferred` por SSE — ver {@link ConversationRealtimeProvider}. */
+export function useConversationMineSignal(): number {
+  return useContext(ConversationRealtimeContext).mineSignal;
 }

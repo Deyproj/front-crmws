@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/features/auth/presentation/context/AuthContext';
 import { LogOutIcon } from '@/components/ui/icons';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { usePlatformDashboard } from '../hooks/usePlatformDashboard';
 import {
   MEMBERSHIP_ROLES,
@@ -42,7 +43,7 @@ export function PlatformDashboardView() {
   return (
     <div className="flex h-full min-h-screen flex-col bg-app">
       <header className="flex min-h-[var(--topbar-height)] shrink-0 flex-wrap items-center justify-between gap-y-[var(--space-4)] border-b border-border bg-surface px-[var(--space-7)] py-[var(--space-4)] sm:px-[var(--space-9)]">
-        <h1 className="text-xl font-bold text-ink">Admin de plataforma</h1>
+        <h1 className="text-2xl font-black tracking-tight text-ink">Admin de plataforma</h1>
         <button
           type="button"
           onClick={handleLogout}
@@ -255,6 +256,12 @@ function OrganizationRow({
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<MembershipRole>('ADVISOR');
   const [statusError, setStatusError] = useState<string | null>(null);
+  const [pendingConfirmation, setPendingConfirmation] = useState<{
+    title: string;
+    description: string;
+    destructive?: boolean;
+    onConfirm: () => void;
+  } | null>(null);
 
   async function refreshMembers() {
     setMembersLoading(true);
@@ -286,8 +293,17 @@ function OrganizationRow({
     }
   }
 
-  async function handleRevoke(membershipId: string) {
-    if (!window.confirm('¿Revocar el acceso de este miembro a la organización?')) return;
+  function handleRevoke(membershipId: string) {
+    setPendingConfirmation({
+      title: 'Revocar acceso',
+      description: '¿Revocar el acceso de este miembro a la organización?',
+      destructive: true,
+      onConfirm: () => runRevoke(membershipId),
+    });
+  }
+
+  async function runRevoke(membershipId: string) {
+    setPendingConfirmation(null);
     setMembersError(null);
     try {
       await onRevoke(membershipId);
@@ -297,15 +313,21 @@ function OrganizationRow({
     }
   }
 
-  async function handleStatusChange(newStatus: OrganizationStatus) {
-    if (
-      newStatus !== 'ACTIVE' &&
-      !window.confirm(
-        `¿Cambiar la organización a ${newStatus}? Todos sus miembros perderán acceso de inmediato, incluida cualquier sesión ya iniciada.`
-      )
-    ) {
+  function handleStatusChange(newStatus: OrganizationStatus) {
+    if (newStatus !== 'ACTIVE') {
+      setPendingConfirmation({
+        title: 'Cambiar estado de la organización',
+        description: `¿Cambiar la organización a ${newStatus}? Todos sus miembros perderán acceso de inmediato, incluida cualquier sesión ya iniciada.`,
+        destructive: true,
+        onConfirm: () => runStatusChange(newStatus),
+      });
       return;
     }
+    runStatusChange(newStatus);
+  }
+
+  async function runStatusChange(newStatus: OrganizationStatus) {
+    setPendingConfirmation(null);
     setStatusError(null);
     try {
       await onChangeStatus(newStatus);
@@ -314,8 +336,17 @@ function OrganizationRow({
     }
   }
 
-  async function handleResetPassword(membershipId: string) {
-    if (!window.confirm('¿Resetear la contraseña de este miembro? Su contraseña actual dejará de funcionar.')) return;
+  function handleResetPassword(membershipId: string) {
+    setPendingConfirmation({
+      title: 'Resetear contraseña',
+      description: '¿Resetear la contraseña de este miembro? Su contraseña actual dejará de funcionar.',
+      destructive: true,
+      onConfirm: () => runResetPassword(membershipId),
+    });
+  }
+
+  async function runResetPassword(membershipId: string) {
+    setPendingConfirmation(null);
     setMembersError(null);
     try {
       await onResetPassword(membershipId);
@@ -504,6 +535,15 @@ function OrganizationRow({
           )}
         </div>
       )}
+      <ConfirmDialog
+        open={pendingConfirmation !== null}
+        title={pendingConfirmation?.title ?? ''}
+        description={pendingConfirmation?.description}
+        destructive={pendingConfirmation?.destructive}
+        confirmLabel="Confirmar"
+        onConfirm={() => pendingConfirmation?.onConfirm()}
+        onCancel={() => setPendingConfirmation(null)}
+      />
     </div>
   );
 }

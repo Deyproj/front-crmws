@@ -3,6 +3,43 @@
 import { useFollowUps } from '../hooks/useFollowUps';
 import { REASON_LABELS } from '@/features/followups';
 import { initials } from '@/lib/utils/initials';
+import { InfoIcon, ClockIcon } from '@/components/ui/icons';
+import { EmptyState } from '@/components/ui/EmptyState';
+
+function FollowUpCriteriaInfo() {
+  return (
+    <span className="group/info relative inline-flex">
+      <button
+        type="button"
+        aria-label="Cómo se arma esta lista"
+        aria-describedby="followups-criteria-tooltip"
+        className="flex size-5 items-center justify-center rounded-full text-secondary hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+      >
+        <InfoIcon className="size-4" />
+      </button>
+      <span
+        id="followups-criteria-tooltip"
+        role="tooltip"
+        className="pointer-events-none absolute left-0 top-full z-10 mt-[var(--space-3)] w-72 origin-top-left rounded-md border border-border bg-surface p-[var(--space-5)] text-xs text-secondary opacity-0 shadow-lg transition-opacity duration-150 group-hover/info:opacity-100 group-focus-within/info:opacity-100"
+      >
+        <p className="mb-[var(--space-3)] font-semibold text-ink">Cómo se arma esta lista</p>
+        <p className="mb-[var(--space-2)]">
+          Solo se llena al presionar &quot;Detectar seguimientos&quot; — no corre en segundo plano ni hay un
+          horario automático.
+        </p>
+        <p className="mb-[var(--space-2)]">Hoy detecta dos señales:</p>
+        <ul className="mb-[var(--space-2)] list-disc space-y-1 pl-4">
+          <li>Citas de cortesía marcadas como inasistencia.</li>
+          <li>Contactos con intención de visita detectada por el agente que aún no tienen cita agendada ni realizada.</li>
+        </ul>
+        <p>
+          No incluye señales por tiempo (sin respuesta, oportunidad estancada) — faltan por validar con negocio.
+          Nunca se envía un mensaje automático al contacto.
+        </p>
+      </span>
+    </span>
+  );
+}
 
 export function FollowUpsView() {
   const { items, loading, detecting, actionPending, error, detect, resolve, dismiss } = useFollowUps();
@@ -10,7 +47,10 @@ export function FollowUpsView() {
   return (
     <div className="flex h-full flex-col">
       <header className="flex min-h-[var(--topbar-height)] shrink-0 flex-wrap items-center justify-between gap-y-[var(--space-4)] border-b border-border bg-surface px-[var(--space-7)] py-[var(--space-4)] sm:px-[var(--space-9)]">
-        <h1 className="text-xl font-bold text-ink">Seguimientos</h1>
+        <div className="flex items-center gap-[var(--space-3)]">
+          <h1 className="text-2xl font-black tracking-tight text-ink">Seguimientos</h1>
+          <FollowUpCriteriaInfo />
+        </div>
         <button
           type="button"
           onClick={detect}
@@ -35,13 +75,17 @@ export function FollowUpsView() {
         {loading ? (
           <p className="text-sm text-secondary">Cargando...</p>
         ) : items.length === 0 ? (
-          <p className="text-sm text-secondary">Sin seguimientos pendientes. Prueba &quot;Detectar seguimientos&quot;.</p>
+          <EmptyState
+            icon={<ClockIcon className="size-6" />}
+            title="Sin seguimientos pendientes"
+            description='Prueba "Detectar seguimientos" para buscar contactos que necesiten que un asesor los retome.'
+          />
         ) : (
           <div className="flex flex-col gap-[var(--space-5)]">
             {items.map(({ task, contact }) => (
               <div
                 key={task.id}
-                className="flex flex-wrap items-center gap-[var(--space-6)] rounded-lg border border-border bg-surface p-[var(--space-7)]"
+                className="flex flex-wrap items-center gap-[var(--space-6)] rounded-xl border border-border bg-surface p-[var(--space-7)]"
               >
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-semibold text-on-brand">
                   {initials(contact?.name, contact?.phone ?? '?')}

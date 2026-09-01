@@ -111,6 +111,13 @@ export async function releaseConversationToAi(conversationId: string): Promise<C
   return apiFetch<Conversation>(`/api/conversations/${conversationId}/release-to-ai`, { method: 'POST' });
 }
 
+export async function transferConversation(conversationId: string, targetMembershipId: string): Promise<Conversation> {
+  return apiFetch<Conversation>(`/api/conversations/${conversationId}/transfer`, {
+    method: 'POST',
+    body: JSON.stringify({ targetMembershipId }),
+  });
+}
+
 /** Refleja ConversationStatsResponse (api-crmws, conversation/presentation/ConversationStatsResponse.java). */
 export interface ConversationStats {
   total: number;

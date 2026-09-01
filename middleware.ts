@@ -55,5 +55,10 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|login|_next/static|_next/image|favicon.ico).*)'],
+  // El logo real (public/logo-dinamo-fitness.png) reveló que la exclusión previa solo
+  // cubría favicon.ico entre los archivos estáticos — cualquier otro asset de public/
+  // (imágenes, íconos futuros) caía en el middleware y, sin cookie de sesión, se
+  // redirigía a /login. La optimización de next/image hace un fetch interno a la ruta
+  // del asset sin la cookie del navegador, así que también le pegaba a esta regla.
+  matcher: ['/((?!api|login|_next/static|_next/image|favicon\\.ico|.*\\.(?:png|jpe?g|gif|svg|webp|ico)$).*)'],
 };

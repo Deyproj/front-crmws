@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useAuth } from '../context/AuthContext';
 import { EyeIcon, EyeOffIcon } from '@/components/ui/icons';
 
@@ -38,19 +39,31 @@ export function LoginView() {
   }
 
   return (
-    <div className="flex min-h-screen flex-1 items-center justify-center bg-app px-[var(--space-7)]">
-      <div className="w-full max-w-sm">
+    <div className="relative flex min-h-screen flex-1 items-center justify-center overflow-hidden bg-app px-[var(--space-7)]">
+      {/* Forma orgánica decorativa — motivo de marca Dinamo Fitness, ver styles/utilities.css#shape-blob */}
+      <div
+        aria-hidden="true"
+        className="shape-blob pointer-events-none absolute -right-24 -top-24 size-[420px] bg-blob opacity-60 sm:size-[520px]"
+      />
+      <div
+        aria-hidden="true"
+        className="shape-blob pointer-events-none absolute -bottom-32 -left-24 size-[360px] bg-blob opacity-40"
+      />
+
+      <div className="relative w-full max-w-sm">
         <div className="mb-[var(--space-10)] flex flex-col items-center text-center">
-          <div className="mb-[var(--space-6)] flex size-8 items-center justify-center rounded-md bg-brand text-on-brand font-bold">
-            C
+          {/* Logo real de Dinamo Fitness es blanco — necesita el chip oscuro de fondo para verse
+              sobre la tarjeta clara del login (mismo motivo por el que el sidebar sí es oscuro). */}
+          <div className="mb-[var(--space-6)] flex items-center justify-center rounded-xl bg-sidebar px-[var(--space-7)] py-[var(--space-5)]">
+            <Image src="/logo-dinamo-fitness.png" alt="Dinamo Fitness" width={282} height={81} className="h-9 w-auto" priority />
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-ink">CRMWS</h1>
+          <h1 className="text-2xl font-black tracking-tight text-ink">Dinabot</h1>
           <p className="mt-1 text-sm text-secondary">Inicia sesión para continuar</p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="flex flex-col gap-[var(--space-7)] rounded-lg border border-border bg-surface p-[var(--space-9)] shadow-sm"
+          className="flex flex-col gap-[var(--space-7)] rounded-xl border border-border bg-surface p-[var(--space-9)] shadow-sm"
         >
           <div>
             <label htmlFor="email" className="mb-[var(--space-3)] block text-xs font-medium uppercase tracking-wide text-secondary">

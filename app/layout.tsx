@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CRMWS",
+  title: "Dinabot",
   description: "Bandeja comercial de CRMWS",
 };
 

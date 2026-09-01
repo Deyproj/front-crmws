@@ -1,5 +1,10 @@
 /*
  * Utilidades visuales que no encajan como componente (helpers de layout/estado puntuales).
- * Vacío por ahora — se agrega contenido cuando una regla se repita en más de un lugar,
- * no antes. Ver guia_completa_sistema_diseno_frontend.md.
+ * Agregado 2026-08-31 (rediseño de personalidad): forma orgánica ("blob") decorativa, motivo
+ * de marca de Dinamo Fitness (fondo translúcido detrás de fotografía/tarjetas protagonistas
+ * en el sitio real) — técnica CSS pura vía border-radius asimétrico, sin SVG ni imagen.
  */
+
+.shape-blob {
+  border-radius: 42% 58% 65% 35% / 45% 40% 60% 55%;
+}

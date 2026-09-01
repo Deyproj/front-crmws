@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { listConversations, type Conversation, type ConversationFilters } from '@/features/conversations';
 import { listContacts, type Contact } from '@/features/contacts';
-import { useConversationWaitingSignal } from '../context/ConversationRealtimeContext';
+import { useConversationMineSignal, useConversationWaitingSignal } from '../context/ConversationRealtimeContext';
 
 const POLL_INTERVAL_MS = 8000;
 
@@ -15,6 +15,7 @@ export interface ConversationListItem {
 export function useConversationsList(filters: ConversationFilters = {}) {
   const { mode, status, assignedTo } = filters;
   const waitingSignal = useConversationWaitingSignal();
+  const mineSignal = useConversationMineSignal();
   const [items, setItems] = useState<ConversationListItem[]>([]);
   // Contactos completos (sin filtrar por quickFilter) — a diferencia de `items`, no
   // desaparece cuando la conversación abierta deja de estar en la pestaña activa.
@@ -62,11 +63,18 @@ export function useConversationsList(filters: ConversationFilters = {}) {
 
   useEffect(() => {
     // Aviso en tiempo real (ConversationRealtimeProvider): adelanta el refresco de la
-    // bandeja cuando llega un `conversation.waiting` por SSE, sin reemplazar el polling.
+    // bandeja cuando llega un `conversation.waiting` o `conversation.transferred` por
+    // SSE, sin reemplazar el polling.
     if (waitingSignal === 0) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load({ silent: true });
   }, [waitingSignal, load]);
+
+  useEffect(() => {
+    if (mineSignal === 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load({ silent: true });
+  }, [mineSignal, load]);
 
   return { items, contactsById, loading, error, refetch: () => load({ silent: true }) };
 }

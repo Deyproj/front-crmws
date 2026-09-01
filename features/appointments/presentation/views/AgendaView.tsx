@@ -3,6 +3,8 @@
 import { useAgenda } from '../hooks/useAgenda';
 import { STATUS_LABELS, type Appointment } from '@/features/appointments';
 import { initials } from '@/lib/utils/initials';
+import { CalendarIcon } from '@/components/ui/icons';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 const STATUS_BADGE_CLASS: Record<Appointment['status'], string> = {
   CONFIRMED: 'bg-info-bg text-info',
@@ -25,7 +27,7 @@ export function AgendaView() {
   return (
     <div className="flex h-full flex-col">
       <header className="flex min-h-[var(--topbar-height)] shrink-0 flex-wrap items-center justify-between gap-y-[var(--space-4)] border-b border-border bg-surface px-[var(--space-7)] py-[var(--space-4)] sm:px-[var(--space-9)]">
-        <h1 className="text-xl font-bold text-ink">Agenda</h1>
+        <h1 className="text-2xl font-black tracking-tight text-ink">Agenda</h1>
         <div className="flex items-center gap-[var(--space-4)]">
           <button
             type="button"
@@ -63,13 +65,17 @@ export function AgendaView() {
         {loading ? (
           <p className="text-sm text-secondary">Cargando...</p>
         ) : items.length === 0 ? (
-          <p className="text-sm text-secondary">Sin cortesías agendadas para este día.</p>
+          <EmptyState
+            icon={<CalendarIcon className="size-6" />}
+            title="Sin cortesías agendadas"
+            description="No hay cortesías para este día."
+          />
         ) : (
           <div className="flex flex-col gap-[var(--space-5)]">
             {items.map(({ appointment, contact }) => (
               <div
                 key={appointment.id}
-                className="flex flex-wrap items-center gap-[var(--space-6)] rounded-lg border border-border bg-surface p-[var(--space-7)]"
+                className="flex flex-wrap items-center gap-[var(--space-6)] rounded-xl border border-border bg-surface p-[var(--space-7)]"
               >
                 <p className="shrink-0 whitespace-nowrap text-sm font-semibold text-ink">
                   {new Date(appointment.scheduledAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}

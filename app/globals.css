@@ -25,6 +25,9 @@
   --color-brand-hover: var(--color-brand-hover);
   --color-brand-pressed: var(--color-brand-pressed);
   --color-on-brand: var(--color-on-brand);
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-blob: var(--color-blob);
 
   /* Semántica */
   --color-success: var(--color-success);
@@ -42,6 +45,7 @@
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
 
   /* Tipografía */
   --font-sans: var(--font-base);

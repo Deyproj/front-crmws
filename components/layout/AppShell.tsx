@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/features/auth/presentation/context/AuthContext';
 import { ConversationRealtimeProvider } from '@/features/conversations/presentation/context/ConversationRealtimeContext';
@@ -46,7 +47,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             >
               <MenuIcon className="size-5" />
             </button>
-            <p className="text-sm font-bold text-ink">CRMWS</p>
+            {/* Logo blanco — necesita el chip oscuro para verse sobre la topbar clara (mismo
+                motivo que en LoginView). */}
+            <div className="flex items-center gap-[var(--space-4)]">
+              <div className="flex items-center rounded-md bg-sidebar px-[var(--space-3)] py-1">
+                <Image src="/logo-dinamo-fitness.png" alt="Dinamo Fitness" width={282} height={81} className="h-4 w-auto" />
+              </div>
+              <p className="text-sm font-bold text-ink">Dinabot</p>
+            </div>
           </div>
           <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-app">{children}</main>
         </div>

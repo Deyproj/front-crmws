@@ -17,6 +17,7 @@ export {
   sendMessage,
   takeOverConversation,
   releaseConversationToAi,
+  transferConversation,
   getConversationStats,
   getConversationSummary,
   MODE_LABELS,

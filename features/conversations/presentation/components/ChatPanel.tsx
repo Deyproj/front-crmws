@@ -5,10 +5,13 @@ import type { Conversation, Message } from '@/features/conversations';
 import { MODE_LABELS, STATUS_LABELS } from '@/features/conversations';
 import { useAgentConfig } from '@/features/agent/presentation/hooks/useAgentConfig';
 import { useTeamMembers } from '@/features/organization/presentation/hooks/useTeamMembers';
+import type { Membership } from '@/features/organization';
 import type { Contact } from '@/features/contacts';
 import { initials } from '@/lib/utils/initials';
 import { formatWhatsAppText } from '@/lib/utils/formatWhatsAppText';
-import { SendIcon, BotIcon, UserIcon, ChevronLeftIcon, InfoIcon } from '@/components/ui/icons';
+import { SendIcon, BotIcon, UserIcon, UsersIcon, ChevronLeftIcon, InfoIcon, MessageSquareIcon } from '@/components/ui/icons';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 export function ChatPanel({
   conversation,
@@ -19,6 +22,7 @@ export function ChatPanel({
   actionError,
   onTakeOver,
   onRelease,
+  onTransfer,
   onSend,
   className = 'flex',
   onBack,
@@ -32,6 +36,7 @@ export function ChatPanel({
   actionError: string | null;
   onTakeOver: () => void;
   onRelease: () => void;
+  onTransfer: (targetMembershipId: string) => void;
   onSend: (text: string) => Promise<boolean>;
   className?: string;
   onBack?: () => void;
@@ -56,8 +61,12 @@ export function ChatPanel({
 
   if (!conversation) {
     return (
-      <div className={`flex-1 items-center justify-center bg-app ${className}`}>
-        <p className="text-sm text-secondary">Selecciona una conversación</p>
+      <div className={`flex-1 flex-col bg-app ${className}`}>
+        <EmptyState
+          icon={<MessageSquareIcon className="size-6" />}
+          title="Selecciona una conversación"
+          description="Elige una conversación de la bandeja para ver el hilo completo."
+        />
       </div>
     );
   }
@@ -66,9 +75,16 @@ export function ChatPanel({
   // queda en HUMAN pero sin asesor asignado (status WAITING) — sigue siendo tomable.
   const isUnassignedHuman = conversation.mode === 'HUMAN' && !conversation.currentAssigneeMembershipId;
   const canTakeOver = conversation.mode === 'AI' || conversation.mode === 'HYBRID' || isUnassignedHuman;
-  const canRelease = conversation.mode !== 'AI';
   const isMine = conversation.currentAssigneeMembershipId === myMembershipId;
+  // Si otro asesor tiene la conversación asignada, solo él puede liberarla a la IA —
+  // sin asignar (recién escalada, WAITING) cualquiera puede hacerlo, nadie es "dueño" todavía.
+  const canRelease = conversation.mode !== 'AI' && (isMine || !conversation.currentAssigneeMembershipId);
   const canSend = conversation.mode === 'HUMAN' && isMine;
+  // Transferir solo tiene sentido sobre una conversación que el propio asesor tiene
+  // asignada, y solo si hay a quién pasársela — en una organización de un solo
+  // miembro (el owner solo) la lista de destinos queda vacía y el botón no aparece.
+  const transferCandidates = members.filter((m) => m.id !== myMembershipId && m.active);
+  const canTransfer = isMine && transferCandidates.length > 0;
   const label = contact?.name || contact?.phone || 'Contacto sin nombre';
 
   async function handleSubmit(e: React.FormEvent) {
@@ -121,6 +137,9 @@ export function ChatPanel({
             >
               Tomar conversación
             </button>
+          )}
+          {canTransfer && (
+            <TransferMenu members={transferCandidates} disabled={actionPending} onSelect={onTransfer} />
           )}
           {canRelease && (
             <button
@@ -183,6 +202,76 @@ export function ChatPanel({
           </p>
         )}
       </form>
+    </div>
+  );
+}
+
+function TransferMenu({
+  members,
+  disabled,
+  onSelect,
+}: {
+  members: Membership[];
+  disabled: boolean;
+  onSelect: (targetMembershipId: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pendingTarget, setPendingTarget] = useState<Membership | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        disabled={disabled}
+        className="flex items-center gap-[var(--space-3)] rounded-md border border-border px-[var(--space-6)] py-[var(--space-4)] text-xs font-semibold text-ink hover:bg-app disabled:opacity-50"
+      >
+        <UsersIcon className="size-3" />
+        Transferir
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-10 mt-[var(--space-3)] w-56 rounded-md border border-border bg-surface py-[var(--space-3)] shadow-sm">
+          {members.map((member) => (
+            <button
+              key={member.id}
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setPendingTarget(member);
+              }}
+              className="block w-full truncate px-[var(--space-6)] py-[var(--space-4)] text-left text-xs text-ink hover:bg-app"
+            >
+              {member.name || member.email || 'Asesor'}
+            </button>
+          ))}
+        </div>
+      )}
+      <ConfirmDialog
+        open={pendingTarget !== null}
+        title="Transferir conversación"
+        description={`¿Transferir esta conversación a ${pendingTarget?.name || pendingTarget?.email || 'este asesor'}? Dejarás de poder responderla hasta que te la transfieran de vuelta.`}
+        confirmLabel="Transferir"
+        pending={disabled}
+        onConfirm={() => {
+          if (!pendingTarget) return;
+          const targetId = pendingTarget.id;
+          setPendingTarget(null);
+          onSelect(targetId);
+        }}
+        onCancel={() => setPendingTarget(null)}
+      />
     </div>
   );
 }

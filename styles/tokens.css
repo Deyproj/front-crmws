@@ -1,21 +1,36 @@
 /*
- * Tokens visuales centrales de front-crmws — FitConnect design system.
- * Extraídos del archivo Figma KETKfuCzhfms9h6Md5Nvrx (2026-08-27).
+ * Tokens visuales centrales de front-crmws — Dinamo Fitness design system.
+ * Base "FitConnect" extraída del Figma KETKfuCzhfms9h6Md5Nvrx (2026-08-27), reemplazada
+ * 2026-08-31 por la identidad real de Dinamo Fitness (rojo/negro), estimada visualmente
+ * a partir de 3 capturas de pantalla de dinamofitness.com que envió el usuario — no es
+ * colorimetría exacta ni sale de un manual de marca. Ver
+ * docs/07-frontend/00-vision-and-scope.md#personalidad-de-marca-rediseño-2026-08-31 para
+ * el detalle de qué se estimó y de dónde.
  * Único lugar donde deben vivir colores, spacing, radios, sombras y tipografía en crudo.
  * Ningún componente ni feature debe hardcodear estos valores directamente — ver
  * guia_completa_sistema_diseno_frontend.md (secciones 3, 9, 15).
  */
 
 :root {
-  /* Brand */
-  --color-brand: #25d366;
-  --color-brand-hover: #1fb457;
-  --color-brand-pressed: #189c4a;
+  /* Brand — rojo Dinamo Fitness (reemplaza el verde de WhatsApp del placeholder) */
+  --color-brand: #c41230;
+  --color-brand-hover: #a50f27;
+  --color-brand-pressed: #8a0c20;
   --color-on-brand: #ffffff;
 
+  /* Acento gráfico — rojo más vivo que --color-brand, para énfasis puntual (franjas,
+     texto destacado dentro de titulares) — nunca para superficies grandes, ese es el rol
+     de --color-brand. Distinción tomada del sitio real, donde ambos rojos conviven. */
+  --color-accent: #e4232f;
+  --color-accent-hover: #c81c27;
+
+  /* Forma decorativa orgánica ("blob") — fondo translúcido detrás de fotografía/tarjetas
+     protagonistas, nunca detrás de texto. Uso puramente decorativo y de baja saturación. */
+  --color-blob: #f4c9c6;
+
   /* Neutrals */
-  --color-ink-900: #0f172a; /* sidebar / darkest surface */
-  --color-slate-800: #1e293b; /* primary text */
+  --color-ink-900: #1a1a1a; /* sidebar / darkest surface — casi-negro real de Dinamo, no azul */
+  --color-slate-800: #4a4a4e; /* primary text — gris carbón real, no negro puro */
   --color-slate-500: #64748b; /* secondary text */
   --color-slate-400: #94a3b8; /* muted text / inactive nav */
   --color-slate-200: #e2e8f0; /* borders / dividers */
@@ -80,6 +95,7 @@
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
+  --radius-xl: 22px; /* superficies protagonistas: tarjetas de estadística, login, modales */
   --radius-full: 9999px;
 
   /* Spacing scale */

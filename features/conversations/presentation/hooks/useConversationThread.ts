@@ -7,6 +7,7 @@ import {
   releaseConversationToAi,
   sendMessage,
   takeOverConversation,
+  transferConversation,
   type Conversation,
   type Message,
 } from '@/features/conversations';
@@ -78,6 +79,11 @@ export function useConversationThread(conversationId: string | null, onConversat
     await runAction(() => releaseConversationToAi(conversationId));
   }
 
+  async function transfer(targetMembershipId: string) {
+    if (!conversationId) return;
+    await runAction(() => transferConversation(conversationId, targetMembershipId));
+  }
+
   /** Devuelve si el envío tuvo éxito, para que el borrador no se limpie si falla. */
   async function send(text: string): Promise<boolean> {
     if (!conversationId || !text.trim()) return false;
@@ -96,5 +102,5 @@ export function useConversationThread(conversationId: string | null, onConversat
     }
   }
 
-  return { conversation, messages, loading, error, actionPending, actionError, takeOver, release, send };
+  return { conversation, messages, loading, error, actionPending, actionError, takeOver, release, transfer, send };
 }
