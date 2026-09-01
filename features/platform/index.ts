@@ -7,6 +7,7 @@ export type {
   ProvisionOrganizationResult,
   ProvisionTeamMemberPayload,
   ProvisionTeamMemberResult,
+  ResetPasswordResult,
 } from './api';
 export {
   MEMBERSHIP_ROLES,
@@ -18,5 +19,6 @@ export {
   changeMemberRole,
   revokeMember,
   activateMember,
+  resetMemberPassword,
   changeOrganizationStatus,
 } from './api';

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/features/auth/presentation/context/AuthContext';
 import { LogOutIcon } from '@/components/ui/icons';
 import { usePlatformDashboard } from '../hooks/usePlatformDashboard';
@@ -15,6 +16,7 @@ import {
 
 export function PlatformDashboardView() {
   const { logout } = useAuth();
+  const router = useRouter();
   const {
     organizations,
     loading,
@@ -28,8 +30,14 @@ export function PlatformDashboardView() {
     changeRole,
     revoke,
     activate,
+    resetPassword,
     changeStatus,
   } = usePlatformDashboard();
+
+  async function handleLogout() {
+    await logout();
+    router.replace('/login');
+  }
 
   return (
     <div className="flex h-full min-h-screen flex-col bg-app">
@@ -37,7 +45,7 @@ export function PlatformDashboardView() {
         <h1 className="text-xl font-bold text-ink">Admin de plataforma</h1>
         <button
           type="button"
-          onClick={() => logout()}
+          onClick={handleLogout}
           className="flex items-center gap-[var(--space-3)] rounded-md px-3 py-2 text-sm font-semibold text-secondary hover:bg-app hover:text-ink"
         >
           <LogOutIcon className="size-[18px]" />
@@ -80,6 +88,7 @@ export function PlatformDashboardView() {
                     onChangeRole={(membershipId, role) => changeRole(organization.id, membershipId, role)}
                     onRevoke={(membershipId) => revoke(organization.id, membershipId)}
                     onActivate={(membershipId) => activate(organization.id, membershipId)}
+                    onResetPassword={(membershipId) => resetPassword(organization.id, membershipId)}
                     onChangeStatus={(status) => changeStatus(organization.id, status)}
                   />
                 ))}
@@ -224,6 +233,7 @@ function OrganizationRow({
   onChangeRole,
   onRevoke,
   onActivate,
+  onResetPassword,
   onChangeStatus,
 }: {
   organization: PlatformOrganization;
@@ -233,6 +243,7 @@ function OrganizationRow({
   onChangeRole: (membershipId: string, role: MembershipRole) => Promise<unknown>;
   onRevoke: (membershipId: string) => Promise<unknown>;
   onActivate: (membershipId: string) => Promise<unknown>;
+  onResetPassword: (membershipId: string) => Promise<unknown>;
   onChangeStatus: (status: OrganizationStatus) => Promise<unknown>;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -300,6 +311,16 @@ function OrganizationRow({
       await onChangeStatus(newStatus);
     } catch (err) {
       setStatusError(err instanceof Error ? err.message : 'No se pudo cambiar el estado');
+    }
+  }
+
+  async function handleResetPassword(membershipId: string) {
+    if (!window.confirm('¿Resetear la contraseña de este miembro? Su contraseña actual dejará de funcionar.')) return;
+    setMembersError(null);
+    try {
+      await onResetPassword(membershipId);
+    } catch (err) {
+      setMembersError(err instanceof Error ? err.message : 'No se pudo resetear la contraseña');
     }
   }
 
@@ -396,6 +417,14 @@ function OrganizationRow({
                           </option>
                         ))}
                       </select>
+                      <button
+                        type="button"
+                        disabled={actionPending}
+                        onClick={() => handleResetPassword(member.id)}
+                        className="rounded-md border border-border px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold text-ink hover:bg-app disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Resetear contraseña
+                      </button>
                       <button
                         type="button"
                         disabled={actionPending}

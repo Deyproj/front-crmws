@@ -44,6 +44,11 @@ export interface ProvisionTeamMemberResult {
   temporaryPassword: string;
 }
 
+/** Refleja ResetTeamMemberPasswordResponse — temporaryPassword solo viaja en esta respuesta. */
+export interface ResetPasswordResult {
+  temporaryPassword: string;
+}
+
 /** Refleja PlatformMembershipResponse (api-crmws, identity/presentation). */
 export interface PlatformMember {
   id: string;
@@ -102,6 +107,16 @@ export async function activateMember(organizationId: string, membershipId: strin
   return apiFetch<PlatformMember>(`/api/platform/organizations/${organizationId}/members/${membershipId}/activate`, {
     method: 'PATCH',
   });
+}
+
+export async function resetMemberPassword(
+  organizationId: string,
+  membershipId: string
+): Promise<ResetPasswordResult> {
+  return apiFetch<ResetPasswordResult>(
+    `/api/platform/organizations/${organizationId}/members/${membershipId}/reset-password`,
+    { method: 'POST' }
+  );
 }
 
 export async function changeOrganizationStatus(

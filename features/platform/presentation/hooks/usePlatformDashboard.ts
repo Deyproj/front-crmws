@@ -9,6 +9,7 @@ import {
   createTeamMember,
   listMembers,
   listOrganizations,
+  resetMemberPassword,
   revokeMember,
   type MembershipRole,
   type OrganizationStatus,
@@ -134,6 +135,22 @@ export function usePlatformDashboard() {
     }
   }
 
+  async function resetPassword(organizationId: string, membershipId: string) {
+    setActionPending(true);
+    setError(null);
+    setLastTemporaryPassword(null);
+    try {
+      const result = await resetMemberPassword(organizationId, membershipId);
+      setLastTemporaryPassword(result.temporaryPassword);
+      return result;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo resetear la contraseña');
+      throw err;
+    } finally {
+      setActionPending(false);
+    }
+  }
+
   return {
     organizations,
     loading,
@@ -147,6 +164,7 @@ export function usePlatformDashboard() {
     changeRole,
     revoke,
     activate,
+    resetPassword,
     changeStatus,
   };
 }
