@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/features/auth/presentation/context/AuthContext';
+import { ConversationRealtimeProvider } from '@/features/conversations/presentation/context/ConversationRealtimeContext';
 import { Sidebar } from './Sidebar';
 import { MenuIcon } from '@/components/ui/icons';
 
@@ -32,22 +33,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden">
-      <Sidebar open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex h-12 shrink-0 items-center gap-[var(--space-6)] border-b border-border bg-surface px-[var(--space-7)] lg:hidden">
-          <button
-            type="button"
-            onClick={() => setMobileNavOpen(true)}
-            aria-label="Abrir menú"
-            className="rounded-md p-1 text-secondary hover:bg-app hover:text-ink"
-          >
-            <MenuIcon className="size-5" />
-          </button>
-          <p className="text-sm font-bold text-ink">CRMWS</p>
+    <ConversationRealtimeProvider>
+      <div className="flex h-screen w-full overflow-hidden">
+        <Sidebar open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex h-12 shrink-0 items-center gap-[var(--space-6)] border-b border-border bg-surface px-[var(--space-7)] lg:hidden">
+            <button
+              type="button"
+              onClick={() => setMobileNavOpen(true)}
+              aria-label="Abrir menú"
+              className="rounded-md p-1 text-secondary hover:bg-app hover:text-ink"
+            >
+              <MenuIcon className="size-5" />
+            </button>
+            <p className="text-sm font-bold text-ink">CRMWS</p>
+          </div>
+          <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-app">{children}</main>
         </div>
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-app">{children}</main>
       </div>
-    </div>
+    </ConversationRealtimeProvider>
   );
 }

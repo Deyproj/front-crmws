@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { listConversations, type Conversation, type ConversationFilters } from '@/features/conversations';
 import { listContacts, type Contact } from '@/features/contacts';
+import { useConversationWaitingSignal } from '../context/ConversationRealtimeContext';
 
 const POLL_INTERVAL_MS = 8000;
 
@@ -13,6 +14,7 @@ export interface ConversationListItem {
 
 export function useConversationsList(filters: ConversationFilters = {}) {
   const { mode, status, assignedTo } = filters;
+  const waitingSignal = useConversationWaitingSignal();
   const [items, setItems] = useState<ConversationListItem[]>([]);
   // Contactos completos (sin filtrar por quickFilter) — a diferencia de `items`, no
   // desaparece cuando la conversación abierta deja de estar en la pestaña activa.
@@ -57,6 +59,14 @@ export function useConversationsList(filters: ConversationFilters = {}) {
     const interval = setInterval(() => load({ silent: true }), POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [load]);
+
+  useEffect(() => {
+    // Aviso en tiempo real (ConversationRealtimeProvider): adelanta el refresco de la
+    // bandeja cuando llega un `conversation.waiting` por SSE, sin reemplazar el polling.
+    if (waitingSignal === 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load({ silent: true });
+  }, [waitingSignal, load]);
 
   return { items, contactsById, loading, error, refetch: () => load({ silent: true }) };
 }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { countConversations } from '@/features/conversations';
+import { useConversationWaitingSignal } from '../context/ConversationRealtimeContext';
 
 const POLL_INTERVAL_MS = 8000;
 
@@ -12,6 +13,7 @@ const POLL_INTERVAL_MS = 8000;
  */
 export function useWaitingConversationsCount() {
   const [count, setCount] = useState(0);
+  const waitingSignal = useConversationWaitingSignal();
 
   const load = useCallback(async () => {
     try {
@@ -28,6 +30,14 @@ export function useWaitingConversationsCount() {
     const interval = setInterval(load, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [load]);
+
+  useEffect(() => {
+    // Aviso en tiempo real (ConversationRealtimeProvider): no reemplaza el polling de
+    // arriba, solo adelanta el refresco cuando llega un `conversation.waiting` por SSE.
+    if (waitingSignal === 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load();
+  }, [waitingSignal, load]);
 
   return count;
 }
