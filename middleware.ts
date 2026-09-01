@@ -21,10 +21,15 @@ function decodeRole(token: string): string | null {
 }
 
 export function middleware(request: NextRequest) {
+  // request.url ya incluye el basePath configurado (p. ej. "/crmws"), pero new URL()
+  // con una ruta absoluta lo descarta por completo — hay que volver a anteponerlo,
+  // o el redirect termina en el dominio raíz en vez de bajo la subruta desplegada.
+  const withBasePath = (path: string) => new URL(`${request.nextUrl.basePath}${path}`, request.url);
+
   const token = request.cookies.get('crmws_access_token')?.value;
 
   if (!token) {
-    const loginUrl = new URL('/login', request.url);
+    const loginUrl = withBasePath('/login');
     loginUrl.searchParams.set('from', request.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -37,17 +42,17 @@ export function middleware(request: NextRequest) {
   // la app asume organizationId/membershipId presentes (bandeja, configuración, etc.).
   if (role === 'PLATFORM_ADMIN') {
     if (pathname !== '/change-password' && !pathname.startsWith('/platform')) {
-      return NextResponse.redirect(new URL('/platform', request.url));
+      return NextResponse.redirect(withBasePath('/platform'));
     }
     return NextResponse.next();
   }
   if (pathname.startsWith('/platform')) {
-    return NextResponse.redirect(new URL('/', request.url));
+    return NextResponse.redirect(withBasePath('/'));
   }
 
   if (pathname.startsWith('/settings')) {
     if (!role || !MANAGER_ROLES.has(role)) {
-      return NextResponse.redirect(new URL('/', request.url));
+      return NextResponse.redirect(withBasePath('/'));
     }
   }
 
