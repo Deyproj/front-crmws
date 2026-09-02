@@ -124,13 +124,18 @@ function ChannelManager() {
   const s = status?.status ?? 'DISCONNECTED';
   const canConnect = s === 'DISCONNECTED' || s === 'LOGGED_OUT' || s === 'ERROR';
   const canDisconnect = s === 'CONNECTED' || s === 'CONNECTING' || s === 'RECONNECTING';
+  // phoneNumber solo se guarda al completarse una vinculación real (ver ChannelSession.markConnected
+  // en api-crmws) y nunca se borra al desconectar — es la única señal de "esta cuenta llegó a
+  // vincularse alguna vez". Sin ella, "Desvincular" no tiene nada real que deshacer todavía.
+  const everLinked = !!status?.phoneNumber;
+  const statusLabel = !everLinked && (s === 'DISCONNECTED' || s === 'LOGGED_OUT') ? 'Sin vincular todavía' : STATUS_LABELS[s];
 
   return (
     <div className="max-w-md rounded-xl border border-border bg-surface p-[var(--space-8)]">
       <div className="mb-[var(--space-6)] flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold text-ink">{channel.externalAccountId}</p>
-          <p className="text-xs text-secondary">{STATUS_LABELS[s]}</p>
+          <p className="text-xs text-secondary">{statusLabel}</p>
         </div>
         <StatusDot status={s} />
       </div>
@@ -188,7 +193,7 @@ function ChannelManager() {
               disabled={actionPending}
               className="rounded-md bg-brand px-[var(--space-7)] py-[var(--space-4)] text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Conectar
+              {everLinked ? 'Conectar' : 'Vincular'}
             </button>
           )}
           {canDisconnect && (
@@ -201,14 +206,16 @@ function ChannelManager() {
               Desconectar
             </button>
           )}
-          <button
-            type="button"
-            onClick={() => setConfirmingUnlink(true)}
-            disabled={actionPending}
-            className="rounded-md px-[var(--space-7)] py-[var(--space-4)] text-sm font-semibold text-danger hover:bg-danger-bg disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Desvincular
-          </button>
+          {everLinked && (
+            <button
+              type="button"
+              onClick={() => setConfirmingUnlink(true)}
+              disabled={actionPending}
+              className="rounded-md px-[var(--space-7)] py-[var(--space-4)] text-sm font-semibold text-danger hover:bg-danger-bg disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Desvincular
+            </button>
+          )}
         </div>
       )}
     </div>
