@@ -129,6 +129,12 @@ function ChannelManager() {
   // vincularse alguna vez". Sin ella, "Desvincular" no tiene nada real que deshacer todavía.
   const everLinked = !!status?.phoneNumber;
   const statusLabel = !everLinked && (s === 'DISCONNECTED' || s === 'LOGGED_OUT') ? 'Sin vincular todavía' : STATUS_LABELS[s];
+  // Con un QR pendiente (PAIRING_REQUIRED) y sin vinculación previa, ni "Vincular" (canConnect
+  // es false mientras ya hay un intento en curso) ni "Desvincular" (everLinked es false, nada
+  // real que deshacer) aparecían — el QR quedaba sin ninguna acción posible. Mismo botón que
+  // "Desvincular" (unlink limpia credenciales/QR pendiente en Node y Java), pero con el texto
+  // correcto para un intento que nunca llegó a vincularse.
+  const canCancelPairing = s === 'PAIRING_REQUIRED' && !everLinked;
 
   return (
     <div className="max-w-md rounded-xl border border-border bg-surface p-[var(--space-8)]">
@@ -194,6 +200,16 @@ function ChannelManager() {
               className="rounded-md bg-brand px-[var(--space-7)] py-[var(--space-4)] text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               {everLinked ? 'Conectar' : 'Vincular'}
+            </button>
+          )}
+          {canCancelPairing && (
+            <button
+              type="button"
+              onClick={unlink}
+              disabled={actionPending}
+              className="rounded-md border border-border px-[var(--space-7)] py-[var(--space-4)] text-sm font-semibold text-ink hover:bg-app disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Cancelar
             </button>
           )}
           {canDisconnect && (
