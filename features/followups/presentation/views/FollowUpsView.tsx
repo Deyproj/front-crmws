@@ -1,10 +1,38 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useFollowUps } from '../hooks/useFollowUps';
-import { REASON_LABELS } from '@/features/followups';
+import { REASON_LABELS, type FollowUpTask } from '@/features/followups';
+import type { Contact } from '@/features/contacts';
 import { initials } from '@/lib/utils/initials';
 import { InfoIcon, ClockIcon } from '@/components/ui/icons';
 import { EmptyState } from '@/components/ui/EmptyState';
+
+interface FollowUpGroup {
+  contactId: string;
+  contact: Contact | null;
+  tasks: FollowUpTask[];
+}
+
+/**
+ * Un mismo contacto puede tener varias tareas PENDING a la vez (ej. "intención de visita" y
+ * "oportunidad en seguimiento" al mismo tiempo) — se agrupan en una sola tarjeta para que no se
+ * vea como un duplicado del contacto; cada motivo conserva su propia fecha y su propio
+ * "Descartar" porque por dentro siguen siendo tareas independientes.
+ */
+function groupByContact(items: { task: FollowUpTask; contact: Contact | null }[]): FollowUpGroup[] {
+  const groups = new Map<string, FollowUpGroup>();
+  for (const { task, contact } of items) {
+    const key = contact?.id ?? task.contactId;
+    const group = groups.get(key);
+    if (group) {
+      group.tasks.push(task);
+    } else {
+      groups.set(key, { contactId: key, contact, tasks: [task] });
+    }
+  }
+  return Array.from(groups.values());
+}
 
 function FollowUpCriteriaInfo() {
   return (
@@ -52,6 +80,7 @@ function FollowUpCriteriaInfo() {
 
 export function FollowUpsView() {
   const { items, loading, detecting, actionPending, error, detect, dismiss } = useFollowUps();
+  const groups = useMemo(() => groupByContact(items), [items]);
 
   return (
     <div className="flex h-full flex-col">
@@ -83,7 +112,7 @@ export function FollowUpsView() {
 
         {loading ? (
           <p className="text-sm text-secondary">Cargando...</p>
-        ) : items.length === 0 ? (
+        ) : groups.length === 0 ? (
           <EmptyState
             icon={<ClockIcon className="size-6" />}
             title="Sin seguimientos pendientes"
@@ -91,32 +120,36 @@ export function FollowUpsView() {
           />
         ) : (
           <div className="flex flex-col gap-[var(--space-5)]">
-            {items.map(({ task, contact }) => (
+            {groups.map((group) => (
               <div
-                key={task.id}
-                className="flex flex-wrap items-center gap-[var(--space-6)] rounded-xl border border-border bg-surface p-[var(--space-7)]"
+                key={group.contactId}
+                className="flex flex-wrap items-start gap-[var(--space-6)] rounded-xl border border-border bg-surface p-[var(--space-7)]"
               >
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-semibold text-on-brand">
-                  {initials(contact?.name, contact?.phone ?? '?')}
+                  {initials(group.contact?.name, group.contact?.phone ?? '?')}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-ink">
-                    {contact?.name || contact?.phone || 'Contacto sin nombre'}
+                    {group.contact?.name || group.contact?.phone || 'Contacto sin nombre'}
                   </p>
-                  <p className="text-xs text-secondary">{REASON_LABELS[task.reason]}</p>
-                </div>
-                <p className="shrink-0 text-xs text-secondary">
-                  {new Date(task.detectedAt).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}
-                </p>
-                <div className="flex shrink-0 gap-[var(--space-4)]">
-                  <button
-                    type="button"
-                    disabled={actionPending}
-                    onClick={() => dismiss(task.id)}
-                    className="rounded-md px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold text-secondary hover:bg-app disabled:opacity-50"
-                  >
-                    Descartar
-                  </button>
+                  <div className="mt-[var(--space-3)] flex flex-col gap-[var(--space-3)]">
+                    {group.tasks.map((task) => (
+                      <div key={task.id} className="flex flex-wrap items-center gap-[var(--space-5)]">
+                        <p className="text-xs text-secondary">{REASON_LABELS[task.reason]}</p>
+                        <p className="shrink-0 text-xs text-muted">
+                          {new Date(task.detectedAt).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}
+                        </p>
+                        <button
+                          type="button"
+                          disabled={actionPending}
+                          onClick={() => dismiss(task.id)}
+                          className="shrink-0 rounded-md px-[var(--space-4)] py-[var(--space-2)] text-xs font-semibold text-secondary hover:bg-app disabled:opacity-50"
+                        >
+                          Descartar
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}
