@@ -67,7 +67,6 @@ export interface SimulateAgentResult {
   escalate: boolean;
   escalationReason: string | null;
   qualificationGoal: string | null;
-  qualificationSchedule: string | null;
   qualificationPlanOfInterest: string | null;
   qualificationIntent: string | null;
   knowledgeQuestionsUsed: string[];

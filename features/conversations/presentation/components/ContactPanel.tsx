@@ -47,8 +47,7 @@ export function ContactPanel({
     setHistoryRefreshKey((k) => k + 1);
   }
 
-  const hasQualification =
-    contact.qualificationGoal || contact.qualificationSchedule || contact.qualificationPlanOfInterest || contact.qualificationIntent;
+  const hasQualification = contact.qualificationGoal || contact.qualificationPlanOfInterest || contact.qualificationIntent;
   const canSummarize = !!conversation && conversation.mode !== 'AI';
 
   return (
@@ -96,7 +95,6 @@ export function ContactPanel({
           <div className="flex flex-col gap-[var(--space-6)]">
             <p className="text-xs font-semibold uppercase text-muted">Calificación</p>
             {contact.qualificationGoal && <Field label="Objetivo" value={contact.qualificationGoal} />}
-            {contact.qualificationSchedule && <Field label="Horario" value={contact.qualificationSchedule} />}
             {contact.qualificationPlanOfInterest && <Field label="Plan de interés" value={contact.qualificationPlanOfInterest} />}
             {contact.qualificationIntent && (
               <Field label="Intención" value={INTENT_LABELS[contact.qualificationIntent] ?? contact.qualificationIntent} />

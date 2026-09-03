@@ -39,7 +39,6 @@ export interface Contact {
   lifecycleStage: ContactLifecycleStage;
   lastInteractionAt: string;
   qualificationGoal: string | null;
-  qualificationSchedule: string | null;
   qualificationPlanOfInterest: string | null;
   qualificationIntent: string | null;
 }

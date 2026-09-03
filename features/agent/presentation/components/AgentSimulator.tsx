@@ -89,13 +89,11 @@ export function AgentSimulator() {
               <p className="text-sm font-semibold text-ink">{lastResult.escalate ? 'Sí' : 'No'}</p>
             </div>
             {(lastResult.qualificationGoal ||
-              lastResult.qualificationSchedule ||
               lastResult.qualificationPlanOfInterest ||
               lastResult.qualificationIntent) && (
               <div className="flex flex-col gap-[var(--space-3)]">
                 <p className="text-[11px] text-secondary">Datos que confirmaría</p>
                 {lastResult.qualificationGoal && <p className="text-xs text-ink">Objetivo: {lastResult.qualificationGoal}</p>}
-                {lastResult.qualificationSchedule && <p className="text-xs text-ink">Horario: {lastResult.qualificationSchedule}</p>}
                 {lastResult.qualificationPlanOfInterest && (
                   <p className="text-xs text-ink">Plan: {lastResult.qualificationPlanOfInterest}</p>
                 )}
