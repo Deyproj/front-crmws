@@ -28,10 +28,41 @@ export async function detectFollowUpTasks(): Promise<FollowUpTask[]> {
   return apiFetch<FollowUpTask[]>('/api/followups/detect', { method: 'POST' });
 }
 
-export async function resolveFollowUpTask(taskId: string): Promise<FollowUpTask> {
-  return apiFetch<FollowUpTask>(`/api/followups/${taskId}/resolve`, { method: 'POST' });
-}
-
 export async function dismissFollowUpTask(taskId: string): Promise<FollowUpTask> {
   return apiFetch<FollowUpTask>(`/api/followups/${taskId}/dismiss`, { method: 'POST' });
+}
+
+/** Refleja FollowUpMessageRuleResponse (api-crmws, followup/presentation/FollowUpMessageRuleResponse.java). */
+export interface FollowUpMessageRule {
+  id: string;
+  thresholdDays: number;
+  messageTemplate: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function listFollowUpMessageRules(): Promise<FollowUpMessageRule[]> {
+  return apiFetch<FollowUpMessageRule[]>('/api/followups/message-rules');
+}
+
+export async function createFollowUpMessageRule(thresholdDays: number, messageTemplate: string): Promise<FollowUpMessageRule> {
+  return apiFetch<FollowUpMessageRule>('/api/followups/message-rules', {
+    method: 'POST',
+    body: JSON.stringify({ thresholdDays, messageTemplate }),
+  });
+}
+
+export async function updateFollowUpMessageRule(
+  ruleId: string,
+  thresholdDays: number,
+  messageTemplate: string,
+): Promise<FollowUpMessageRule> {
+  return apiFetch<FollowUpMessageRule>(`/api/followups/message-rules/${ruleId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ thresholdDays, messageTemplate }),
+  });
+}
+
+export async function deleteFollowUpMessageRule(ruleId: string): Promise<void> {
+  await apiFetch<void>(`/api/followups/message-rules/${ruleId}`, { method: 'DELETE' });
 }

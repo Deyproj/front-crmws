@@ -33,9 +33,17 @@ function FollowUpCriteriaInfo() {
           <li>Contactos con intención de visita detectada por el agente que aún no tienen cita agendada ni realizada.</li>
           <li>Contactos cuya oportunidad quedó &quot;En seguimiento&quot; en el panel del contacto.</li>
         </ul>
-        <p>
+        <p className="mb-[var(--space-2)]">
           No incluye señales por tiempo (sin respuesta, oportunidad estancada) — faltan por validar con negocio.
-          Nunca se envía un mensaje automático al contacto.
+        </p>
+        <p className="mb-[var(--space-2)] font-semibold text-ink">¿Cómo sale un contacto de esta lista?</p>
+        <p className="mb-[var(--space-2)]">
+          Solo cuando lo marcas como &quot;Oportunidad&quot; o &quot;Ganado&quot; desde su panel — ya no hay un botón
+          &quot;Resuelto&quot; manual. &quot;Descartar&quot; sigue disponible para falsos positivos.
+        </p>
+        <p>
+          Según cuánto tiempo lleve un contacto aquí, el sistema puede enviarle mensajes automáticos por WhatsApp —
+          configúralos en Configuración → Seguimientos.
         </p>
       </span>
     </span>
@@ -43,7 +51,7 @@ function FollowUpCriteriaInfo() {
 }
 
 export function FollowUpsView() {
-  const { items, loading, detecting, actionPending, error, detect, resolve, dismiss } = useFollowUps();
+  const { items, loading, detecting, actionPending, error, detect, dismiss } = useFollowUps();
 
   return (
     <div className="flex h-full flex-col">
@@ -101,14 +109,6 @@ export function FollowUpsView() {
                   {new Date(task.detectedAt).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}
                 </p>
                 <div className="flex shrink-0 gap-[var(--space-4)]">
-                  <button
-                    type="button"
-                    disabled={actionPending}
-                    onClick={() => resolve(task.id)}
-                    className="rounded-md border border-border px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold text-ink hover:bg-app disabled:opacity-50"
-                  >
-                    Resuelto
-                  </button>
                   <button
                     type="button"
                     disabled={actionPending}

@@ -19,7 +19,7 @@ export function Tabs({ tabs, activeId, onChange, size = 'md', label }: TabsProps
     <div
       role="tablist"
       aria-label={label}
-      className={`flex gap-[var(--space-7)] overflow-x-auto border-b border-border ${isSmall ? 'text-xs' : 'text-sm'}`}
+      className={`flex gap-[var(--space-7)] overflow-x-auto overflow-y-hidden border-b border-border ${isSmall ? 'text-xs' : 'text-sm'}`}
     >
       {tabs.map((tab) => {
         const active = tab.id === activeId;

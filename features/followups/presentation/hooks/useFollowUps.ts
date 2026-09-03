@@ -1,13 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import {
-  listFollowUpTasks,
-  detectFollowUpTasks,
-  resolveFollowUpTask,
-  dismissFollowUpTask,
-  type FollowUpTask,
-} from '@/features/followups';
+import { listFollowUpTasks, detectFollowUpTasks, dismissFollowUpTask, type FollowUpTask } from '@/features/followups';
 import { listContacts, type Contact } from '@/features/contacts';
 
 export interface FollowUpItem {
@@ -74,7 +68,6 @@ export function useFollowUps() {
     actionPending,
     error,
     detect,
-    resolve: (taskId: string) => runAction(() => resolveFollowUpTask(taskId)),
     dismiss: (taskId: string) => runAction(() => dismissFollowUpTask(taskId)),
   };
 }
