@@ -23,6 +23,13 @@ export function ConversationsView() {
     setMobileView('chat');
   }
 
+  // La conversación puede ser nueva (aún no está en `items`) — se refresca la bandeja
+  // antes de seleccionarla para que ChatPanel/ContactPanel encuentren el contacto real.
+  async function handleConversationStarted(id: string) {
+    await refetch();
+    handleSelect(id);
+  }
+
   const filters = useMemo<ConversationFilters>(() => {
     switch (quickFilter) {
       case 'MINE':
@@ -69,6 +76,8 @@ export function ConversationsView() {
               quickFilter={quickFilter}
               onQuickFilterChange={setQuickFilter}
               myMembershipId={user?.membershipId}
+              onBulkTransferred={refetch}
+              onConversationStarted={handleConversationStarted}
               className={mobileView === 'chat' ? 'hidden lg:flex' : 'flex animate-panel-slide-in lg:animate-none'}
             />
             <ChatPanel

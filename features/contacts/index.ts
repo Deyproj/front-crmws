@@ -3,6 +3,7 @@ export {
   listContacts,
   changeLifecycleStage,
   updateContactProfile,
+  mergeContacts,
   getContactStats,
   CONTACT_LIFECYCLE_STAGES,
   LIFECYCLE_STAGE_LABELS,

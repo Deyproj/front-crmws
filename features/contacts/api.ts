@@ -80,3 +80,15 @@ export async function changeLifecycleStage(
     body: JSON.stringify({ targetStage, followUpReason }),
   });
 }
+
+/**
+ * Fusiona `duplicateContactId` dentro de `keepContactId` — mismo cliente real dividido en dos
+ * contactos (típicamente porque su primer mensaje llegó identificado solo por LID de WhatsApp,
+ * sin teléfono). `keepContactId` es el que sobrevive; `duplicateContactId` desaparece.
+ */
+export async function mergeContacts(keepContactId: string, duplicateContactId: string): Promise<Contact> {
+  return apiFetch<Contact>(`/api/contacts/${keepContactId}/merge`, {
+    method: 'POST',
+    body: JSON.stringify({ duplicateContactId }),
+  });
+}

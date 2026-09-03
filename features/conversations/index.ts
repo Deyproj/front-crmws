@@ -13,6 +13,7 @@ export {
   listConversations,
   countConversations,
   getConversation,
+  startConversation,
   listMessages,
   sendMessage,
   takeOverConversation,

@@ -10,6 +10,7 @@ import { OpportunityHistory } from '@/features/opportunities/presentation/compon
 import { AppointmentsSection } from '@/features/appointments/presentation/components/AppointmentsSection';
 import { useConversationSummary } from '../hooks/useConversationSummary';
 import { XIcon } from '@/components/ui/icons';
+import { MergeContactDialog } from '@/features/contacts/presentation/components/MergeContactDialog';
 
 const INTENT_LABELS: Record<string, string> = {
   INFO: 'Busca información',
@@ -36,6 +37,7 @@ export function ContactPanel({
   onClose?: () => void;
 }) {
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
+  const [mergeOpen, setMergeOpen] = useState(false);
   const summaryState = useConversationSummary(conversation?.id ?? null);
 
   if (!contact) {
@@ -43,6 +45,12 @@ export function ContactPanel({
   }
 
   function handleStageChanged(updated: Contact) {
+    onContactChanged(updated);
+    setHistoryRefreshKey((k) => k + 1);
+  }
+
+  function handleMerged(updated: Contact) {
+    setMergeOpen(false);
     onContactChanged(updated);
     setHistoryRefreshKey((k) => k + 1);
   }
@@ -135,7 +143,20 @@ export function ContactPanel({
           <p className="text-xs font-semibold uppercase text-muted">Historial de oportunidades</p>
           <OpportunityHistory contactId={contact.id} refreshKey={historyRefreshKey} />
         </div>
+
+        {/* Deshabilitado a pedido del usuario (2026-09-03) — no visible ni usable, pero se deja
+            el resto del flujo (estado, MergeContactDialog, handleMerged) intacto para poder
+            reactivarlo solo descomentando este botón.
+        <button
+          type="button"
+          onClick={() => setMergeOpen(true)}
+          className="rounded-md border border-border px-[var(--space-6)] py-[var(--space-4)] text-xs font-semibold text-secondary hover:bg-app hover:text-ink"
+        >
+          Fusionar con otro contacto
+        </button>
+        */}
       </aside>
+      <MergeContactDialog contact={contact} open={mergeOpen} onClose={() => setMergeOpen(false)} onMerged={handleMerged} />
     </>
   );
 }

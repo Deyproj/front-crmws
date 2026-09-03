@@ -95,6 +95,18 @@ export async function getConversation(id: string): Promise<Conversation> {
   return apiFetch<Conversation>(`/api/conversations/${id}`);
 }
 
+/**
+ * "Nuevo chat" de la bandeja. `phone` debe llegar ya en E.164 (indicativo + número,
+ * p. ej. "+573001234567") — ver PhoneNormalizer en el backend. Si el número ya tenía
+ * una conversación, el backend la devuelve tal cual (sin reasignarla).
+ */
+export async function startConversation(phone: string): Promise<Conversation> {
+  return apiFetch<Conversation>('/api/conversations/start', {
+    method: 'POST',
+    body: JSON.stringify({ phone }),
+  });
+}
+
 export async function listMessages(conversationId: string): Promise<Message[]> {
   const result = await apiFetch<PageResponse<Message>>(
     `/api/conversations/${conversationId}/messages?size=${DEFAULT_PAGE_SIZE}`
