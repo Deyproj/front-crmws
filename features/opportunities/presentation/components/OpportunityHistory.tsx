@@ -19,7 +19,7 @@ export function OpportunityHistory({ contactId, refreshKey }: { contactId: strin
               {new Date(opportunity.openedAt).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}
             </span>
           </div>
-          {opportunity.lostReason && <p className="mt-1 text-[11px] text-secondary">Motivo: {opportunity.lostReason}</p>}
+          {opportunity.followUpReason && <p className="mt-1 text-[11px] text-secondary">Motivo: {opportunity.followUpReason}</p>}
         </li>
       ))}
     </ul>

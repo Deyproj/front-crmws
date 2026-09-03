@@ -11,11 +11,11 @@ import { changeLifecycleStage, type Contact, type ContactLifecycleStage } from '
  * sobreingeniería). Por eso ni LEAD ni un reingreso ofrecen 'QUALIFIED': el asesor califica
  * directo al elegir una de las 3 acciones reales. */
 const NEXT_STAGES: Record<ContactLifecycleStage, Exclude<ContactLifecycleStage, 'LEAD'>[]> = {
-  LEAD: ['OPPORTUNITY', 'CUSTOMER', 'LOST'],
-  QUALIFIED: ['OPPORTUNITY', 'CUSTOMER', 'LOST'],
-  OPPORTUNITY: ['CUSTOMER', 'LOST'],
-  CUSTOMER: ['OPPORTUNITY', 'CUSTOMER', 'LOST'],
-  LOST: ['OPPORTUNITY', 'CUSTOMER', 'LOST'],
+  LEAD: ['OPPORTUNITY', 'CUSTOMER', 'FOLLOW_UP'],
+  QUALIFIED: ['OPPORTUNITY', 'CUSTOMER', 'FOLLOW_UP'],
+  OPPORTUNITY: ['CUSTOMER', 'FOLLOW_UP'],
+  CUSTOMER: ['OPPORTUNITY', 'CUSTOMER', 'FOLLOW_UP'],
+  FOLLOW_UP: ['OPPORTUNITY', 'CUSTOMER', 'FOLLOW_UP'],
 };
 
 export function nextStages(current: ContactLifecycleStage): Exclude<ContactLifecycleStage, 'LEAD'>[] {
@@ -26,11 +26,11 @@ export function useChangeStage(onChanged: (contact: Contact) => void) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function changeStage(contactId: string, target: Exclude<ContactLifecycleStage, 'LEAD'>, lostReason?: string) {
+  async function changeStage(contactId: string, target: Exclude<ContactLifecycleStage, 'LEAD'>, followUpReason?: string) {
     setPending(true);
     setError(null);
     try {
-      const updated = await changeLifecycleStage(contactId, target, lostReason);
+      const updated = await changeLifecycleStage(contactId, target, followUpReason);
       onChanged(updated);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo actualizar la etapa');

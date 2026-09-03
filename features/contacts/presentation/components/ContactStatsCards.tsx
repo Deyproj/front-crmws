@@ -17,7 +17,7 @@ export function ContactStatsCards({
     { label: 'Calificados', value: stats?.qualified ?? null },
     { label: 'Oportunidades', value: stats?.opportunities ?? null },
     { label: 'Ganados', value: stats?.customers ?? null },
-    { label: 'Perdidos', value: stats?.lost ?? null },
+    { label: 'En seguimiento', value: stats?.followUp ?? null },
     {
       label: 'Transferidas a asesor',
       value: conversationStats ? `${conversationStats.transferredPercentage.toFixed(0)}%` : null,

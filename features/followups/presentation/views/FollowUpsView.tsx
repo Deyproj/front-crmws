@@ -27,10 +27,11 @@ function FollowUpCriteriaInfo() {
           Solo se llena al presionar &quot;Detectar seguimientos&quot; — no corre en segundo plano ni hay un
           horario automático.
         </p>
-        <p className="mb-[var(--space-2)]">Hoy detecta dos señales:</p>
+        <p className="mb-[var(--space-2)]">Hoy detecta tres señales:</p>
         <ul className="mb-[var(--space-2)] list-disc space-y-1 pl-4">
           <li>Citas de cortesía marcadas como inasistencia.</li>
           <li>Contactos con intención de visita detectada por el agente que aún no tienen cita agendada ni realizada.</li>
+          <li>Contactos cuya oportunidad quedó &quot;En seguimiento&quot; en el panel del contacto.</li>
         </ul>
         <p>
           No incluye señales por tiempo (sin respuesta, oportunidad estancada) — faltan por validar con negocio.

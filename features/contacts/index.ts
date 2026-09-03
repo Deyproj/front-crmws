@@ -6,5 +6,5 @@ export {
   getContactStats,
   CONTACT_LIFECYCLE_STAGES,
   LIFECYCLE_STAGE_LABELS,
-  LOST_REASONS,
+  FOLLOW_UP_REASONS,
 } from './api';

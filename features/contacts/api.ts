@@ -8,7 +8,7 @@ import type { PageResponse } from '@/lib/http/pageResponse';
  */
 const DEFAULT_PAGE_SIZE = 100;
 
-export const CONTACT_LIFECYCLE_STAGES = ['LEAD', 'QUALIFIED', 'OPPORTUNITY', 'CUSTOMER', 'LOST'] as const;
+export const CONTACT_LIFECYCLE_STAGES = ['LEAD', 'QUALIFIED', 'OPPORTUNITY', 'CUSTOMER', 'FOLLOW_UP'] as const;
 export type ContactLifecycleStage = (typeof CONTACT_LIFECYCLE_STAGES)[number];
 
 /** Etiquetas confirmadas con el negocio — ver docs/02-requirements/opportunity-stages-draft-dinamo-fitness.md. */
@@ -17,11 +17,11 @@ export const LIFECYCLE_STAGE_LABELS: Record<ContactLifecycleStage, string> = {
   QUALIFIED: 'Calificado',
   OPPORTUNITY: 'Oportunidad',
   CUSTOMER: 'Ganado',
-  LOST: 'Perdido',
+  FOLLOW_UP: 'En seguimiento',
 };
 
-/** Motivos de pérdida confirmados con Dinamo Fitness (lista abierta a ampliarse, BR-015). */
-export const LOST_REASONS = [
+/** Motivos de seguimiento confirmados con Dinamo Fitness (lista abierta a ampliarse, BR-015). */
+export const FOLLOW_UP_REASONS = [
   'Precio muy alto',
   'Ubicación / cercanía',
   'Ya se inscribió en otro gimnasio',
@@ -54,7 +54,7 @@ export interface ContactStats {
   qualified: number;
   opportunities: number;
   customers: number;
-  lost: number;
+  followUp: number;
 }
 
 export async function getContactStats(): Promise<ContactStats> {
@@ -73,10 +73,10 @@ export async function updateContactProfile(contactId: string, name: string, emai
 export async function changeLifecycleStage(
   contactId: string,
   targetStage: Exclude<ContactLifecycleStage, 'LEAD'>,
-  lostReason?: string
+  followUpReason?: string
 ): Promise<Contact> {
   return apiFetch<Contact>(`/api/contacts/${contactId}/lifecycle-stage`, {
     method: 'PATCH',
-    body: JSON.stringify({ targetStage, lostReason }),
+    body: JSON.stringify({ targetStage, followUpReason }),
   });
 }

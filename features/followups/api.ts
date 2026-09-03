@@ -1,11 +1,12 @@
 import { apiFetch } from '@/lib/http/apiFetch';
 
-export const FOLLOWUP_REASONS = ['APPOINTMENT_NO_SHOW', 'INTENT_WITHOUT_APPOINTMENT'] as const;
+export const FOLLOWUP_REASONS = ['APPOINTMENT_NO_SHOW', 'INTENT_WITHOUT_APPOINTMENT', 'OPPORTUNITY_FOLLOW_UP'] as const;
 export type FollowUpReason = (typeof FOLLOWUP_REASONS)[number];
 
 export const REASON_LABELS: Record<FollowUpReason, string> = {
   APPOINTMENT_NO_SHOW: 'Agendó una cortesía y no asistió',
   INTENT_WITHOUT_APPOINTMENT: 'Quiere visitar, sin cita agendada',
+  OPPORTUNITY_FOLLOW_UP: 'Oportunidad marcada en seguimiento',
 };
 
 /** Refleja FollowUpTaskResponse (api-crmws, followup/presentation/FollowUpTaskResponse.java). */
