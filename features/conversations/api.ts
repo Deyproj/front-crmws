@@ -16,6 +16,9 @@ export type MessageDirection = (typeof MESSAGE_DIRECTIONS)[number];
 export const SENDER_TYPES = ['CONTACT', 'AI', 'ADVISOR', 'SYSTEM'] as const;
 export type SenderType = (typeof SENDER_TYPES)[number];
 
+export const MESSAGE_TYPES = ['TEXT', 'IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT', 'STICKER', 'OTHER'] as const;
+export type MessageType = (typeof MESSAGE_TYPES)[number];
+
 export const MODE_LABELS: Record<ConversationMode, string> = {
   AI: 'IA',
   HUMAN: 'Asesor',
@@ -51,6 +54,9 @@ export interface Message {
   sentAt: string;
   /** Solo presente en mensajes senderType=ADVISOR — qué asesor lo envió. */
   senderMembershipId: string | null;
+  messageType: MessageType;
+  /** Solo presente cuando messageType no es TEXT — archivo servido por service-whatsapp. */
+  mediaUrl: string | null;
 }
 
 export interface ConversationFilters {
