@@ -81,9 +81,7 @@ export function ConversationRealtimeProvider({ children }: { children: React.Rea
   }, []);
 
   useEffect(() => {
-    const session = getSession();
-    if (!session) return;
-    const myMembershipId = session.user.membershipId;
+    if (!getSession()) return;
 
     let cancelled = false;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -109,6 +107,7 @@ export function ConversationRealtimeProvider({ children }: { children: React.Rea
         setMineSignal((n) => n + 1);
         try {
           const payload = JSON.parse(data) as { targetMembershipId?: string };
+          const myMembershipId = getSession()?.user.membershipId;
           if (myMembershipId && payload.targetMembershipId === myMembershipId) {
             notifyBrowser('Conversación transferida', 'Te transfirieron una conversación.', 'conversation-transferred');
           }
@@ -120,10 +119,16 @@ export function ConversationRealtimeProvider({ children }: { children: React.Rea
 
     async function connect() {
       if (cancelled) return;
+      // Relee la sesión en cada intento — AuthContext renueva el access token en segundo
+      // plano (ver AuthContext.tsx) y esta conexión debe usar el token vigente en vez de
+      // quedarse con el de cuando se montó el provider, o reintentaría para siempre con un
+      // token ya expirado (WARN "Token de acceso rechazado" repetido cada RECONNECT_DELAY_MS).
+      const session = getSession();
+      if (!session) return; // sesión cerrada — nada que reconectar, ni programar otro intento
       controller = new AbortController();
       try {
         const response = await fetch(`${BASE_PATH}/api/conversations/events/stream`, {
-          headers: { Authorization: `Bearer ${session!.accessToken}` },
+          headers: { Authorization: `Bearer ${session.accessToken}` },
           signal: controller.signal,
         });
         if (!response.ok || !response.body) throw new Error(`stream ${response.status}`);
