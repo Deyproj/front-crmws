@@ -7,6 +7,10 @@ import { useAgentConfig } from '@/features/agent/presentation/hooks/useAgentConf
 import { useTeamMembers } from '@/features/organization/presentation/hooks/useTeamMembers';
 import type { Membership } from '@/features/organization';
 import type { Contact } from '@/features/contacts';
+import { useQuickReplies } from '@/features/quickReplies/presentation/hooks/useQuickReplies';
+import { QuickReplyPicker } from '@/features/quickReplies/presentation/components/QuickReplyPicker';
+import type { QuickReply } from '@/features/quickReplies';
+import { TemplateSendPanel } from './TemplateSendPanel';
 import { initials } from '@/lib/utils/initials';
 import { formatWhatsAppText } from '@/lib/utils/formatWhatsAppText';
 import { SendIcon, BotIcon, UserIcon, UsersIcon, ChevronLeftIcon, InfoIcon, MessageSquareIcon, ZoomInIcon, XIcon } from '@/components/ui/icons';
@@ -24,6 +28,9 @@ export function ChatPanel({
   onRelease,
   onTransfer,
   onSend,
+  outsideServiceWindow,
+  onSendTemplate,
+  onDismissTemplateRequirement,
   className = 'flex',
   onBack,
   onOpenContact,
@@ -38,6 +45,10 @@ export function ChatPanel({
   onRelease: () => void;
   onTransfer: (targetMembershipId: string) => void;
   onSend: (text: string) => Promise<boolean>;
+  /** true = el último envío manual falló por estar fuera de la ventana de 24h de Meta Cloud API (BR-030). */
+  outsideServiceWindow: boolean;
+  onSendTemplate: (templateId: string, parameters: string[]) => Promise<boolean>;
+  onDismissTemplateRequirement: () => void;
   className?: string;
   onBack?: () => void;
   onOpenContact?: () => void;
@@ -45,7 +56,72 @@ export function ChatPanel({
   const [draft, setDraft] = useState('');
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const composeRef = useRef<HTMLDivElement>(null);
+  const draftInputRef = useRef<HTMLInputElement>(null);
   const { config: agentConfig } = useAgentConfig();
+
+  // Pila flotante de mensajes rápidos (2026-09-03, a pedido del usuario): escribir "/" al
+  // inicio del cuadro de texto abre el selector; Escape o un clic afuera lo cierra hasta
+  // que el asesor vuelva a escribir. La lista se filtra por el texto tras la "/".
+  const { quickReplies, loading: quickRepliesLoading, saving: quickRepliesSaving, error: quickRepliesError, create: createQuickReply, update: updateQuickReply, remove: removeQuickReply } = useQuickReplies();
+  const [quickReplyDismissed, setQuickReplyDismissed] = useState(false);
+  const [quickReplyHighlight, setQuickReplyHighlight] = useState(0);
+  const quickReplyQuery = draft.startsWith('/') ? draft.slice(1) : null;
+  const quickReplyOpen = quickReplyQuery !== null && !quickReplyDismissed;
+  const filteredQuickReplies = useMemo(() => {
+    if (quickReplyQuery === null) return [];
+    const q = quickReplyQuery.trim().toLowerCase();
+    if (!q) return quickReplies;
+    return quickReplies.filter(
+      (item) => item.shortcut.toLowerCase().includes(q) || item.content.toLowerCase().includes(q)
+    );
+  }, [quickReplies, quickReplyQuery]);
+  // Se acota en vez de resetear por efecto: si la lista se achica al filtrar, el resaltado
+  // nunca queda apuntando fuera de rango.
+  const quickReplyHighlightIndex = Math.min(quickReplyHighlight, Math.max(filteredQuickReplies.length - 1, 0));
+
+  useEffect(() => {
+    if (!quickReplyOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (composeRef.current && !composeRef.current.contains(e.target as Node)) {
+        setQuickReplyDismissed(true);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [quickReplyOpen]);
+
+  function handleDraftChange(value: string) {
+    setDraft(value);
+    setQuickReplyDismissed(false);
+    setQuickReplyHighlight(0);
+  }
+
+  function selectQuickReply(item: QuickReply) {
+    setDraft(item.content);
+    setQuickReplyDismissed(true);
+    draftInputRef.current?.focus();
+  }
+
+  function handleDraftKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (!quickReplyOpen) return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setQuickReplyDismissed(true);
+      return;
+    }
+    if (filteredQuickReplies.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setQuickReplyHighlight((i) => Math.min(i + 1, filteredQuickReplies.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setQuickReplyHighlight((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      selectQuickReply(filteredQuickReplies[quickReplyHighlightIndex]);
+    }
+  }
   const agentName = agentConfig?.agentName || 'IA';
   // Un mismo contacto puede pasar por varios asesores distintos (uno responde, se
   // libera a la IA, se escala de nuevo y lo toma otro) — se identifica cada mensaje
@@ -179,33 +255,65 @@ export function ChatPanel({
 
       <ImageLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
 
-      <form onSubmit={handleSubmit} className="border-t border-border bg-surface p-[var(--space-7)]">
-        {canSend ? (
-          <div className="flex items-center gap-[var(--space-6)]">
-            <input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder="Escribe un mensaje..."
-              className="flex-1 rounded-full bg-app px-[var(--space-8)] py-[var(--space-5)] text-sm text-ink placeholder-secondary focus:outline-none focus:ring-2 focus:ring-brand"
-            />
-            <button
-              type="submit"
-              disabled={actionPending || !draft.trim()}
-              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand text-on-brand hover:bg-brand-hover disabled:opacity-50"
-            >
-              <SendIcon className="size-[18px]" />
-            </button>
-          </div>
+      <div ref={composeRef} className="relative border-t border-border bg-surface p-[var(--space-7)]">
+        {canSend && outsideServiceWindow ? (
+          <TemplateSendPanel
+            channelId={conversation.channelId}
+            pending={actionPending}
+            onSend={onSendTemplate}
+            onCancel={onDismissTemplateRequirement}
+          />
         ) : (
-          <p className="text-center text-xs text-secondary">
-            {conversation.mode === 'HUMAN' && !isMine
-              ? conversation.currentAssigneeMembershipId
-                ? 'Otro asesor tiene esta conversación asignada.'
-                : 'Esperando respuesta de un asesor. Toma la conversación para responder manualmente.'
-              : 'Toma la conversación para responder manualmente.'}
-          </p>
+          <>
+            {canSend && quickReplyOpen && (
+              <QuickReplyPicker
+                query={quickReplyQuery ?? ''}
+                items={filteredQuickReplies}
+                allCount={quickReplies.length}
+                highlightedIndex={quickReplyHighlightIndex}
+                onHighlight={setQuickReplyHighlight}
+                onSelect={selectQuickReply}
+                onClose={() => setQuickReplyDismissed(true)}
+                loading={quickRepliesLoading}
+                saving={quickRepliesSaving}
+                error={quickRepliesError}
+                onCreate={createQuickReply}
+                onUpdate={updateQuickReply}
+                onDelete={removeQuickReply}
+              />
+            )}
+            <form onSubmit={handleSubmit}>
+              {canSend ? (
+                <div className="flex items-center gap-[var(--space-6)]">
+                  <input
+                    ref={draftInputRef}
+                    value={draft}
+                    onChange={(e) => handleDraftChange(e.target.value)}
+                    onKeyDown={handleDraftKeyDown}
+                    placeholder="Escribe un mensaje... (usa / para mensajes rápidos)"
+                    className="flex-1 rounded-full bg-app px-[var(--space-8)] py-[var(--space-5)] text-sm text-ink placeholder-secondary focus:outline-none focus:ring-2 focus:ring-brand"
+                  />
+                  <button
+                    type="submit"
+                    disabled={actionPending || !draft.trim()}
+                    className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand text-on-brand hover:bg-brand-hover disabled:opacity-50"
+                  >
+                    <SendIcon className="size-[18px]" />
+                  </button>
+                </div>
+              ) : (
+                <p className="text-center text-xs text-secondary">
+                  {conversation.mode === 'HUMAN' && !isMine
+                    ? conversation.currentAssigneeMembershipId
+                      ? 'Otro asesor tiene esta conversación asignada.'
+                      : 'Esperando respuesta de un asesor. Toma la conversación para responder manualmente.'
+                    : 'Toma la conversación para responder manualmente.'}
+                </p>
+              )}
+            </form>
+          </>
         )}
-      </form>
+      </div>
     </div>
   );
 }

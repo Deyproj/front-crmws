@@ -16,6 +16,7 @@ export {
   startConversation,
   listMessages,
   sendMessage,
+  sendTemplateMessage,
   takeOverConversation,
   releaseConversationToAi,
   transferConversation,

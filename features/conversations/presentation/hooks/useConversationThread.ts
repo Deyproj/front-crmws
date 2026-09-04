@@ -6,11 +6,13 @@ import {
   listMessages,
   releaseConversationToAi,
   sendMessage,
+  sendTemplateMessage,
   takeOverConversation,
   transferConversation,
   type Conversation,
   type Message,
 } from '@/features/conversations';
+import { ApiError } from '@/lib/http/apiFetch';
 
 const POLL_INTERVAL_MS = 5000;
 
@@ -21,6 +23,10 @@ export function useConversationThread(conversationId: string | null, onConversat
   const [error, setError] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  // 422 en el envío manual = OutsideServiceWindowException (BR-030, solo canales Meta Cloud
+  // API) — el asesor debe usar una plantilla en vez de texto libre hasta que el contacto
+  // vuelva a escribir. Se resetea al cambiar de conversación o tras un envío exitoso.
+  const [outsideServiceWindow, setOutsideServiceWindow] = useState(false);
 
   const load = useCallback(
     async (opts?: { silent?: boolean }) => {
@@ -48,8 +54,10 @@ export function useConversationThread(conversationId: string | null, onConversat
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setConversation(null);
       setMessages([]);
+      setOutsideServiceWindow(false);
       return;
     }
+    setOutsideServiceWindow(false);
     load();
     const interval = setInterval(() => load({ silent: true }), POLL_INTERVAL_MS);
     return () => clearInterval(interval);
@@ -92,9 +100,11 @@ export function useConversationThread(conversationId: string | null, onConversat
     try {
       const message = await sendMessage(conversationId, text.trim());
       setMessages((prev) => [...prev, message]);
+      setOutsideServiceWindow(false);
       onConversationChanged?.();
       return true;
     } catch (err) {
+      if (err instanceof ApiError && err.status === 422) setOutsideServiceWindow(true);
       setActionError(err instanceof Error ? err.message : 'No se pudo enviar el mensaje');
       return false;
     } finally {
@@ -102,5 +112,38 @@ export function useConversationThread(conversationId: string | null, onConversat
     }
   }
 
-  return { conversation, messages, loading, error, actionPending, actionError, takeOver, release, transfer, send };
+  /** Único envío posible fuera de la ventana de 24h de un canal Meta (ver `outsideServiceWindow`). */
+  async function sendTemplate(templateId: string, parameters: string[]): Promise<boolean> {
+    if (!conversationId) return false;
+    setActionPending(true);
+    setActionError(null);
+    try {
+      const message = await sendTemplateMessage(conversationId, templateId, parameters);
+      setMessages((prev) => [...prev, message]);
+      setOutsideServiceWindow(false);
+      onConversationChanged?.();
+      return true;
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'No se pudo enviar la plantilla');
+      return false;
+    } finally {
+      setActionPending(false);
+    }
+  }
+
+  return {
+    conversation,
+    messages,
+    loading,
+    error,
+    actionPending,
+    actionError,
+    outsideServiceWindow,
+    dismissOutsideServiceWindow: () => setOutsideServiceWindow(false),
+    takeOver,
+    release,
+    transfer,
+    send,
+    sendTemplate,
+  };
 }

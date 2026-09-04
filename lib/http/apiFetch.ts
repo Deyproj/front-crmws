@@ -1,6 +1,23 @@
 import { clearSession, getSession } from '@/lib/runtime/tokenStorage';
 import { BASE_PATH } from '@/lib/runtime/basePath';
 
+/**
+ * Error con el status HTTP real del backend — un `Error` plano no lo expone, y algunos
+ * llamadores necesitan distinguir un código específico (ej. 422 = fuera de la ventana de
+ * servicio de Meta Cloud API, ver OutsideServiceWindowException en api-crmws) en vez de solo
+ * mostrar el mensaje. Sigue siendo un `Error` normal para todo el código existente que hace
+ * `err instanceof Error ? err.message : ...`.
+ */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 function buildAuthHeaders(): Record<string, string> {
   const session = getSession();
   return session ? { Authorization: `Bearer ${session.accessToken}` } : {};
@@ -48,7 +65,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   if (res.status === 401) handleUnauthorized();
   const text = await res.text();
   if (!res.ok) {
-    throw new Error(extractErrorMessage(text, res.status));
+    throw new ApiError(extractErrorMessage(text, res.status), res.status);
   }
   return text ? (JSON.parse(text) as T) : (undefined as T);
 }

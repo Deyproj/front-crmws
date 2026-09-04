@@ -91,6 +91,9 @@ export function ConversationsView() {
               onRelease={thread.release}
               onTransfer={thread.transfer}
               onSend={thread.send}
+              outsideServiceWindow={thread.outsideServiceWindow}
+              onSendTemplate={thread.sendTemplate}
+              onDismissTemplateRequirement={thread.dismissOutsideServiceWindow}
               className={mobileView === 'list' ? 'hidden lg:flex' : 'flex animate-panel-slide-in lg:animate-none'}
               onBack={() => setMobileView('list')}
               onOpenContact={() => setContactPanelOpen(true)}

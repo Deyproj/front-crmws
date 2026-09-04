@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { startConversation } from '@/features/conversations';
+import { listChannels, PROVIDER_LABELS, type Channel } from '@/features/channel';
 import { XIcon } from '@/components/ui/icons';
 
 /**
@@ -35,8 +36,28 @@ export function NewConversationDialog({
   const [number, setNumber] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Con Baileys + Meta Cloud API coexistiendo (ADR-017), el backend ya no puede elegir un canal
+  // solo con más de uno activo — salvo que el OWNER haya marcado uno "preferido" en Configuración
+  // (ver ChannelCard), en cuyo caso ni hace falta preguntar acá.
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const [channelId, setChannelId] = useState('');
+
+  useEffect(() => {
+    if (!open) return;
+    listChannels()
+      .then((all) => {
+        const active = all.filter((c) => c.active);
+        setChannels(active);
+        setChannelId(active.find((c) => c.preferred)?.id ?? active[0]?.id ?? '');
+      })
+      .catch(() => {
+        // Silencioso: si falla, se sigue intentando sin channelId (funciona igual con 0 o 1 canal).
+      });
+  }, [open]);
 
   if (!open) return null;
+
+  const needsChannelChoice = channels.length > 1 && !channels.some((c) => c.preferred);
 
   function reset() {
     setNumber('');
@@ -56,10 +77,14 @@ export function NewConversationDialog({
       setError('Escribe un número de teléfono.');
       return;
     }
+    if (needsChannelChoice && !channelId) {
+      setError('Elige desde qué canal iniciar la conversación.');
+      return;
+    }
     setPending(true);
     setError(null);
     try {
-      const conversation = await startConversation(`${dial}${digits}`);
+      const conversation = await startConversation(`${dial}${digits}`, channelId || undefined);
       reset();
       onStarted(conversation.id);
     } catch (err) {
@@ -95,6 +120,23 @@ export function NewConversationDialog({
         </div>
 
         <form onSubmit={handleSubmit} className="mt-[var(--space-6)] flex flex-col gap-[var(--space-5)]">
+          {needsChannelChoice && (
+            <label className="flex flex-col gap-[var(--space-3)] text-xs font-semibold text-secondary">
+              Canal
+              <select
+                value={channelId}
+                onChange={(e) => setChannelId(e.target.value)}
+                aria-label="Canal de WhatsApp"
+                className="rounded-md border border-border bg-app px-[var(--space-4)] py-[var(--space-4)] text-xs font-normal normal-case text-ink focus:outline-none"
+              >
+                {channels.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {PROVIDER_LABELS[c.provider]} ({c.externalAccountId})
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <label className="flex flex-col gap-[var(--space-3)] text-xs font-semibold text-secondary">
             Número de WhatsApp
             <div className="flex gap-[var(--space-3)]">

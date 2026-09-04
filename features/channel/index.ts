@@ -1,4 +1,16 @@
-export type { Channel, ChannelSessionStatus, ChannelStatus } from './api';
+export type {
+  Channel,
+  ChannelSessionStatus,
+  ChannelStatus,
+  ChannelProvider,
+  CreateChannelInput,
+  CreateBaileysChannelInput,
+  CreateMetaChannelInput,
+  MetaCredentialsInput,
+  MessageTemplate,
+  CreateMessageTemplateInput,
+  UpdateMessageTemplateInput,
+} from './api';
 export {
   listChannels,
   createChannel,
@@ -7,5 +19,12 @@ export {
   reconnectChannel,
   disconnectChannel,
   unlinkChannel,
+  reconnectMetaChannel,
+  listMessageTemplates,
+  createMessageTemplate,
+  updateMessageTemplate,
+  syncMessageTemplates,
+  setPreferredChannel,
   STATUS_LABELS,
+  PROVIDER_LABELS,
 } from './api';

@@ -99,11 +99,15 @@ export async function getConversation(id: string): Promise<Conversation> {
  * "Nuevo chat" de la bandeja. `phone` debe llegar ya en E.164 (indicativo + número,
  * p. ej. "+573001234567") — ver PhoneNormalizer en el backend. Si el número ya tenía
  * una conversación, el backend la devuelve tal cual (sin reasignarla).
+ *
+ * `channelId`: obligatorio cuando la organización tiene más de un canal activo (Baileys + Meta
+ * Cloud API coexistiendo, ver ADR-017 en api-crmws) — sin él, el backend no puede elegir uno solo
+ * y responde 409 (`AmbiguousChannelException`).
  */
-export async function startConversation(phone: string): Promise<Conversation> {
+export async function startConversation(phone: string, channelId?: string): Promise<Conversation> {
   return apiFetch<Conversation>('/api/conversations/start', {
     method: 'POST',
-    body: JSON.stringify({ phone }),
+    body: JSON.stringify({ phone, channelId }),
   });
 }
 
@@ -118,6 +122,24 @@ export async function sendMessage(conversationId: string, text: string): Promise
   return apiFetch<Message>(`/api/conversations/${conversationId}/messages`, {
     method: 'POST',
     body: JSON.stringify({ text }),
+  });
+}
+
+/**
+ * Único camino para reabrir una conversación de un canal Meta Cloud API fuera de la ventana de
+ * servicio de 24h — `sendMessage` con texto libre falla con 422 en ese caso (BR-030,
+ * OutsideServiceWindowException en api-crmws). `templateId` viene del catálogo de
+ * `features/channel` (`listMessageTemplates`), `parameters` en el mismo orden que las
+ * variables {{1}}, {{2}}, ... de la plantilla.
+ */
+export async function sendTemplateMessage(
+  conversationId: string,
+  templateId: string,
+  parameters: string[]
+): Promise<Message> {
+  return apiFetch<Message>(`/api/conversations/${conversationId}/send-template`, {
+    method: 'POST',
+    body: JSON.stringify({ templateId, parameters }),
   });
 }
 
