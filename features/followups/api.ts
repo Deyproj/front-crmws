@@ -37,6 +37,8 @@ export interface FollowUpMessageRule {
   id: string;
   thresholdDays: number;
   messageTemplate: string;
+  /** `null` = aplica a cualquier motivo (regla universal). */
+  reason: FollowUpReason | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -45,10 +47,14 @@ export async function listFollowUpMessageRules(): Promise<FollowUpMessageRule[]>
   return apiFetch<FollowUpMessageRule[]>('/api/followups/message-rules');
 }
 
-export async function createFollowUpMessageRule(thresholdDays: number, messageTemplate: string): Promise<FollowUpMessageRule> {
+export async function createFollowUpMessageRule(
+  thresholdDays: number,
+  messageTemplate: string,
+  reason: FollowUpReason | null,
+): Promise<FollowUpMessageRule> {
   return apiFetch<FollowUpMessageRule>('/api/followups/message-rules', {
     method: 'POST',
-    body: JSON.stringify({ thresholdDays, messageTemplate }),
+    body: JSON.stringify({ thresholdDays, messageTemplate, reason }),
   });
 }
 
@@ -56,10 +62,11 @@ export async function updateFollowUpMessageRule(
   ruleId: string,
   thresholdDays: number,
   messageTemplate: string,
+  reason: FollowUpReason | null,
 ): Promise<FollowUpMessageRule> {
   return apiFetch<FollowUpMessageRule>(`/api/followups/message-rules/${ruleId}`, {
     method: 'PATCH',
-    body: JSON.stringify({ thresholdDays, messageTemplate }),
+    body: JSON.stringify({ thresholdDays, messageTemplate, reason }),
   });
 }
 

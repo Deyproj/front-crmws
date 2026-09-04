@@ -7,6 +7,7 @@ import {
   updateFollowUpMessageRule,
   deleteFollowUpMessageRule,
   type FollowUpMessageRule,
+  type FollowUpReason,
 } from '@/features/followups';
 
 export function useFollowUpMessageRules() {
@@ -32,11 +33,11 @@ export function useFollowUpMessageRules() {
     load();
   }, [load]);
 
-  async function create(thresholdDays: number, messageTemplate: string): Promise<boolean> {
+  async function create(thresholdDays: number, messageTemplate: string, reason: FollowUpReason | null): Promise<boolean> {
     setSaving(true);
     setError(null);
     try {
-      const rule = await createFollowUpMessageRule(thresholdDays, messageTemplate);
+      const rule = await createFollowUpMessageRule(thresholdDays, messageTemplate, reason);
       setRules((prev) => [...prev, rule].sort((a, b) => a.thresholdDays - b.thresholdDays));
       return true;
     } catch (err) {
@@ -47,11 +48,16 @@ export function useFollowUpMessageRules() {
     }
   }
 
-  async function update(id: string, thresholdDays: number, messageTemplate: string): Promise<boolean> {
+  async function update(
+    id: string,
+    thresholdDays: number,
+    messageTemplate: string,
+    reason: FollowUpReason | null,
+  ): Promise<boolean> {
     setSaving(true);
     setError(null);
     try {
-      const rule = await updateFollowUpMessageRule(id, thresholdDays, messageTemplate);
+      const rule = await updateFollowUpMessageRule(id, thresholdDays, messageTemplate, reason);
       setRules((prev) => prev.map((r) => (r.id === id ? rule : r)).sort((a, b) => a.thresholdDays - b.thresholdDays));
       return true;
     } catch (err) {

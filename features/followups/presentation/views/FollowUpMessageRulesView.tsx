@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useFollowUpMessageRules } from '../hooks/useFollowUpMessageRules';
-import type { FollowUpMessageRule } from '@/features/followups';
+import { REASON_LABELS, type FollowUpMessageRule, type FollowUpReason } from '@/features/followups';
 
 const inputClass =
   'w-full rounded-md border border-border bg-app px-[var(--space-6)] py-[var(--space-5)] text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand';
@@ -19,6 +19,8 @@ export function FollowUpMessageRulesView() {
         Mensajes automáticos por WhatsApp según cuánto tiempo lleve un contacto pendiente en{' '}
         <span className="font-semibold text-ink">Seguimientos</span>. Cada regla dispara una sola vez al cumplirse su
         umbral; usa <code className="rounded bg-app px-1">{'{{nombre}}'}</code> para incluir el nombre del contacto.
+        Elige un motivo específico (ej. &quot;No asistió&quot;) para un mensaje distinto solo para ese caso, o &quot;Cualquier
+        motivo&quot; para una regla universal.
       </p>
 
       {error && <p className="text-sm text-danger">{error}</p>}
@@ -37,8 +39,8 @@ export function FollowUpMessageRulesView() {
                 initial={rule}
                 saving={saving}
                 onCancel={() => setEditingId(null)}
-                onSubmit={async (thresholdDays, messageTemplate) => {
-                  const ok = await update(rule.id, thresholdDays, messageTemplate);
+                onSubmit={async (thresholdDays, messageTemplate, reason) => {
+                  const ok = await update(rule.id, thresholdDays, messageTemplate, reason);
                   if (ok) setEditingId(null);
                 }}
               />
@@ -59,8 +61,8 @@ export function FollowUpMessageRulesView() {
         <FollowUpMessageRuleForm
           saving={saving}
           onCancel={() => setCreating(false)}
-          onSubmit={async (thresholdDays, messageTemplate) => {
-            const ok = await create(thresholdDays, messageTemplate);
+          onSubmit={async (thresholdDays, messageTemplate, reason) => {
+            const ok = await create(thresholdDays, messageTemplate, reason);
             if (ok) setCreating(false);
           }}
         />
@@ -91,7 +93,9 @@ function FollowUpMessageRuleCard({
   return (
     <div className="flex flex-col gap-[var(--space-4)] rounded-lg border border-border bg-surface p-[var(--space-7)]">
       <div className="flex items-start justify-between gap-[var(--space-5)]">
-        <p className="text-sm font-semibold text-ink">A partir de {rule.thresholdDays} día(s)</p>
+        <p className="text-sm font-semibold text-ink">
+          A partir de {rule.thresholdDays} día(s) — {rule.reason ? REASON_LABELS[rule.reason] : 'cualquier motivo'}
+        </p>
       </div>
       <p className="whitespace-pre-wrap text-sm text-secondary">{rule.messageTemplate}</p>
       <div className="flex gap-[var(--space-4)]">
@@ -129,10 +133,11 @@ function FollowUpMessageRuleForm({
   initial?: FollowUpMessageRule;
   saving: boolean;
   onCancel: () => void;
-  onSubmit: (thresholdDays: number, messageTemplate: string) => void;
+  onSubmit: (thresholdDays: number, messageTemplate: string, reason: FollowUpReason | null) => void;
 }) {
   const [thresholdDays, setThresholdDays] = useState(String(initial?.thresholdDays ?? ''));
   const [messageTemplate, setMessageTemplate] = useState(initial?.messageTemplate ?? '');
+  const [reason, setReason] = useState<FollowUpReason | ''>(initial?.reason ?? '');
 
   const parsedDays = Number(thresholdDays);
   const isValid = Number.isInteger(parsedDays) && parsedDays > 0 && messageTemplate.trim().length > 0;
@@ -141,10 +146,21 @@ function FollowUpMessageRuleForm({
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (isValid) onSubmit(parsedDays, messageTemplate.trim());
+        if (isValid) onSubmit(parsedDays, messageTemplate.trim(), reason || null);
       }}
       className="flex flex-col gap-[var(--space-5)] rounded-lg border border-border bg-surface p-[var(--space-7)]"
     >
+      <div>
+        <label className={labelClass}>Motivo</label>
+        <select value={reason} onChange={(e) => setReason(e.target.value as FollowUpReason | '')} className={inputClass}>
+          <option value="">Cualquier motivo</option>
+          {(Object.entries(REASON_LABELS) as [FollowUpReason, string][]).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </div>
       <div>
         <label className={labelClass}>A partir de cuántos días</label>
         <input

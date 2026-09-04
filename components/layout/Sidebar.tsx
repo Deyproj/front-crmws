@@ -10,12 +10,6 @@ import { useMineConversationsCount } from '@/features/conversations/presentation
 import { MessageSquareIcon, UsersIcon, CalendarIcon, ClockIcon, SettingsIcon, LogOutIcon, XIcon } from '@/components/ui/icons';
 import { BASE_PATH } from '@/lib/runtime/basePath';
 
-/** Refleja MembershipRole (api-crmws, organization/domain/MembershipRole.java) — ver docs/01-product/actors-and-roles.md. */
-const ROLE_LABELS: Record<string, string> = {
-  OWNER: 'Propietario',
-  ADVISOR: 'Asesor',
-};
-
 /**
  * En pantallas <lg es un drawer que se desliza sobre el contenido (controlado por
  * AppShell vía `open`/`onClose`); en lg+ vuelve a ser la columna fija de siempre.
@@ -89,10 +83,10 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
 
         <div className="flex items-center gap-[var(--space-6)]">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-semibold text-on-brand">
-            {(user?.role ?? '?').slice(0, 1)}
+            {(user?.name ?? '?').slice(0, 1)}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-on-dark">{user ? (ROLE_LABELS[user.role] ?? user.role) : ''}</p>
+            <p className="truncate text-sm font-semibold text-on-dark">{user?.name ?? ''}</p>
             {/* <p className="truncate text-xs text-on-dark-muted">{user?.organizationId ?? ''}</p> */}
           </div>
           <button

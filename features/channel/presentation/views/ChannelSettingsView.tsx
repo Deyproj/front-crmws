@@ -12,6 +12,7 @@ import { AgentConfigForm } from '@/features/agent/presentation/components/AgentC
 import { AgentSimulator } from '@/features/agent/presentation/components/AgentSimulator';
 import { KnowledgeEntriesManager } from '@/features/agent/presentation/components/KnowledgeEntriesManager';
 import { FollowUpMessageRulesView } from '@/features/followups/presentation/views/FollowUpMessageRulesView';
+import { SatisfactionSurveysView } from '@/features/feedback/presentation/views/SatisfactionSurveysView';
 
 const MANAGER_ROLES = new Set(['OWNER']);
 
@@ -19,6 +20,7 @@ const MAIN_TABS = [
   { id: 'agent', label: 'Agente' },
   { id: 'channel', label: 'Canal de WhatsApp' },
   { id: 'followups', label: 'Seguimientos' },
+  { id: 'feedback', label: 'Encuestas' },
   { id: 'team', label: 'Equipo' },
 ];
 
@@ -60,6 +62,7 @@ export function ChannelSettingsView() {
               )}
               {mainTab === 'channel' && <ChannelManager />}
               {mainTab === 'followups' && <FollowUpMessageRulesView />}
+              {mainTab === 'feedback' && <SatisfactionSurveysView />}
               {mainTab === 'team' && <TeamManager />}
             </div>
           </div>

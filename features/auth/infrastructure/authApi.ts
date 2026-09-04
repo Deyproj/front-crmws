@@ -11,6 +11,7 @@ export interface AuthResponsePayload {
   organizationId: string | null;
   membershipId: string | null;
   role: string;
+  name: string;
   mustChangePassword: boolean;
 }
 
