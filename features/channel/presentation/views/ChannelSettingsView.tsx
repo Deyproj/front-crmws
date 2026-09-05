@@ -114,6 +114,12 @@ const AGENT_TABS = [
   { id: 'simulator', label: 'Probar agente' },
 ];
 
+// META_CLOUD_API primero: es el canal oficial recomendado, Baileys (QR) es el respaldo no oficial.
+const CHANNEL_TABS: { id: ChannelProvider; label: string }[] = [
+  { id: 'META_CLOUD_API', label: 'API' },
+  { id: 'BAILEYS', label: 'QR' },
+];
+
 export function ChannelSettingsView() {
   const { user } = useAuth();
   const canManage = !!user && MANAGER_ROLES.has(user.role);
@@ -168,91 +174,89 @@ function ChannelManager() {
     useChannels();
   const [externalAccountId, setExternalAccountId] = useState('');
   const [metaDialogOpen, setMetaDialogOpen] = useState(false);
+  const [channelTab, setChannelTab] = useState<ChannelProvider>(CHANNEL_TABS[0].id);
 
   if (loading) return <p className="text-sm text-secondary">Cargando...</p>;
 
-  const hasBaileys = entries.some((entry) => entry.channel.provider === 'BAILEYS');
-  const hasMeta = entries.some((entry) => entry.channel.provider === 'META_CLOUD_API');
   // Con un único canal no tiene sentido elegir "preferido" — solo importa cuando "Nuevo chat"
   // tendría que preguntar cuál usar (ver StartConversationHandler.getPrimary en api-crmws).
   const showPreferredControl = entries.length > 1;
+  const activeEntry = entries.find((entry) => entry.channel.provider === channelTab);
 
   return (
     <div className="flex w-full max-w-md flex-col gap-[var(--space-7)]">
-      {entries.map((entry) => (
+      <Tabs tabs={CHANNEL_TABS} activeId={channelTab} onChange={(id) => setChannelTab(id as ChannelProvider)} size="sm" label="Tipo de canal de WhatsApp" />
+
+      {activeEntry ? (
         <ChannelCard
-          key={entry.channel.id}
-          channel={entry.channel}
-          status={entry.status}
+          key={activeEntry.channel.id}
+          channel={activeEntry.channel}
+          status={activeEntry.status}
           actionPending={actionPending}
           error={error}
           showPreferredControl={showPreferredControl}
-          onConnect={() => connect(entry.channel.id)}
-          onDisconnect={() => disconnect(entry.channel.id)}
-          onUnlink={() => unlink(entry.channel.id)}
-          onReconnectMeta={(fields) => reconnectMeta(entry.channel.id, fields)}
-          onSetPreferred={() => setPreferred(entry.channel.id)}
+          onConnect={() => connect(activeEntry.channel.id)}
+          onDisconnect={() => disconnect(activeEntry.channel.id)}
+          onUnlink={() => unlink(activeEntry.channel.id)}
+          onReconnectMeta={(fields) => reconnectMeta(activeEntry.channel.id, fields)}
+          onSetPreferred={() => setPreferred(activeEntry.channel.id)}
         />
-      ))}
+      ) : channelTab === 'BAILEYS' ? (
+        <div className="rounded-xl border border-border bg-surface p-[var(--space-8)]">
+          <p className="mb-[var(--space-6)] text-sm font-semibold text-ink">Agregar canal</p>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (externalAccountId.trim()) {
+                create({ provider: 'BAILEYS', externalAccountId: externalAccountId.trim() });
+                setExternalAccountId('');
+              }
+            }}
+            className="flex flex-col gap-[var(--space-4)]"
+          >
+            <label
+              htmlFor="externalAccountId"
+              className="flex items-center gap-[var(--space-3)] text-xs font-medium uppercase tracking-wide text-secondary"
+            >
+              <QrCodeIcon className="size-4 text-violet" />
+              WhatsApp por QR — identificador de cuenta
+            </label>
+            <div className="flex gap-[var(--space-4)]">
+              <input
+                id="externalAccountId"
+                value={externalAccountId}
+                onChange={(e) => setExternalAccountId(e.target.value)}
+                placeholder="ej. gym-principal"
+                className="w-full rounded-md border border-border bg-app px-[var(--space-6)] py-[var(--space-5)] text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
+              />
+              <button
+                type="submit"
+                disabled={actionPending || !externalAccountId.trim()}
+                className="shrink-0 rounded-md bg-brand px-[var(--space-7)] py-[var(--space-5)] text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Crear
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border bg-surface p-[var(--space-8)]">
+          <p className="mb-[var(--space-6)] text-sm font-semibold text-ink">Agregar canal</p>
+          <button
+            type="button"
+            onClick={() => setMetaDialogOpen(true)}
+            className="inline-flex items-center gap-[var(--space-4)] self-start rounded-md border border-border px-[var(--space-7)] py-[var(--space-5)] text-sm font-semibold text-ink hover:bg-app"
+          >
+            <ShieldCheckIcon className="size-4 text-info" />
+            Conectar Meta Cloud API (oficial)
+          </button>
+        </div>
+      )}
 
       {error && (
         <p className="rounded-md border border-danger/30 bg-danger-bg px-[var(--space-6)] py-[var(--space-5)] text-sm text-danger">
           {error}
         </p>
-      )}
-
-      {(!hasBaileys || !hasMeta) && (
-        <div className="rounded-xl border border-border bg-surface p-[var(--space-8)]">
-          <p className="mb-[var(--space-6)] text-sm font-semibold text-ink">Agregar canal</p>
-          <div className="flex flex-col gap-[var(--space-7)]">
-            {!hasBaileys && (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (externalAccountId.trim()) {
-                    create({ provider: 'BAILEYS', externalAccountId: externalAccountId.trim() });
-                    setExternalAccountId('');
-                  }
-                }}
-                className="flex flex-col gap-[var(--space-4)]"
-              >
-                <label
-                  htmlFor="externalAccountId"
-                  className="flex items-center gap-[var(--space-3)] text-xs font-medium uppercase tracking-wide text-secondary"
-                >
-                  <QrCodeIcon className="size-4 text-violet" />
-                  WhatsApp por QR — identificador de cuenta
-                </label>
-                <div className="flex gap-[var(--space-4)]">
-                  <input
-                    id="externalAccountId"
-                    value={externalAccountId}
-                    onChange={(e) => setExternalAccountId(e.target.value)}
-                    placeholder="ej. gym-principal"
-                    className="w-full rounded-md border border-border bg-app px-[var(--space-6)] py-[var(--space-5)] text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
-                  />
-                  <button
-                    type="submit"
-                    disabled={actionPending || !externalAccountId.trim()}
-                    className="shrink-0 rounded-md bg-brand px-[var(--space-7)] py-[var(--space-5)] text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Crear
-                  </button>
-                </div>
-              </form>
-            )}
-            {!hasMeta && (
-              <button
-                type="button"
-                onClick={() => setMetaDialogOpen(true)}
-                className="inline-flex items-center gap-[var(--space-4)] self-start rounded-md border border-border px-[var(--space-7)] py-[var(--space-5)] text-sm font-semibold text-ink hover:bg-app"
-              >
-                <ShieldCheckIcon className="size-4 text-info" />
-                Conectar Meta Cloud API (oficial)
-              </button>
-            )}
-          </div>
-        </div>
       )}
 
       <MetaChannelConnectDialog
