@@ -14,7 +14,7 @@ import {
   type ChannelStatus,
   type MetaCredentialsInput,
 } from '@/features/channel';
-import { QrCodeIcon, ShieldCheckIcon } from '@/components/ui/icons';
+import { CopyIcon, QrCodeIcon, ShieldCheckIcon } from '@/components/ui/icons';
 import { Tabs } from '@/components/ui/Tabs';
 import { AutomationToggle } from '@/features/organization/presentation/components/AutomationToggle';
 import { TeamManager } from '@/features/organization/presentation/components/TeamManager';
@@ -360,6 +360,8 @@ function ChannelCard({
         </div>
       )}
 
+      {isMeta && <MetaWebhookUrlBox channelId={channel.id} />}
+
       {!isMeta && s === 'PAIRING_REQUIRED' && status?.qrCode && (
         <div className="mb-[var(--space-7)] flex flex-col items-center gap-[var(--space-5)] rounded-xl bg-app p-[var(--space-8)]">
           <QRCodeSVG value={status.qrCode} size={200} />
@@ -469,6 +471,47 @@ function ChannelCard({
           submitPendingLabel="Reconectando..."
         />
       )}
+    </div>
+  );
+}
+
+/**
+ * URL pública que hay que pegar en developers.facebook.com -> WhatsApp -> Configuration ->
+ * Webhook. Vive en `window.location.origin` porque el bloque nginx que la expone
+ * (`/api/internal/channels/meta/`) está replicado en cada dominio que sirve esta app -- ver
+ * `crmws-meta-cloud-api.conf` (cuotamanager.com) y el vhost de dinabot.prothymia.app.
+ */
+function MetaWebhookUrlBox({ channelId }: { channelId: string }) {
+  const [copied, setCopied] = useState(false);
+  const url =
+    typeof window !== 'undefined'
+      ? `${window.location.origin}/api/internal/channels/meta/${channelId}/webhook`
+      : '';
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard puede fallar sin HTTPS/permiso -- el usuario igual puede seleccionar el texto a mano.
+    }
+  }
+
+  return (
+    <div className="mb-[var(--space-7)] rounded-lg border border-border bg-app p-[var(--space-6)]">
+      <p className="mb-[var(--space-3)] text-xs font-semibold text-secondary">URL del webhook (Meta)</p>
+      <div className="flex items-center gap-[var(--space-4)]">
+        <code className="min-w-0 flex-1 truncate text-xs text-ink">{url}</code>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="inline-flex shrink-0 items-center gap-[var(--space-2)] rounded-md border border-border bg-surface px-[var(--space-4)] py-[var(--space-2)] text-xs font-semibold text-ink hover:bg-app"
+        >
+          <CopyIcon className="size-3.5" />
+          {copied ? 'Copiado' : 'Copiar'}
+        </button>
+      </div>
     </div>
   );
 }
