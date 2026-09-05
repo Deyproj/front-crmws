@@ -65,5 +65,7 @@ export const config = {
   // (imágenes, íconos futuros) caía en el middleware y, sin cookie de sesión, se
   // redirigía a /login. La optimización de next/image hace un fetch interno a la ruta
   // del asset sin la cookie del navegador, así que también le pegaba a esta regla.
-  matcher: ['/((?!api|login|_next/static|_next/image|favicon\\.ico|.*\\.(?:png|jpe?g|gif|svg|webp|ico)$).*)'],
+  // "legal" también queda pública: son las páginas de privacidad/eliminación de datos
+  // que Meta exige poder abrir sin sesión para el App Review de developers.facebook.com.
+  matcher: ['/((?!api|login|legal|_next/static|_next/image|favicon\\.ico|.*\\.(?:png|jpe?g|gif|svg|webp|ico)$).*)'],
 };
