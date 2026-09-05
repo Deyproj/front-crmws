@@ -41,6 +41,7 @@ export function PlatformDashboardView() {
     provisionTeamMember,
     loadMembers,
     changeRole,
+    update,
     revoke,
     activate,
     resetPassword,
@@ -144,6 +145,7 @@ export function PlatformDashboardView() {
                     onAddTeamMember={(payload) => provisionTeamMember(organization.id, payload)}
                     onLoadMembers={() => loadMembers(organization.id)}
                     onChangeRole={(membershipId, role) => changeRole(organization.id, membershipId, role)}
+                    onUpdateMember={(membershipId, payload) => update(organization.id, membershipId, payload)}
                     onRevoke={(membershipId) => revoke(organization.id, membershipId)}
                     onActivate={(membershipId) => activate(organization.id, membershipId)}
                     onResetPassword={(membershipId) => resetPassword(organization.id, membershipId)}
@@ -317,6 +319,7 @@ function OrganizationRow({
   onAddTeamMember,
   onLoadMembers,
   onChangeRole,
+  onUpdateMember,
   onRevoke,
   onActivate,
   onResetPassword,
@@ -329,6 +332,7 @@ function OrganizationRow({
   onAddTeamMember: (payload: { name: string; email: string; role: MembershipRole }) => Promise<unknown>;
   onLoadMembers: () => Promise<PlatformMember[]>;
   onChangeRole: (membershipId: string, role: MembershipRole) => Promise<unknown>;
+  onUpdateMember: (membershipId: string, payload: { name: string; email: string }) => Promise<unknown>;
   onRevoke: (membershipId: string) => Promise<unknown>;
   onActivate: (membershipId: string) => Promise<unknown>;
   onResetPassword: (membershipId: string) => Promise<unknown>;
@@ -344,6 +348,9 @@ function OrganizationRow({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<MembershipRole>('ADVISOR');
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
   const [statusError, setStatusError] = useState<string | null>(null);
   const [pendingConfirmation, setPendingConfirmation] = useState<{
     title: string;
@@ -379,6 +386,25 @@ function OrganizationRow({
       await refreshMembers();
     } catch (err) {
       setMembersError(err instanceof Error ? err.message : 'No se pudo cambiar el rol');
+    }
+  }
+
+  function startEditing(member: PlatformMember) {
+    setMembersError(null);
+    setEditingMemberId(member.id);
+    setEditName(member.name ?? '');
+    setEditEmail(member.email ?? '');
+  }
+
+  async function handleEditSubmit(e: React.FormEvent, membershipId: string) {
+    e.preventDefault();
+    setMembersError(null);
+    try {
+      await onUpdateMember(membershipId, { name: editName, email: editEmail });
+      setEditingMemberId(null);
+      await refreshMembers();
+    } catch (err) {
+      setMembersError(err instanceof Error ? err.message : 'No se pudieron guardar los datos del miembro');
     }
   }
 
@@ -533,60 +559,108 @@ function OrganizationRow({
                         member.active ? '' : 'opacity-50'
                       }`}
                     >
-                      <div>
-                        <div className="flex items-center gap-[var(--space-3)]">
-                          <p className="text-sm font-medium text-ink">{member.name ?? '—'}</p>
-                          {!member.active && (
-                            <span className="rounded-full border border-danger/30 bg-danger-bg px-[var(--space-3)] py-[2px] text-[10px] font-semibold uppercase text-danger">
-                              Inactivo
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-secondary">{member.email ?? '—'}</p>
-                      </div>
-                      {member.active ? (
-                        <div className="flex items-center gap-[var(--space-4)]">
-                          <select
-                            value={member.role}
+                      {editingMemberId === member.id ? (
+                        <form
+                          onSubmit={(e) => handleEditSubmit(e, member.id)}
+                          className="flex w-full flex-wrap items-center gap-[var(--space-4)]"
+                        >
+                          <input
+                            required
+                            placeholder="Nombre"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="min-w-0 flex-1 rounded-md border border-border bg-surface px-[var(--space-4)] py-[var(--space-3)] text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand"
+                          />
+                          <input
+                            required
+                            type="email"
+                            placeholder="Email"
+                            value={editEmail}
+                            onChange={(e) => setEditEmail(e.target.value)}
+                            className="min-w-0 flex-1 rounded-md border border-border bg-surface px-[var(--space-4)] py-[var(--space-3)] text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand"
+                          />
+                          <button
+                            type="submit"
                             disabled={actionPending}
-                            onChange={(e) => handleRoleChange(member.id, e.target.value as MembershipRole)}
-                            className="rounded-md border border-border bg-surface px-[var(--space-4)] py-[var(--space-3)] text-xs text-ink focus:outline-none focus:ring-2 focus:ring-brand"
+                            className="rounded-md bg-brand px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold text-on-brand hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            {MEMBERSHIP_ROLES.map((r) => (
-                              <option key={r} value={r}>
-                                {r}
-                              </option>
-                            ))}
-                          </select>
+                            Guardar
+                          </button>
                           <button
                             type="button"
                             disabled={actionPending}
-                            onClick={() => handleResetPassword(member.id)}
+                            onClick={() => setEditingMemberId(null)}
                             className="rounded-md border border-border px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold text-ink hover:bg-app disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            Resetear contraseña
+                            Cancelar
                           </button>
-                          <button
-                            type="button"
-                            disabled={actionPending}
-                            onClick={() => handleRevoke(member.id)}
-                            className="rounded-md border border-danger/30 px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold text-danger hover:bg-danger-bg disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            Revocar
-                          </button>
-                        </div>
+                        </form>
                       ) : (
-                        <div className="flex items-center gap-[var(--space-4)]">
-                          <p className="text-xs text-secondary">Sin acceso — revocado</p>
-                          <button
-                            type="button"
-                            disabled={actionPending}
-                            onClick={() => handleActivate(member.id)}
-                            className="rounded-md border border-border px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold text-ink hover:bg-app disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            Reactivar
-                          </button>
-                        </div>
+                        <>
+                          <div>
+                            <div className="flex items-center gap-[var(--space-3)]">
+                              <p className="text-sm font-medium text-ink">{member.name ?? '—'}</p>
+                              {!member.active && (
+                                <span className="rounded-full border border-danger/30 bg-danger-bg px-[var(--space-3)] py-[2px] text-[10px] font-semibold uppercase text-danger">
+                                  Inactivo
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-secondary">{member.email ?? '—'}</p>
+                          </div>
+                          {member.active ? (
+                            <div className="flex items-center gap-[var(--space-4)]">
+                              <select
+                                value={member.role}
+                                disabled={actionPending}
+                                onChange={(e) => handleRoleChange(member.id, e.target.value as MembershipRole)}
+                                className="rounded-md border border-border bg-surface px-[var(--space-4)] py-[var(--space-3)] text-xs text-ink focus:outline-none focus:ring-2 focus:ring-brand"
+                              >
+                                {MEMBERSHIP_ROLES.map((r) => (
+                                  <option key={r} value={r}>
+                                    {r}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                type="button"
+                                disabled={actionPending}
+                                onClick={() => startEditing(member)}
+                                className="rounded-md border border-border px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold text-ink hover:bg-app disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                type="button"
+                                disabled={actionPending}
+                                onClick={() => handleResetPassword(member.id)}
+                                className="rounded-md border border-border px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold text-ink hover:bg-app disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                Resetear contraseña
+                              </button>
+                              <button
+                                type="button"
+                                disabled={actionPending}
+                                onClick={() => handleRevoke(member.id)}
+                                className="rounded-md border border-danger/30 px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold text-danger hover:bg-danger-bg disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                Revocar
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-[var(--space-4)]">
+                              <p className="text-xs text-secondary">Sin acceso — revocado</p>
+                              <button
+                                type="button"
+                                disabled={actionPending}
+                                onClick={() => handleActivate(member.id)}
+                                className="rounded-md border border-border px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold text-ink hover:bg-app disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                Reactivar
+                              </button>
+                            </div>
+                          )}
+                        </>
                       )}
                     </li>
                   ))}

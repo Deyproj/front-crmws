@@ -12,6 +12,7 @@ import {
   listOrganizationsUsage,
   resetMemberPassword,
   revokeMember,
+  updateMember,
   upsertOrganizationAiPlan,
   type MembershipRole,
   type OrganizationAiPlanPayload,
@@ -21,6 +22,7 @@ import {
   type PlatformOrganizationUsage,
   type ProvisionOrganizationPayload,
   type ProvisionTeamMemberPayload,
+  type UpdateTeamMemberPayload,
 } from '@/features/platform';
 
 export function usePlatformDashboard() {
@@ -95,6 +97,19 @@ export function usePlatformDashboard() {
       return await changeMemberRole(organizationId, membershipId, role);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo cambiar el rol');
+      throw err;
+    } finally {
+      setActionPending(false);
+    }
+  }
+
+  async function update(organizationId: string, membershipId: string, payload: UpdateTeamMemberPayload) {
+    setActionPending(true);
+    setError(null);
+    try {
+      return await updateMember(organizationId, membershipId, payload);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudieron guardar los datos del miembro');
       throw err;
     } finally {
       setActionPending(false);
@@ -184,6 +199,7 @@ export function usePlatformDashboard() {
     provisionTeamMember,
     loadMembers,
     changeRole,
+    update,
     revoke,
     activate,
     resetPassword,

@@ -103,6 +103,22 @@ export async function revokeMember(organizationId: string, membershipId: string)
   });
 }
 
+export interface UpdateTeamMemberPayload {
+  name: string;
+  email: string;
+}
+
+export async function updateMember(
+  organizationId: string,
+  membershipId: string,
+  payload: UpdateTeamMemberPayload
+): Promise<PlatformMember> {
+  return apiFetch<PlatformMember>(`/api/platform/organizations/${organizationId}/members/${membershipId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function activateMember(organizationId: string, membershipId: string): Promise<PlatformMember> {
   return apiFetch<PlatformMember>(`/api/platform/organizations/${organizationId}/members/${membershipId}/activate`, {
     method: 'PATCH',
