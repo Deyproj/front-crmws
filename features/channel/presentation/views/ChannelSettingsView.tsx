@@ -8,11 +8,13 @@ import { MetaChannelConnectDialog } from '../components/MetaChannelConnectDialog
 import { MessageTemplatesManager } from '../components/MessageTemplatesManager';
 import {
   STATUS_LABELS,
-  PROVIDER_LABELS,
   type Channel,
+  type ChannelProvider,
   type ChannelSessionStatus,
+  type ChannelStatus,
   type MetaCredentialsInput,
 } from '@/features/channel';
+import { QrCodeIcon, ShieldCheckIcon } from '@/components/ui/icons';
 import { Tabs } from '@/components/ui/Tabs';
 import { AutomationToggle } from '@/features/organization/presentation/components/AutomationToggle';
 import { TeamManager } from '@/features/organization/presentation/components/TeamManager';
@@ -24,6 +26,77 @@ import { SatisfactionSurveysView } from '@/features/feedback/presentation/views/
 import { AiUsagePanel } from '@/features/usage/presentation/components/AiUsagePanel';
 
 const MANAGER_ROLES = new Set(['OWNER']);
+
+/**
+ * Identidad visual fija por proveedor (icono + insignia "Oficial"/"No oficial") — comunica
+ * FUNCIONALIDAD (qué es cada canal), independiente de si en este momento está conectado o no.
+ * Nunca se atenúa según el estado, para no mezclar las dos señales en una sola.
+ */
+const PROVIDER_STYLE: Record<
+  ChannelProvider,
+  { icon: typeof QrCodeIcon; badgeLabel: string; badgeClass: string; avatarClass: string; shortLabel: string }
+> = {
+  BAILEYS: {
+    icon: QrCodeIcon,
+    badgeLabel: 'No oficial',
+    badgeClass: 'bg-app text-secondary',
+    avatarClass: 'bg-violet-bg text-violet',
+    shortLabel: 'WhatsApp por código QR',
+  },
+  META_CLOUD_API: {
+    icon: ShieldCheckIcon,
+    badgeLabel: 'Oficial',
+    badgeClass: 'bg-info-bg text-info',
+    avatarClass: 'bg-info-bg text-info',
+    shortLabel: 'WhatsApp Business',
+  },
+};
+
+/**
+ * Tono de ESTADO (activo/transición/inactivo/error) — señal separada de la identidad de
+ * proveedor de arriba. `everLinked=false` fuerza "muted" fuera de este mapa (ver ChannelCard):
+ * un canal que nunca se vinculó no es lo mismo que uno vinculado que se desconectó.
+ */
+type StatusTone = 'success' | 'warning' | 'danger' | 'muted';
+
+const STATUS_TONE: Record<ChannelStatus, StatusTone> = {
+  CONNECTED: 'success',
+  CONNECTING: 'warning',
+  RECONNECTING: 'warning',
+  PAIRING_REQUIRED: 'warning',
+  DISCONNECTED: 'muted',
+  LOGGED_OUT: 'muted',
+  ERROR: 'danger',
+};
+
+const TONE_CLASSES: Record<StatusTone, { badge: string; dot: string; ring: string }> = {
+  success: { badge: 'bg-success-bg text-success', dot: 'bg-success', ring: 'border-success/40' },
+  warning: { badge: 'bg-warning-bg text-warning', dot: 'bg-warning', ring: 'border-warning/40' },
+  danger: { badge: 'bg-danger-bg text-danger', dot: 'bg-danger', ring: 'border-danger/40' },
+  muted: { badge: 'bg-app text-muted', dot: 'bg-muted', ring: 'border-border' },
+};
+
+function ProviderAvatar({ provider }: { provider: ChannelProvider }) {
+  const style = PROVIDER_STYLE[provider];
+  const Icon = style.icon;
+  return (
+    <div className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${style.avatarClass}`}>
+      <Icon className="size-5" />
+    </div>
+  );
+}
+
+function StatusBadge({ tone, label, pulsing = false }: { tone: StatusTone; label: string; pulsing?: boolean }) {
+  const t = TONE_CLASSES[tone];
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center gap-[var(--space-3)] whitespace-nowrap rounded-full px-[var(--space-5)] py-[var(--space-2)] text-xs font-semibold ${t.badge}`}
+    >
+      <span className={`size-2 rounded-full ${t.dot} ${pulsing ? 'animate-pulse' : ''}`} />
+      {label}
+    </span>
+  );
+}
 
 const MAIN_TABS = [
   { id: 'agent', label: 'Agente' },
@@ -49,8 +122,8 @@ export function ChannelSettingsView() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex h-[var(--topbar-height)] shrink-0 items-center border-b border-border bg-surface px-[var(--space-7)] sm:px-[var(--space-9)]">
-        <h1 className="text-2xl font-black tracking-tight text-ink">Configuración</h1>
+      <header className="flex h-12 shrink-0 items-center border-b border-border bg-surface px-[var(--space-7)] sm:px-[var(--space-9)]">
+        <h1 className="text-base font-bold tracking-tight text-ink">Configuración</h1>
       </header>
       {canManage ? (
         <>
@@ -145,8 +218,9 @@ function ChannelManager() {
               >
                 <label
                   htmlFor="externalAccountId"
-                  className="text-xs font-medium uppercase tracking-wide text-secondary"
+                  className="flex items-center gap-[var(--space-3)] text-xs font-medium uppercase tracking-wide text-secondary"
                 >
+                  <QrCodeIcon className="size-4 text-violet" />
                   WhatsApp por QR — identificador de cuenta
                 </label>
                 <div className="flex gap-[var(--space-4)]">
@@ -171,8 +245,9 @@ function ChannelManager() {
               <button
                 type="button"
                 onClick={() => setMetaDialogOpen(true)}
-                className="self-start rounded-md border border-border px-[var(--space-7)] py-[var(--space-5)] text-sm font-semibold text-ink hover:bg-app"
+                className="inline-flex items-center gap-[var(--space-4)] self-start rounded-md border border-border px-[var(--space-7)] py-[var(--space-5)] text-sm font-semibold text-ink hover:bg-app"
               >
+                <ShieldCheckIcon className="size-4 text-info" />
                 Conectar Meta Cloud API (oficial)
               </button>
             )}
@@ -242,16 +317,28 @@ function ChannelCard({
   // correcto para un intento que nunca llegó a vincularse. Meta nunca pasa por PAIRING_REQUIRED.
   const canCancelPairing = !isMeta && s === 'PAIRING_REQUIRED' && !everLinked;
 
+  const providerStyle = PROVIDER_STYLE[channel.provider];
+  const tone: StatusTone = everLinked ? STATUS_TONE[s] : 'muted';
+  const isTransitioning = tone === 'warning';
+
   return (
-    <div className="rounded-xl border border-border bg-surface p-[var(--space-8)]">
-      <div className="mb-[var(--space-6)] flex items-center justify-between">
-        <div>
-          <p className="text-sm font-semibold text-ink">{channel.externalAccountId}</p>
-          <p className="text-xs text-secondary">
-            {PROVIDER_LABELS[channel.provider]} · {statusLabel}
-          </p>
+    <div className={`rounded-xl border bg-surface p-[var(--space-8)] transition-colors ${TONE_CLASSES[tone].ring}`}>
+      <div className="mb-[var(--space-6)] flex items-start justify-between gap-[var(--space-5)]">
+        <div className="flex min-w-0 items-start gap-[var(--space-5)]">
+          <ProviderAvatar provider={channel.provider} />
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-[var(--space-3)]">
+              <p className="truncate text-sm font-semibold text-ink">{channel.externalAccountId}</p>
+              <span
+                className={`shrink-0 rounded-full px-[var(--space-4)] py-[var(--space-1)] text-[10px] font-semibold uppercase tracking-wide ${providerStyle.badgeClass}`}
+              >
+                {providerStyle.badgeLabel}
+              </span>
+            </div>
+            <p className="text-xs text-secondary">{providerStyle.shortLabel}</p>
+          </div>
         </div>
-        <StatusDot status={s} />
+        <StatusBadge tone={tone} label={statusLabel} pulsing={isTransitioning} />
       </div>
 
       {showPreferredControl && (
@@ -384,9 +471,4 @@ function ChannelCard({
       )}
     </div>
   );
-}
-
-function StatusDot({ status }: { status: string }) {
-  const color = status === 'CONNECTED' ? 'bg-success' : status === 'ERROR' ? 'bg-danger' : 'bg-warning';
-  return <span className={`size-3 rounded-full ${color}`} />;
 }

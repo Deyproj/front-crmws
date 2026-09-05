@@ -26,8 +26,8 @@ export function AgendaView() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex min-h-[var(--topbar-height)] shrink-0 flex-wrap items-center justify-between gap-y-[var(--space-4)] border-b border-border bg-surface px-[var(--space-7)] py-[var(--space-4)] sm:px-[var(--space-9)]">
-        <h1 className="text-2xl font-black tracking-tight text-ink">Agenda</h1>
+      <header className="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-y-[var(--space-3)] border-b border-border bg-surface px-[var(--space-7)] py-[var(--space-3)] sm:px-[var(--space-9)]">
+        <h1 className="text-base font-bold tracking-tight text-ink">Agenda</h1>
         <div className="flex items-center gap-[var(--space-4)]">
           <button
             type="button"

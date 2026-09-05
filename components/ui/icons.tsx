@@ -206,6 +206,30 @@ export function PencilIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function QrCodeIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)}>
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <line x1="14" y1="14" x2="14" y2="17.5" />
+      <line x1="14" y1="21" x2="14" y2="21" />
+      <line x1="17.5" y1="14" x2="21" y2="14" />
+      <line x1="21" y1="17.5" x2="21" y2="21" />
+      <line x1="17.5" y1="21" x2="17.5" y2="17.5" />
+    </svg>
+  );
+}
+
+export function ShieldCheckIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)}>
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <polyline points="9 12 11 14 15 10" />
+    </svg>
+  );
+}
+
 export function TrashIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...base(props)}>

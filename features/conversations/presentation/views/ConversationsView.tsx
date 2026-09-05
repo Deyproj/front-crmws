@@ -54,8 +54,8 @@ export function ConversationsView() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex h-[var(--topbar-height)] shrink-0 items-center border-b border-border bg-surface px-[var(--space-7)] sm:px-[var(--space-9)]">
-        <h1 className="text-2xl font-black tracking-tight text-ink">Bandeja de conversaciones</h1>
+      <header className="flex h-12 shrink-0 items-center border-b border-border bg-surface px-[var(--space-7)] sm:px-[var(--space-9)]">
+        <h1 className="text-base font-bold tracking-tight text-ink">Bandeja de conversaciones</h1>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
