@@ -58,3 +58,7 @@ export async function changeMembershipRole(membershipId: string, role: Membershi
 export async function revokeMembership(membershipId: string): Promise<void> {
   await apiFetch<void>(`/api/memberships/${membershipId}`, { method: 'DELETE' });
 }
+
+export async function reactivateMembership(membershipId: string): Promise<Membership> {
+  return apiFetch<Membership>(`/api/memberships/${membershipId}/reactivate`, { method: 'PATCH' });
+}

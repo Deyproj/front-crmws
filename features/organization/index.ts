@@ -6,4 +6,5 @@ export {
   listMembers,
   changeMembershipRole,
   revokeMembership,
+  reactivateMembership,
 } from './api';

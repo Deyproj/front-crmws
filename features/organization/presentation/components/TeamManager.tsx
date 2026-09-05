@@ -5,12 +5,12 @@ import { MEMBERSHIP_ROLES, type Membership, type MembershipRole } from '@/featur
 import { useTeamMembers } from '../hooks/useTeamMembers';
 
 /**
- * Solo lectura/administración de miembros ya existentes (cambiar rol, revocar) — el alta de
+ * Solo administración de miembros ya existentes (cambiar rol, revocar, reactivar) — el alta de
  * usuarios nuevos vive exclusivamente en el backoffice del admin de plataforma (/platform),
  * ver docs/06-delivery/mvp-roadmap.md.
  */
 export function TeamManager() {
-  const { members, loading, actionPending, error, changeRole, revoke } = useTeamMembers();
+  const { members, loading, actionPending, error, changeRole, revoke, reactivate } = useTeamMembers();
   const [confirmingRevokeId, setConfirmingRevokeId] = useState<string | null>(null);
 
   if (loading) return <p className="text-sm text-secondary">Cargando...</p>;
@@ -40,6 +40,7 @@ export function TeamManager() {
                 setConfirmingRevokeId(null);
               }}
               onChangeRole={(role) => changeRole(member.id, role)}
+              onReactivate={() => reactivate(member.id)}
             />
           ))}
         </ul>
@@ -56,6 +57,7 @@ function TeamMemberRow({
   onCancelRevoke,
   onConfirmRevoke,
   onChangeRole,
+  onReactivate,
 }: {
   member: Membership;
   actionPending: boolean;
@@ -64,6 +66,7 @@ function TeamMemberRow({
   onCancelRevoke: () => void;
   onConfirmRevoke: () => void;
   onChangeRole: (role: MembershipRole) => void;
+  onReactivate: () => void;
 }) {
   return (
     <li className="flex flex-wrap items-center gap-[var(--space-5)] px-[var(--space-7)] py-[var(--space-6)]">
@@ -89,6 +92,17 @@ function TeamMemberRow({
           </option>
         ))}
       </select>
+
+      {!member.active && (
+        <button
+          type="button"
+          onClick={onReactivate}
+          disabled={actionPending}
+          className="rounded-md px-[var(--space-4)] py-[var(--space-3)] text-xs font-semibold text-success hover:bg-success-bg disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Reactivar
+        </button>
+      )}
 
       {member.active &&
         (confirmingRevoke ? (

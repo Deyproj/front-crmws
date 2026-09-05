@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   changeMembershipRole,
   listMembers,
+  reactivateMembership,
   revokeMembership,
   type Membership,
   type MembershipRole,
@@ -58,5 +59,18 @@ export function useTeamMembers() {
     }
   }
 
-  return { members, loading, actionPending, error, changeRole, revoke };
+  async function reactivate(membershipId: string) {
+    setActionPending(true);
+    setError(null);
+    try {
+      const updated = await reactivateMembership(membershipId);
+      setMembers((current) => current.map((m) => (m.id === membershipId ? updated : m)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo reactivar la membresía');
+    } finally {
+      setActionPending(false);
+    }
+  }
+
+  return { members, loading, actionPending, error, changeRole, revoke, reactivate };
 }
