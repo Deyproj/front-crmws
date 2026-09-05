@@ -8,6 +8,13 @@ export type {
   ProvisionTeamMemberPayload,
   ProvisionTeamMemberResult,
   ResetPasswordResult,
+  PlanBillingCycle,
+  OrganizationAiUsage,
+  PlatformOrganizationUsage,
+  OrganizationAiPlanPayload,
+  OrganizationAiPlan,
+  AiModelPrice,
+  AiModelPricePayload,
 } from './api';
 export {
   MEMBERSHIP_ROLES,
@@ -21,4 +28,10 @@ export {
   activateMember,
   resetMemberPassword,
   changeOrganizationStatus,
+  PLAN_BILLING_CYCLES,
+  PLAN_BILLING_CYCLE_LABELS,
+  listOrganizationsUsage,
+  upsertOrganizationAiPlan,
+  listAiModelPrices,
+  createAiModelPrice,
 } from './api';

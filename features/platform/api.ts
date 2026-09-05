@@ -128,3 +128,104 @@ export async function changeOrganizationStatus(
     body: JSON.stringify({ status }),
   });
 }
+
+export const PLAN_BILLING_CYCLES = ['MONTHLY', 'BIWEEKLY'] as const;
+export type PlanBillingCycle = (typeof PLAN_BILLING_CYCLES)[number];
+
+export const PLAN_BILLING_CYCLE_LABELS: Record<PlanBillingCycle, string> = {
+  MONTHLY: 'Mensual',
+  BIWEEKLY: 'Quincenal',
+};
+
+/** Refleja CurrentUsageResponse (api-crmws, usage/presentation) — administración de IA por organización (BR-031). */
+export interface OrganizationAiUsage {
+  planConfigured: boolean;
+  billingCycle: PlanBillingCycle | null;
+  periodStart: string;
+  periodEnd: string;
+  includedInteractions: number;
+  usedInteractions: number;
+  remainingInteractions: number;
+  usagePercentage: number;
+  overageInteractions: number;
+  overageEnabled: boolean;
+  overageUnitPrice: number | null;
+  overageAmount: number | null;
+  llmCalls: number;
+  toolCalls: number;
+  inputTokens: number;
+  outputTokens: number;
+  cachedTokens: number;
+  reasoningTokens: number;
+  totalTokens: number;
+  estimatedCost: number | null;
+}
+
+/** Refleja PlatformOrganizationUsageResponse. */
+export interface PlatformOrganizationUsage {
+  organizationId: string;
+  organizationName: string;
+  organizationSlug: string;
+  usage: OrganizationAiUsage;
+}
+
+export interface OrganizationAiPlanPayload {
+  billingCycle: PlanBillingCycle;
+  includedInteractions: number;
+  overageEnabled: boolean;
+  overageUnitPrice: number | null;
+}
+
+/** Refleja OrganizationAiPlanResponse. */
+export interface OrganizationAiPlan {
+  organizationId: string;
+  billingCycle: PlanBillingCycle;
+  includedInteractions: number;
+  overageEnabled: boolean;
+  overageUnitPrice: number | null;
+}
+
+/** Refleja AiModelPriceResponse. */
+export interface AiModelPrice {
+  id: string;
+  provider: string;
+  model: string;
+  inputTokenPrice: number;
+  outputTokenPrice: number;
+  cachedTokenPrice: number | null;
+  effectiveFrom: string;
+  effectiveTo: string | null;
+}
+
+export interface AiModelPricePayload {
+  provider: string;
+  model: string;
+  inputTokenPrice: number;
+  outputTokenPrice: number;
+  cachedTokenPrice: number | null;
+}
+
+export async function listOrganizationsUsage(): Promise<PlatformOrganizationUsage[]> {
+  return apiFetch<PlatformOrganizationUsage[]>('/api/platform/usage/organizations');
+}
+
+export async function upsertOrganizationAiPlan(
+  organizationId: string,
+  payload: OrganizationAiPlanPayload
+): Promise<OrganizationAiPlan> {
+  return apiFetch<OrganizationAiPlan>(`/api/platform/organizations/${organizationId}/ai-plan`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function listAiModelPrices(): Promise<AiModelPrice[]> {
+  return apiFetch<AiModelPrice[]>('/api/platform/ai-model-prices');
+}
+
+export async function createAiModelPrice(payload: AiModelPricePayload): Promise<AiModelPrice> {
+  return apiFetch<AiModelPrice>('/api/platform/ai-model-prices', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}

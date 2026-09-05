@@ -9,18 +9,23 @@ import {
   createTeamMember,
   listMembers,
   listOrganizations,
+  listOrganizationsUsage,
   resetMemberPassword,
   revokeMember,
+  upsertOrganizationAiPlan,
   type MembershipRole,
+  type OrganizationAiPlanPayload,
   type OrganizationStatus,
   type PlatformMember,
   type PlatformOrganization,
+  type PlatformOrganizationUsage,
   type ProvisionOrganizationPayload,
   type ProvisionTeamMemberPayload,
 } from '@/features/platform';
 
 export function usePlatformDashboard() {
   const [organizations, setOrganizations] = useState<PlatformOrganization[]>([]);
+  const [organizationsUsage, setOrganizationsUsage] = useState<Record<string, PlatformOrganizationUsage>>({});
   const [loading, setLoading] = useState(true);
   const [actionPending, setActionPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +35,9 @@ export function usePlatformDashboard() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setOrganizations(await listOrganizations());
+      const [orgs, usage] = await Promise.all([listOrganizations(), listOrganizationsUsage()]);
+      setOrganizations(orgs);
+      setOrganizationsUsage(Object.fromEntries(usage.map((entry) => [entry.organizationId, entry])));
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudieron cargar las organizaciones');
@@ -122,6 +129,20 @@ export function usePlatformDashboard() {
     }
   }
 
+  async function saveAiPlan(organizationId: string, payload: OrganizationAiPlanPayload) {
+    setActionPending(true);
+    setError(null);
+    try {
+      await upsertOrganizationAiPlan(organizationId, payload);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo guardar el plan de IA');
+      throw err;
+    } finally {
+      setActionPending(false);
+    }
+  }
+
   async function activate(organizationId: string, membershipId: string) {
     setActionPending(true);
     setError(null);
@@ -153,6 +174,7 @@ export function usePlatformDashboard() {
 
   return {
     organizations,
+    organizationsUsage,
     loading,
     actionPending,
     error,
@@ -166,5 +188,6 @@ export function usePlatformDashboard() {
     activate,
     resetPassword,
     changeStatus,
+    saveAiPlan,
   };
 }

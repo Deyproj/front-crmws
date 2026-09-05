@@ -1,25 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/features/auth/presentation/context/AuthContext';
-import { LogOutIcon } from '@/components/ui/icons';
+import { LogOutIcon, PlusIcon, UsersIcon, ZapIcon } from '@/components/ui/icons';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Tabs } from '@/components/ui/Tabs';
 import { usePlatformDashboard } from '../hooks/usePlatformDashboard';
+import { AiUsageSection } from '../components/AiUsageSection';
+import { AiModelPricesManager } from '../components/AiModelPricesManager';
 import {
   MEMBERSHIP_ROLES,
   ORGANIZATION_STATUSES,
   type MembershipRole,
+  type OrganizationAiPlanPayload,
   type OrganizationStatus,
   type PlatformMember,
   type PlatformOrganization,
+  type PlatformOrganizationUsage,
 } from '@/features/platform';
+
+const DETAIL_TABS = [
+  { id: 'team', label: 'Equipo' },
+  { id: 'usage', label: 'Consumo IA' },
+];
 
 export function PlatformDashboardView() {
   const { logout } = useAuth();
   const router = useRouter();
   const {
     organizations,
+    organizationsUsage,
     loading,
     actionPending,
     error,
@@ -33,12 +45,22 @@ export function PlatformDashboardView() {
     activate,
     resetPassword,
     changeStatus,
+    saveAiPlan,
   } = usePlatformDashboard();
+  const [creatingOrganization, setCreatingOrganization] = useState(false);
 
   async function handleLogout() {
     await logout();
     router.replace('/login');
   }
+
+  const kpis = useMemo(() => {
+    const usageEntries = Object.values(organizationsUsage);
+    const active = organizations.filter((o) => o.status === 'ACTIVE').length;
+    const withPlan = usageEntries.filter((entry) => entry.usage.planConfigured).length;
+    const totalInteractions = usageEntries.reduce((sum, entry) => sum + entry.usage.usedInteractions, 0);
+    return { total: organizations.length, active, withPlan, totalInteractions };
+  }, [organizations, organizationsUsage]);
 
   return (
     // dvh, no screen: 100vh no descuenta la barra de direcciones en móvil (ver LoginView.tsx)
@@ -56,7 +78,7 @@ export function PlatformDashboardView() {
       </header>
 
       <div className="flex-1 overflow-y-auto p-[var(--space-9)]">
-        <div className="mx-auto flex max-w-3xl flex-col gap-[var(--space-9)]">
+        <div className="mx-auto flex max-w-4xl flex-col gap-[var(--space-9)]">
           {lastTemporaryPassword && (
             <TemporaryPasswordBanner password={lastTemporaryPassword} onDismiss={dismissTemporaryPassword} />
           )}
@@ -67,23 +89,57 @@ export function PlatformDashboardView() {
             </p>
           )}
 
-          <section className="flex flex-col gap-[var(--space-5)]">
-            <h2 className="text-sm font-semibold uppercase text-muted">Nueva organización</h2>
-            <NewOrganizationForm actionPending={actionPending} onSubmit={provisionOrganization} />
-          </section>
+          {!loading && organizations.length > 0 && (
+            <div className="grid grid-cols-2 gap-[var(--space-6)] sm:grid-cols-4">
+              <KpiCard label="Organizaciones" value={kpis.total} />
+              <KpiCard label="Activas" value={kpis.active} />
+              <KpiCard label="Con paquete de IA" value={kpis.withPlan} />
+              <KpiCard label="Interacciones IA (período)" value={kpis.totalInteractions.toLocaleString('es-CO')} />
+            </div>
+          )}
 
           <section className="flex flex-col gap-[var(--space-5)]">
-            <h2 className="text-sm font-semibold uppercase text-muted">Organizaciones</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold uppercase text-muted">Organizaciones</h2>
+              {!creatingOrganization && (
+                <button
+                  type="button"
+                  onClick={() => setCreatingOrganization(true)}
+                  className="flex items-center gap-[var(--space-3)] rounded-md bg-brand px-[var(--space-6)] py-[var(--space-4)] text-xs font-semibold text-on-brand hover:bg-brand-hover"
+                >
+                  <PlusIcon className="size-[14px]" />
+                  Nueva organización
+                </button>
+              )}
+            </div>
+
+            {creatingOrganization && (
+              <NewOrganizationForm
+                actionPending={actionPending}
+                onSubmit={async (payload) => {
+                  const result = await provisionOrganization(payload);
+                  setCreatingOrganization(false);
+                  return result;
+                }}
+                onCancel={() => setCreatingOrganization(false)}
+              />
+            )}
+
             {loading ? (
               <p className="text-sm text-secondary">Cargando...</p>
             ) : organizations.length === 0 ? (
-              <p className="text-sm text-secondary">Todavía no hay organizaciones creadas.</p>
+              <EmptyState
+                icon={<UsersIcon className="size-[22px]" />}
+                title="Todavía no hay organizaciones creadas"
+                description="Crea la primera organización para dar de alta a su dueño y empezar a operar."
+              />
             ) : (
               <div className="flex flex-col gap-[var(--space-6)]">
                 {organizations.map((organization) => (
                   <OrganizationRow
                     key={organization.id}
                     organization={organization}
+                    usage={organizationsUsage[organization.id]}
                     actionPending={actionPending}
                     onAddTeamMember={(payload) => provisionTeamMember(organization.id, payload)}
                     onLoadMembers={() => loadMembers(organization.id)}
@@ -92,13 +148,30 @@ export function PlatformDashboardView() {
                     onActivate={(membershipId) => activate(organization.id, membershipId)}
                     onResetPassword={(membershipId) => resetPassword(organization.id, membershipId)}
                     onChangeStatus={(status) => changeStatus(organization.id, status)}
+                    onSaveAiPlan={(payload) => saveAiPlan(organization.id, payload)}
                   />
                 ))}
               </div>
             )}
           </section>
+
+          <section className="flex flex-col gap-[var(--space-5)]">
+            <h2 className="text-sm font-semibold uppercase text-muted">Precios de modelos de IA</h2>
+            <div className="rounded-xl border border-border bg-surface p-[var(--space-8)]">
+              <AiModelPricesManager />
+            </div>
+          </section>
         </div>
       </div>
+    </div>
+  );
+}
+
+function KpiCard({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-xl border border-border bg-surface p-[var(--space-7)]">
+      <p className="text-2xl font-black text-ink">{value}</p>
+      <p className="mt-1 text-xs text-secondary">{label}</p>
     </div>
   );
 }
@@ -116,7 +189,7 @@ function TemporaryPasswordBanner({ password, onDismiss }: { password: string; on
   }
 
   return (
-    <div className="rounded-lg border border-warning/40 bg-warning-bg p-[var(--space-8)]">
+    <div className="rounded-xl border border-warning/40 bg-warning-bg p-[var(--space-8)]">
       <p className="mb-[var(--space-4)] text-sm font-semibold text-ink">
         Contraseña temporal — cópiala ahora, no se volverá a mostrar
       </p>
@@ -149,6 +222,7 @@ function TemporaryPasswordBanner({ password, onDismiss }: { password: string; on
 function NewOrganizationForm({
   actionPending,
   onSubmit,
+  onCancel,
 }: {
   actionPending: boolean;
   onSubmit: (payload: {
@@ -158,6 +232,7 @@ function NewOrganizationForm({
     organizationSlug: string;
     timezone: string;
   }) => Promise<unknown>;
+  onCancel: () => void;
 }) {
   const [ownerName, setOwnerName] = useState('');
   const [ownerEmail, setOwnerEmail] = useState('');
@@ -180,7 +255,7 @@ function NewOrganizationForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid grid-cols-1 gap-[var(--space-6)] rounded-lg border border-border bg-surface p-[var(--space-8)] sm:grid-cols-2"
+      className="grid grid-cols-1 gap-[var(--space-6)] rounded-xl border border-border bg-surface p-[var(--space-8)] sm:grid-cols-2"
     >
       <Field label="Nombre del dueño">
         <input required value={ownerName} onChange={(e) => setOwnerName(e.target.value)} className={inputClass} />
@@ -214,7 +289,15 @@ function NewOrganizationForm({
       <Field label="Zona horaria">
         <input required value={timezone} onChange={(e) => setTimezone(e.target.value)} className={inputClass} />
       </Field>
-      <div className="flex items-end sm:col-span-2">
+      <div className="flex items-end gap-[var(--space-4)] sm:col-span-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={actionPending}
+          className="rounded-md border border-border px-[var(--space-7)] py-[var(--space-5)] text-sm font-semibold text-ink hover:bg-app disabled:opacity-50"
+        >
+          Cancelar
+        </button>
         <button
           type="submit"
           disabled={actionPending}
@@ -229,6 +312,7 @@ function NewOrganizationForm({
 
 function OrganizationRow({
   organization,
+  usage,
   actionPending,
   onAddTeamMember,
   onLoadMembers,
@@ -237,8 +321,10 @@ function OrganizationRow({
   onActivate,
   onResetPassword,
   onChangeStatus,
+  onSaveAiPlan,
 }: {
   organization: PlatformOrganization;
+  usage: PlatformOrganizationUsage | undefined;
   actionPending: boolean;
   onAddTeamMember: (payload: { name: string; email: string; role: MembershipRole }) => Promise<unknown>;
   onLoadMembers: () => Promise<PlatformMember[]>;
@@ -247,8 +333,10 @@ function OrganizationRow({
   onActivate: (membershipId: string) => Promise<unknown>;
   onResetPassword: (membershipId: string) => Promise<unknown>;
   onChangeStatus: (status: OrganizationStatus) => Promise<unknown>;
+  onSaveAiPlan: (payload: OrganizationAiPlanPayload) => Promise<unknown>;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [detailTab, setDetailTab] = useState(DETAIL_TABS[0].id);
   const [members, setMembers] = useState<PlatformMember[] | null>(null);
   const [membersLoading, setMembersLoading] = useState(false);
   const [membersError, setMembersError] = useState<string | null>(null);
@@ -376,163 +464,190 @@ function OrganizationRow({
     await refreshMembers();
   }
 
+  const usagePercentage = usage?.usage.planConfigured ? usage.usage.usagePercentage : null;
+
   return (
-    <div className="rounded-lg border border-border bg-surface p-[var(--space-7)]">
+    <div className="rounded-xl border border-border bg-surface p-[var(--space-7)]">
       {statusError && <p className="mb-[var(--space-4)] text-sm text-danger">{statusError}</p>}
       <div className="flex flex-wrap items-center justify-between gap-[var(--space-5)]">
-        <div>
-          <p className="text-sm font-semibold text-ink">{organization.name}</p>
-          <p className="text-xs text-secondary">{organization.slug}</p>
+        <div className="flex min-w-0 items-center gap-[var(--space-5)]">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-semibold text-on-brand">
+            {organization.name.slice(0, 1).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-ink">{organization.name}</p>
+            <div className="flex flex-wrap items-center gap-x-[var(--space-4)] gap-y-1">
+              <p className="text-xs text-secondary">{organization.slug}</p>
+              {usagePercentage !== null && <UsagePill percentage={usagePercentage} />}
+            </div>
+          </div>
         </div>
-        <select
-          value={organization.status}
-          disabled={actionPending}
-          onChange={(e) => handleStatusChange(e.target.value as OrganizationStatus)}
-          className={`rounded-md border px-[var(--space-4)] py-[var(--space-3)] text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand disabled:cursor-not-allowed disabled:opacity-50 ${
-            organization.status === 'ACTIVE'
-              ? 'border-border bg-app text-ink'
-              : 'border-danger/30 bg-danger-bg text-danger'
-          }`}
-        >
-          {ORGANIZATION_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          onClick={toggleExpanded}
-          className="rounded-md border border-border px-[var(--space-6)] py-[var(--space-4)] text-xs font-semibold text-ink hover:bg-app"
-        >
-          {expanded ? 'Ocultar equipo' : 'Ver equipo'}
-        </button>
+
+        <div className="flex items-center gap-[var(--space-4)]">
+          <select
+            value={organization.status}
+            disabled={actionPending}
+            onChange={(e) => handleStatusChange(e.target.value as OrganizationStatus)}
+            className={`rounded-md border px-[var(--space-4)] py-[var(--space-3)] text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand disabled:cursor-not-allowed disabled:opacity-50 ${
+              organization.status === 'ACTIVE'
+                ? 'border-border bg-app text-ink'
+                : 'border-danger/30 bg-danger-bg text-danger'
+            }`}
+          >
+            {ORGANIZATION_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={toggleExpanded}
+            className="rounded-md border border-border px-[var(--space-6)] py-[var(--space-4)] text-xs font-semibold text-ink hover:bg-app"
+          >
+            {expanded ? 'Ocultar detalle' : 'Ver detalle'}
+          </button>
+        </div>
       </div>
 
       {expanded && (
-        <div className="mt-[var(--space-6)] flex flex-col gap-[var(--space-5)] border-t border-border pt-[var(--space-6)]">
-          {membersError && <p className="text-sm text-danger">{membersError}</p>}
+        <div className="mt-[var(--space-6)] flex flex-col gap-[var(--space-6)] border-t border-border pt-[var(--space-6)]">
+          <Tabs tabs={DETAIL_TABS} activeId={detailTab} onChange={setDetailTab} size="sm" label="Detalle de la organización" />
 
-          {membersLoading ? (
-            <p className="text-sm text-secondary">Cargando miembros...</p>
-          ) : members && members.length > 0 ? (
-            <ul className="flex flex-col gap-[var(--space-4)]">
-              {members.map((member) => (
-                <li
-                  key={member.id}
-                  className={`flex flex-wrap items-center justify-between gap-[var(--space-4)] rounded-md border border-border bg-app px-[var(--space-5)] py-[var(--space-4)] ${
-                    member.active ? '' : 'opacity-50'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center gap-[var(--space-3)]">
-                      <p className="text-sm font-medium text-ink">{member.name ?? '—'}</p>
-                      {!member.active && (
-                        <span className="rounded-full border border-danger/30 bg-danger-bg px-[var(--space-3)] py-[2px] text-[10px] font-semibold uppercase text-danger">
-                          Inactivo
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-secondary">{member.email ?? '—'}</p>
-                  </div>
-                  {member.active ? (
-                    <div className="flex items-center gap-[var(--space-4)]">
-                      <select
-                        value={member.role}
-                        disabled={actionPending}
-                        onChange={(e) => handleRoleChange(member.id, e.target.value as MembershipRole)}
-                        className="rounded-md border border-border bg-surface px-[var(--space-4)] py-[var(--space-3)] text-xs text-ink focus:outline-none focus:ring-2 focus:ring-brand"
-                      >
-                        {MEMBERSHIP_ROLES.map((r) => (
-                          <option key={r} value={r}>
-                            {r}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        disabled={actionPending}
-                        onClick={() => handleResetPassword(member.id)}
-                        className="rounded-md border border-border px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold text-ink hover:bg-app disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Resetear contraseña
-                      </button>
-                      <button
-                        type="button"
-                        disabled={actionPending}
-                        onClick={() => handleRevoke(member.id)}
-                        className="rounded-md border border-danger/30 px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold text-danger hover:bg-danger-bg disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Revocar
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-[var(--space-4)]">
-                      <p className="text-xs text-secondary">Sin acceso — revocado</p>
-                      <button
-                        type="button"
-                        disabled={actionPending}
-                        onClick={() => handleActivate(member.id)}
-                        className="rounded-md border border-border px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold text-ink hover:bg-app disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Reactivar
-                      </button>
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-secondary">Todavía no hay miembros en esta organización.</p>
+          {detailTab === 'usage' && (
+            <AiUsageSection usage={usage?.usage} actionPending={actionPending} onSavePlan={onSaveAiPlan} />
           )}
 
-          {addingMember ? (
-            <form
-              onSubmit={handleAddSubmit}
-              className="grid grid-cols-1 gap-[var(--space-5)] border-t border-border pt-[var(--space-6)] sm:grid-cols-4"
-            >
-              <input
-                required
-                placeholder="Nombre"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="rounded-md border border-border bg-app px-[var(--space-5)] py-[var(--space-4)] text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand sm:col-span-1"
-              />
-              <input
-                required
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="rounded-md border border-border bg-app px-[var(--space-5)] py-[var(--space-4)] text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand sm:col-span-1"
-              />
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as MembershipRole)}
-                className="rounded-md border border-border bg-app px-[var(--space-5)] py-[var(--space-4)] text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand sm:col-span-1"
-              >
-                {MEMBERSHIP_ROLES.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="submit"
-                disabled={actionPending}
-                className="rounded-md bg-brand px-[var(--space-6)] py-[var(--space-4)] text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-1"
-              >
-                Crear
-              </button>
-            </form>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setAddingMember(true)}
-              className="self-start rounded-md border border-border px-[var(--space-6)] py-[var(--space-4)] text-xs font-semibold text-ink hover:bg-app"
-            >
-              Agregar asesor
-            </button>
+          {detailTab === 'team' && (
+            <div className="flex flex-col gap-[var(--space-5)]">
+              {membersError && <p className="text-sm text-danger">{membersError}</p>}
+
+              {membersLoading ? (
+                <p className="text-sm text-secondary">Cargando miembros...</p>
+              ) : members && members.length > 0 ? (
+                <ul className="flex flex-col gap-[var(--space-4)]">
+                  {members.map((member) => (
+                    <li
+                      key={member.id}
+                      className={`flex flex-wrap items-center justify-between gap-[var(--space-4)] rounded-md border border-border bg-app px-[var(--space-5)] py-[var(--space-4)] ${
+                        member.active ? '' : 'opacity-50'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center gap-[var(--space-3)]">
+                          <p className="text-sm font-medium text-ink">{member.name ?? '—'}</p>
+                          {!member.active && (
+                            <span className="rounded-full border border-danger/30 bg-danger-bg px-[var(--space-3)] py-[2px] text-[10px] font-semibold uppercase text-danger">
+                              Inactivo
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-secondary">{member.email ?? '—'}</p>
+                      </div>
+                      {member.active ? (
+                        <div className="flex items-center gap-[var(--space-4)]">
+                          <select
+                            value={member.role}
+                            disabled={actionPending}
+                            onChange={(e) => handleRoleChange(member.id, e.target.value as MembershipRole)}
+                            className="rounded-md border border-border bg-surface px-[var(--space-4)] py-[var(--space-3)] text-xs text-ink focus:outline-none focus:ring-2 focus:ring-brand"
+                          >
+                            {MEMBERSHIP_ROLES.map((r) => (
+                              <option key={r} value={r}>
+                                {r}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            disabled={actionPending}
+                            onClick={() => handleResetPassword(member.id)}
+                            className="rounded-md border border-border px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold text-ink hover:bg-app disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Resetear contraseña
+                          </button>
+                          <button
+                            type="button"
+                            disabled={actionPending}
+                            onClick={() => handleRevoke(member.id)}
+                            className="rounded-md border border-danger/30 px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold text-danger hover:bg-danger-bg disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Revocar
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-[var(--space-4)]">
+                          <p className="text-xs text-secondary">Sin acceso — revocado</p>
+                          <button
+                            type="button"
+                            disabled={actionPending}
+                            onClick={() => handleActivate(member.id)}
+                            className="rounded-md border border-border px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold text-ink hover:bg-app disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Reactivar
+                          </button>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <EmptyState
+                  icon={<UsersIcon className="size-[18px]" />}
+                  title="Todavía no hay miembros en esta organización"
+                  className="p-[var(--space-6)]"
+                />
+              )}
+
+              {addingMember ? (
+                <form
+                  onSubmit={handleAddSubmit}
+                  className="grid grid-cols-1 gap-[var(--space-5)] border-t border-border pt-[var(--space-6)] sm:grid-cols-4"
+                >
+                  <input
+                    required
+                    placeholder="Nombre"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="rounded-md border border-border bg-app px-[var(--space-5)] py-[var(--space-4)] text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand sm:col-span-1"
+                  />
+                  <input
+                    required
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="rounded-md border border-border bg-app px-[var(--space-5)] py-[var(--space-4)] text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand sm:col-span-1"
+                  />
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value as MembershipRole)}
+                    className="rounded-md border border-border bg-app px-[var(--space-5)] py-[var(--space-4)] text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand sm:col-span-1"
+                  >
+                    {MEMBERSHIP_ROLES.map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="submit"
+                    disabled={actionPending}
+                    className="rounded-md bg-brand px-[var(--space-6)] py-[var(--space-4)] text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-1"
+                  >
+                    Crear
+                  </button>
+                </form>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAddingMember(true)}
+                  className="self-start rounded-md border border-border px-[var(--space-6)] py-[var(--space-4)] text-xs font-semibold text-ink hover:bg-app"
+                >
+                  Agregar asesor
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -546,6 +661,18 @@ function OrganizationRow({
         onCancel={() => setPendingConfirmation(null)}
       />
     </div>
+  );
+}
+
+/** Vistazo rápido del consumo de IA sin tener que abrir el detalle — solo cuando hay plan configurado. */
+function UsagePill({ percentage }: { percentage: number }) {
+  const variantClass =
+    percentage > 100 ? 'bg-danger-bg text-danger' : percentage >= 90 ? 'bg-warning-bg text-warning' : 'bg-info-bg text-info';
+  return (
+    <span className={`flex items-center gap-1 rounded-full px-[var(--space-3)] py-[1px] text-[10px] font-semibold ${variantClass}`}>
+      <ZapIcon className="size-[10px]" />
+      {percentage.toFixed(0)}% del paquete IA
+    </span>
   );
 }
 
