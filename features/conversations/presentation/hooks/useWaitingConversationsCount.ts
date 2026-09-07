@@ -2,9 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { countConversations } from '@/features/conversations';
-import { useConversationWaitingSignal } from '../context/ConversationRealtimeContext';
-
-const POLL_INTERVAL_MS = 8000;
+import { useConversationsPollTick, useConversationsSignal } from '../context/ConversationRealtimeContext';
 
 /**
  * Cuántas conversaciones están en status WAITING (esperando un asesor) — sin importar
@@ -13,7 +11,8 @@ const POLL_INTERVAL_MS = 8000;
  */
 export function useWaitingConversationsCount() {
   const [count, setCount] = useState(0);
-  const waitingSignal = useConversationWaitingSignal();
+  const conversationsSignal = useConversationsSignal();
+  const pollTick = useConversationsPollTick();
 
   const load = useCallback(async () => {
     try {
@@ -24,20 +23,26 @@ export function useWaitingConversationsCount() {
   }, []);
 
   useEffect(() => {
-    // Carga inicial + refresco periódico, mismo patrón que useConversationsList.
+    // Carga inicial.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
-    const interval = setInterval(load, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
   }, [load]);
 
   useEffect(() => {
-    // Aviso en tiempo real (ConversationRealtimeProvider): no reemplaza el polling de
-    // arriba, solo adelanta el refresco cuando llega un `conversation.waiting` por SSE.
-    if (waitingSignal === 0) return;
+    // conversation.waiting/.taken/.released/.transferred: adelanta el refresco en vez de
+    // esperar el próximo poll de seguridad — cualquiera de los cuatro puede cambiar cuántas
+    // conversaciones quedan en Esperando (p. ej. alguien la toma o la libera de vuelta).
+    if (conversationsSignal === 0) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
-  }, [waitingSignal, load]);
+  }, [conversationsSignal, load]);
+
+  useEffect(() => {
+    // Red de seguridad si el SSE no conectó, sincronizada con el resto de la bandeja.
+    if (pollTick === 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load();
+  }, [pollTick, load]);
 
   return count;
 }

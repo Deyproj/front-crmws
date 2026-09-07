@@ -6,24 +6,49 @@ import { BASE_PATH } from '@/lib/runtime/basePath';
 import { subscribeToPush } from './pushSubscriptionClient';
 
 interface RealtimeSignals {
-  /** Se incrementa con cada aviso `conversation.waiting` (broadcast, cualquier asesor puede tomarla). */
-  waitingSignal: number;
   /**
-   * Se incrementa con cada aviso `conversation.transferred`, sin filtrar por destinatario —
-   * tanto quien recibe como quien pierde la conversación deben refrescar su "Mías" al toque.
+   * Se incrementa con cualquier aviso que mueva una conversación de una lista a otra
+   * (`conversation.waiting`, `.taken`, `.released`, `.transferred`) — la señal que deben
+   * escuchar la bandeja y los contadores de burbujas para reflejarlo de inmediato en vez
+   * de esperar el próximo poll de seguridad.
    */
-  mineSignal: number;
+  conversationsSignal: number;
+  /**
+   * Se incrementa solo con `conversation.waiting`, el único aviso que puede traer un
+   * contacto nuevo (mensaje entrante de un número no visto antes). Separado de
+   * `conversationsSignal` para no releer el catálogo completo de contactos ante avisos
+   * que no lo modifican (tomar/liberar/transferir no crean ni renombran contactos).
+   */
+  contactsSignal: number;
+  /**
+   * Red de seguridad: se incrementa cada POLL_INTERVAL_MS sin importar el SSE — cubre el
+   * caso de stream caído, proxy sin soporte de streaming, o backend con más de una réplica
+   * sin sticky sessions. Un único temporizador compartido para que la bandeja y los
+   * contadores de burbujas se refresquen siempre juntos (antes cada hook tenía su propio
+   * `setInterval` de 8s, arrancado en un instante distinto, así que podían quedar
+   * desincronizados entre sí).
+   */
+  pollTick: number;
 }
 
-const ConversationRealtimeContext = createContext<RealtimeSignals>({ waitingSignal: 0, mineSignal: 0 });
+const ConversationRealtimeContext = createContext<RealtimeSignals>({
+  conversationsSignal: 0,
+  contactsSignal: 0,
+  pollTick: 0,
+});
 
 const RECONNECT_DELAY_MS = 4000;
+// Red de seguridad, no la vía primaria de actualización: los eventos SSE
+// (conversation.waiting/.taken/.released/.transferred) ya cubren en tiempo real todos los
+// cambios de estado que mueven un chat entre listas. Este intervalo, mucho más largo que
+// el polling de 8s/5s de antes, solo protege contra un stream que no llegó a conectar.
+const POLL_INTERVAL_MS = 45000;
 
 function notifyBrowser(title: string, body: string, tag: string) {
   if (typeof window === 'undefined' || !('Notification' in window)) return;
   if (Notification.permission !== 'granted') return;
-  // La pestaña visible ya se entera por el badge/lista (useConversationWaitingSignal /
-  // useConversationMineSignal) — evita duplicar el aviso con una notificación del sistema encima.
+  // La pestaña visible ya se entera por el badge/lista (useConversationsSignal) — evita
+  // duplicar el aviso con una notificación del sistema encima.
   if (document.visibilityState === 'visible') return;
 
   // `tag` colapsa avisos repetidos en una sola notificación en vez de apilarlos si
@@ -38,18 +63,18 @@ function notifyBrowser(title: string, body: string, tag: string) {
 /**
  * Una única conexión SSE compartida por toda la sesión (montada en AppShell) hacia
  * `/api/conversations/events/stream`, que reenvía sin materializar el stream de
- * `ConversationRealtimeController` (api-crmws). Expone solo un contador que se
- * incrementa con cada aviso `conversation.waiting` recibido — los hooks que
- * necesitan reaccionar (`useWaitingConversationsCount`, `useConversationsList`) lo
- * leen con {@link useConversationWaitingSignal} y refrescan de inmediato en vez de
- * esperar el próximo ciclo de polling. El polling sigue activo como red de
- * seguridad si el stream no conecta (navegador viejo, proxy que no soporta
- * streaming, backend con más de una réplica sin sticky sessions).
+ * `ConversationRealtimeController` (api-crmws). Expone las señales que consumen
+ * {@link useConversationsSignal}/{@link useContactsSignal}/{@link useConversationsPollTick} —
+ * los hooks de la bandeja (`useConversationsList`, `useWaitingConversationsCount`,
+ * `useMineConversationsCount`) las leen para refrescar de inmediato en vez de esperar el
+ * próximo ciclo de polling de seguridad.
  *
- * También dispara una notificación del navegador (`Notification` API) por cada
- * aviso recibido mientras la pestaña no está visible — si el asesor ya está
- * mirando la bandeja, el badge/lista que refresca `useConversationWaitingSignal`
- * ya es aviso suficiente, la notificación del sistema sería ruido redundante.
+ * También dispara una notificación del navegador (`Notification` API) por cada aviso de
+ * `conversation.waiting`/`.transferred` recibido mientras la pestaña no está visible — si
+ * el asesor ya está mirando la bandeja, el badge/lista que refresca `conversationsSignal`
+ * ya es aviso suficiente. `conversation.taken`/`.released` no disparan notificación: no son
+ * una alerta que requiera atención, solo el aviso de que otra bandeja ya abierta debe
+ * reflejar el movimiento del chat.
  *
  * Con el permiso concedido, además suscribe el navegador a Web Push
  * (`pushSubscriptionClient.ts`) — a diferencia de la notificación de arriba, esa
@@ -57,8 +82,14 @@ function notifyBrowser(title: string, body: string, tag: string) {
  * `app.push.vapid.*` configurado.
  */
 export function ConversationRealtimeProvider({ children }: { children: React.ReactNode }) {
-  const [waitingSignal, setWaitingSignal] = useState(0);
-  const [mineSignal, setMineSignal] = useState(0);
+  const [conversationsSignal, setConversationsSignal] = useState(0);
+  const [contactsSignal, setContactsSignal] = useState(0);
+  const [pollTick, setPollTick] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => setPollTick((n) => n + 1), POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !('Notification' in window)) return;
@@ -96,15 +127,19 @@ export function ConversationRealtimeProvider({ children }: { children: React.Rea
       }
 
       if (eventName === 'conversation.waiting') {
-        setWaitingSignal((n) => n + 1);
+        setConversationsSignal((n) => n + 1);
+        setContactsSignal((n) => n + 1);
         notifyBrowser('Conversación en espera', 'Un contacto necesita la atención de un asesor.', 'conversation-waiting');
         return;
       }
 
+      if (eventName === 'conversation.taken' || eventName === 'conversation.released') {
+        setConversationsSignal((n) => n + 1);
+        return;
+      }
+
       if (eventName === 'conversation.transferred') {
-        // Indiscriminado a propósito: tanto quien recibe como quien pierde la
-        // conversación deben refrescar su contador de "Mías" al toque.
-        setMineSignal((n) => n + 1);
+        setConversationsSignal((n) => n + 1);
         try {
           const payload = JSON.parse(data) as { targetMembershipId?: string };
           const myMembershipId = getSession()?.user.membershipId;
@@ -166,18 +201,26 @@ export function ConversationRealtimeProvider({ children }: { children: React.Rea
   }, []);
 
   return (
-    <ConversationRealtimeContext.Provider value={{ waitingSignal, mineSignal }}>
+    <ConversationRealtimeContext.Provider value={{ conversationsSignal, contactsSignal, pollTick }}>
       {children}
     </ConversationRealtimeContext.Provider>
   );
 }
 
-/** Cambia cada vez que llega un aviso `conversation.waiting` por SSE — ver {@link ConversationRealtimeProvider}. */
-export function useConversationWaitingSignal(): number {
-  return useContext(ConversationRealtimeContext).waitingSignal;
+/**
+ * Cambia con cualquier aviso que mueva una conversación de una lista a otra
+ * (`conversation.waiting`/`.taken`/`.released`/`.transferred`) — ver {@link ConversationRealtimeProvider}.
+ */
+export function useConversationsSignal(): number {
+  return useContext(ConversationRealtimeContext).conversationsSignal;
 }
 
-/** Cambia cada vez que llega un aviso `conversation.transferred` por SSE — ver {@link ConversationRealtimeProvider}. */
-export function useConversationMineSignal(): number {
-  return useContext(ConversationRealtimeContext).mineSignal;
+/** Cambia solo con `conversation.waiting` (posible contacto nuevo) — ver {@link ConversationRealtimeProvider}. */
+export function useContactsSignal(): number {
+  return useContext(ConversationRealtimeContext).contactsSignal;
+}
+
+/** Red de seguridad de polling, compartida por todos los hooks de la bandeja — ver {@link ConversationRealtimeProvider}. */
+export function useConversationsPollTick(): number {
+  return useContext(ConversationRealtimeContext).pollTick;
 }

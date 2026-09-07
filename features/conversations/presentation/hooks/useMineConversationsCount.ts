@@ -2,9 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { countConversations } from '@/features/conversations';
-import { useConversationMineSignal } from '../context/ConversationRealtimeContext';
-
-const POLL_INTERVAL_MS = 8000;
+import { useConversationsPollTick, useConversationsSignal } from '../context/ConversationRealtimeContext';
 
 /**
  * Cuántas conversaciones tiene asignadas el asesor actual — sin importar la pestaña
@@ -13,7 +11,8 @@ const POLL_INTERVAL_MS = 8000;
  */
 export function useMineConversationsCount(membershipId: string | null | undefined) {
   const [count, setCount] = useState(0);
-  const mineSignal = useConversationMineSignal();
+  const conversationsSignal = useConversationsSignal();
+  const pollTick = useConversationsPollTick();
 
   const load = useCallback(async () => {
     if (!membershipId) {
@@ -28,21 +27,26 @@ export function useMineConversationsCount(membershipId: string | null | undefine
   }, [membershipId]);
 
   useEffect(() => {
-    // Carga inicial + refresco periódico, mismo patrón que useWaitingConversationsCount.
+    // Carga inicial.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
-    const interval = setInterval(load, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
   }, [load]);
 
   useEffect(() => {
-    // Aviso en tiempo real (conversation.transferred): adelanta el refresco en vez de
-    // esperar el próximo ciclo de polling, tanto para quien recibe como para quien
-    // pierde la conversación transferida.
-    if (mineSignal === 0) return;
+    // conversation.waiting/.taken/.released/.transferred: adelanta el refresco en vez de
+    // esperar el próximo poll de seguridad — cualquiera de los cuatro puede afectar "Mías",
+    // tanto para quien gana como para quien pierde la conversación.
+    if (conversationsSignal === 0) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
-  }, [mineSignal, load]);
+  }, [conversationsSignal, load]);
+
+  useEffect(() => {
+    // Red de seguridad si el SSE no conectó, sincronizada con el resto de la bandeja.
+    if (pollTick === 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load();
+  }, [pollTick, load]);
 
   return count;
 }
