@@ -39,6 +39,8 @@ export interface FollowUpMessageRule {
   messageTemplate: string;
   /** `null` = aplica a cualquier motivo (regla universal). */
   reason: FollowUpReason | null;
+  /** Plantilla Meta a usar cuando el contacto lleva más de 24h sin escribir (BR-030); `null` = sin asignar (se omite el envío en ese caso). */
+  metaTemplateId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -51,10 +53,11 @@ export async function createFollowUpMessageRule(
   thresholdDays: number,
   messageTemplate: string,
   reason: FollowUpReason | null,
+  metaTemplateId: string | null,
 ): Promise<FollowUpMessageRule> {
   return apiFetch<FollowUpMessageRule>('/api/followups/message-rules', {
     method: 'POST',
-    body: JSON.stringify({ thresholdDays, messageTemplate, reason }),
+    body: JSON.stringify({ thresholdDays, messageTemplate, reason, metaTemplateId }),
   });
 }
 
@@ -63,10 +66,11 @@ export async function updateFollowUpMessageRule(
   thresholdDays: number,
   messageTemplate: string,
   reason: FollowUpReason | null,
+  metaTemplateId: string | null,
 ): Promise<FollowUpMessageRule> {
   return apiFetch<FollowUpMessageRule>(`/api/followups/message-rules/${ruleId}`, {
     method: 'PATCH',
-    body: JSON.stringify({ thresholdDays, messageTemplate, reason }),
+    body: JSON.stringify({ thresholdDays, messageTemplate, reason, metaTemplateId }),
   });
 }
 

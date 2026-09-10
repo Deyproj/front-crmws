@@ -14,6 +14,19 @@ export interface Organization {
   timezone: string;
   status: OrganizationStatus;
   automationEnabled: boolean;
+  courtesyReminderEnabled: boolean;
+  followUpReminderEnabled: boolean;
+  /** Hora local (0-23, zona horaria de `timezone`) en la que corren los recordatorios automáticos. */
+  dailyReminderHour: number;
+  /** Plantilla Meta a usar cuando el contacto lleva más de 24h sin escribir (BR-030); `null` = sin asignar (se omite el envío en ese caso). */
+  courtesyReminderTemplateId: string | null;
+}
+
+export interface ReminderScheduleInput {
+  courtesyReminderEnabled: boolean;
+  followUpReminderEnabled: boolean;
+  dailyReminderHour: number;
+  courtesyReminderTemplateId: string | null;
 }
 
 /**
@@ -37,6 +50,13 @@ export async function setAutomationEnabled(enabled: boolean): Promise<Organizati
   return apiFetch<Organization>('/api/organizations/me/automation', {
     method: 'PATCH',
     body: JSON.stringify({ enabled }),
+  });
+}
+
+export async function updateReminderSchedule(input: ReminderScheduleInput): Promise<Organization> {
+  return apiFetch<Organization>('/api/organizations/me/reminders', {
+    method: 'PATCH',
+    body: JSON.stringify(input),
   });
 }
 

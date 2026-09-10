@@ -134,6 +134,7 @@ export async function reconnectMetaChannel(channelId: string, input: MetaCredent
 /** Refleja MessageTemplateResponse (api-crmws, channel/presentation/MessageTemplateResponse.java). */
 export interface MessageTemplate {
   id: string;
+  channelId: string;
   name: string;
   languageCode: string;
   bodyPreview: string;
@@ -158,6 +159,15 @@ export interface UpdateMessageTemplateInput {
 
 export async function listMessageTemplates(channelId: string): Promise<MessageTemplate[]> {
   return apiFetch<MessageTemplate[]>(`/api/channels/${channelId}/templates`);
+}
+
+/**
+ * Plantillas Meta activas de la organización, sin importar a cuál de sus canales pertenece cada
+ * una — alimenta los selectores de "qué plantilla usar" del recordatorio de cortesía y de cada
+ * regla de seguimiento (BR-030, 2026-09-07).
+ */
+export async function listOrganizationTemplates(): Promise<MessageTemplate[]> {
+  return apiFetch<MessageTemplate[]>('/api/channels/templates');
 }
 
 export async function createMessageTemplate(

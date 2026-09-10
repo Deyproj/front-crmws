@@ -21,6 +21,7 @@ export {
   unlinkChannel,
   reconnectMetaChannel,
   listMessageTemplates,
+  listOrganizationTemplates,
   createMessageTemplate,
   updateMessageTemplate,
   syncMessageTemplates,

@@ -17,6 +17,7 @@ import {
 import { CopyIcon, QrCodeIcon, ShieldCheckIcon } from '@/components/ui/icons';
 import { Tabs } from '@/components/ui/Tabs';
 import { AutomationToggle } from '@/features/organization/presentation/components/AutomationToggle';
+import { ReminderScheduleSettings } from '@/features/organization/presentation/components/ReminderScheduleSettings';
 import { TeamManager } from '@/features/organization/presentation/components/TeamManager';
 import { AgentConfigForm } from '@/features/agent/presentation/components/AgentConfigForm';
 import { AgentSimulator } from '@/features/agent/presentation/components/AgentSimulator';
@@ -141,8 +142,13 @@ export function ChannelSettingsView() {
               {mainTab === 'agent' && (
                 <div className="flex w-full flex-col items-center gap-[var(--space-7)]">
                   <Tabs tabs={AGENT_TABS} activeId={agentTab} onChange={setAgentTab} size="sm" label="Secciones del agente" />
-                  <div className="w-full">
-                    {agentTab === 'automation' && <AutomationToggle />}
+                  <div className="w-full flex flex-col items-center gap-[var(--space-7)]">
+                    {agentTab === 'automation' && (
+                      <>
+                        <AutomationToggle />
+                        <ReminderScheduleSettings />
+                      </>
+                    )}
                     {agentTab === 'personalization' && <AgentConfigForm />}
                     {agentTab === 'knowledge' && <KnowledgeEntriesManager />}
                     {agentTab === 'simulator' && <AgentSimulator />}

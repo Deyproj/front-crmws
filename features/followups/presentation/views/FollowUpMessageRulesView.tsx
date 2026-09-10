@@ -1,8 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFollowUpMessageRules } from '../hooks/useFollowUpMessageRules';
 import { REASON_LABELS, type FollowUpMessageRule, type FollowUpReason } from '@/features/followups';
+import { listOrganizationTemplates, type MessageTemplate } from '@/features/channel';
+
+/** Convención fija de las reglas de seguimiento: {{1}}=nombre (mismo dato que ya admite {{nombre}} en el texto libre). */
+const FOLLOW_UP_TEMPLATE_VARIABLE_COUNT = 1;
 
 const inputClass =
   'w-full rounded-md border border-border bg-app px-[var(--space-6)] py-[var(--space-5)] text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand';
@@ -39,8 +43,8 @@ export function FollowUpMessageRulesView() {
                 initial={rule}
                 saving={saving}
                 onCancel={() => setEditingId(null)}
-                onSubmit={async (thresholdDays, messageTemplate, reason) => {
-                  const ok = await update(rule.id, thresholdDays, messageTemplate, reason);
+                onSubmit={async (thresholdDays, messageTemplate, reason, metaTemplateId) => {
+                  const ok = await update(rule.id, thresholdDays, messageTemplate, reason, metaTemplateId);
                   if (ok) setEditingId(null);
                 }}
               />
@@ -61,8 +65,8 @@ export function FollowUpMessageRulesView() {
         <FollowUpMessageRuleForm
           saving={saving}
           onCancel={() => setCreating(false)}
-          onSubmit={async (thresholdDays, messageTemplate, reason) => {
-            const ok = await create(thresholdDays, messageTemplate, reason);
+          onSubmit={async (thresholdDays, messageTemplate, reason, metaTemplateId) => {
+            const ok = await create(thresholdDays, messageTemplate, reason, metaTemplateId);
             if (ok) setCreating(false);
           }}
         />
@@ -133,20 +137,34 @@ function FollowUpMessageRuleForm({
   initial?: FollowUpMessageRule;
   saving: boolean;
   onCancel: () => void;
-  onSubmit: (thresholdDays: number, messageTemplate: string, reason: FollowUpReason | null) => void;
+  onSubmit: (
+    thresholdDays: number,
+    messageTemplate: string,
+    reason: FollowUpReason | null,
+    metaTemplateId: string | null,
+  ) => void;
 }) {
   const [thresholdDays, setThresholdDays] = useState(String(initial?.thresholdDays ?? ''));
   const [messageTemplate, setMessageTemplate] = useState(initial?.messageTemplate ?? '');
   const [reason, setReason] = useState<FollowUpReason | ''>(initial?.reason ?? '');
+  const [metaTemplateId, setMetaTemplateId] = useState(initial?.metaTemplateId ?? '');
+  const [templates, setTemplates] = useState<MessageTemplate[]>([]);
+
+  useEffect(() => {
+    listOrganizationTemplates()
+      .then(setTemplates)
+      .catch(() => setTemplates([]));
+  }, []);
 
   const parsedDays = Number(thresholdDays);
   const isValid = Number.isInteger(parsedDays) && parsedDays > 0 && messageTemplate.trim().length > 0;
+  const metaTemplates = templates.filter((t) => t.variableCount === FOLLOW_UP_TEMPLATE_VARIABLE_COUNT);
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (isValid) onSubmit(parsedDays, messageTemplate.trim(), reason || null);
+        if (isValid) onSubmit(parsedDays, messageTemplate.trim(), reason || null, metaTemplateId || null);
       }}
       className="flex flex-col gap-[var(--space-5)] rounded-lg border border-border bg-surface p-[var(--space-7)]"
     >
@@ -183,6 +201,17 @@ function FollowUpMessageRuleForm({
           rows={3}
           className={inputClass}
         />
+      </div>
+      <div>
+        <label className={labelClass}>Plantilla de Meta (fuera de la ventana de 24h)</label>
+        <select value={metaTemplateId} onChange={(e) => setMetaTemplateId(e.target.value)} className={inputClass}>
+          <option value="">Ninguna — se omite el envío fuera de la ventana de 24h</option>
+          {metaTemplates.map((template) => (
+            <option key={template.id} value={template.id}>
+              {template.name} ({template.languageCode})
+            </option>
+          ))}
+        </select>
       </div>
       <div className="flex gap-[var(--space-4)]">
         <button
