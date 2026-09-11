@@ -22,7 +22,6 @@ import { TeamManager } from '@/features/organization/presentation/components/Tea
 import { AgentConfigForm } from '@/features/agent/presentation/components/AgentConfigForm';
 import { AgentSimulator } from '@/features/agent/presentation/components/AgentSimulator';
 import { KnowledgeEntriesManager } from '@/features/agent/presentation/components/KnowledgeEntriesManager';
-import { FollowUpMessageRulesView } from '@/features/followups/presentation/views/FollowUpMessageRulesView';
 import { SatisfactionSurveysView } from '@/features/feedback/presentation/views/SatisfactionSurveysView';
 import { AiUsagePanel } from '@/features/usage/presentation/components/AiUsagePanel';
 
@@ -101,7 +100,6 @@ function StatusBadge({ tone, label, pulsing = false }: { tone: StatusTone; label
 
 const MAIN_TABS = [
   { id: 'agent', label: 'Agente' },
-  { id: 'followups', label: 'Seguimientos' },
   { id: 'feedback', label: 'Encuestas' },
   { id: 'usage', label: 'Consumo IA' },
   { id: 'team', label: 'Equipo' },
@@ -156,7 +154,6 @@ export function ChannelSettingsView() {
                 </div>
               )}
               {mainTab === 'channel' && <ChannelManager />}
-              {mainTab === 'followups' && <FollowUpMessageRulesView />}
               {mainTab === 'feedback' && <SatisfactionSurveysView />}
               {mainTab === 'usage' && <AiUsagePanel />}
               {mainTab === 'team' && <TeamManager />}

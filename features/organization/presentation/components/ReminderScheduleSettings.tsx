@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { listOrganizationTemplates, type MessageTemplate } from '@/features/channel';
 import { useReminderSchedule } from '../hooks/useReminderSchedule';
+import { FollowUpMessageRulesView } from '@/features/followups/presentation/views/FollowUpMessageRulesView';
 
 /**
  * Convención fija del recordatorio de cortesía: {{1}}=nombre, {{2}}=fecha, {{3}}=hora (ver
@@ -155,7 +156,7 @@ export function ReminderScheduleSettings() {
         <div className="flex items-center justify-between gap-[var(--space-5)]">
           <div>
             <p className="text-sm font-medium text-ink">Mensajes de seguimiento</p>
-            <p className="text-xs text-secondary">Envía los mensajes configurados en la pestaña Seguimientos.</p>
+            <p className="text-xs text-secondary">Reglas por umbral de días — configúralas justo debajo.</p>
           </div>
           <ToggleSwitch
             label="Mensajes de seguimiento"
@@ -164,6 +165,8 @@ export function ReminderScheduleSettings() {
             onChange={(checked) => update({ followUpReminderEnabled: checked })}
           />
         </div>
+
+        <FollowUpMessageRulesView />
       </div>
     </div>
   );

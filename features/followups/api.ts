@@ -32,15 +32,19 @@ export async function dismissFollowUpTask(taskId: string): Promise<FollowUpTask>
   return apiFetch<FollowUpTask>(`/api/followups/${taskId}/dismiss`, { method: 'POST' });
 }
 
-/** Refleja FollowUpMessageRuleResponse (api-crmws, followup/presentation/FollowUpMessageRuleResponse.java). */
+/**
+ * Refleja FollowUpMessageRuleResponse (api-crmws, followup/presentation/FollowUpMessageRuleResponse.java).
+ * `messageTemplate` desapareció (2026-09-10, a pedido explícito del usuario: "no pedir mensaje,
+ * solo plantilla") — `metaTemplateId` pasó de opcional a obligatorio y es la única fuente del
+ * contenido del mensaje, ver FollowUpMessageSchedulerService en el backend.
+ */
 export interface FollowUpMessageRule {
   id: string;
   thresholdDays: number;
-  messageTemplate: string;
   /** `null` = aplica a cualquier motivo (regla universal). */
   reason: FollowUpReason | null;
-  /** Plantilla Meta a usar cuando el contacto lleva más de 24h sin escribir (BR-030); `null` = sin asignar (se omite el envío en ese caso). */
-  metaTemplateId: string | null;
+  /** Plantilla Meta ya aprobada (BR-030) — su texto es el mensaje, dentro y fuera de la ventana de 24h. */
+  metaTemplateId: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -51,26 +55,24 @@ export async function listFollowUpMessageRules(): Promise<FollowUpMessageRule[]>
 
 export async function createFollowUpMessageRule(
   thresholdDays: number,
-  messageTemplate: string,
   reason: FollowUpReason | null,
-  metaTemplateId: string | null,
+  metaTemplateId: string,
 ): Promise<FollowUpMessageRule> {
   return apiFetch<FollowUpMessageRule>('/api/followups/message-rules', {
     method: 'POST',
-    body: JSON.stringify({ thresholdDays, messageTemplate, reason, metaTemplateId }),
+    body: JSON.stringify({ thresholdDays, reason, metaTemplateId }),
   });
 }
 
 export async function updateFollowUpMessageRule(
   ruleId: string,
   thresholdDays: number,
-  messageTemplate: string,
   reason: FollowUpReason | null,
-  metaTemplateId: string | null,
+  metaTemplateId: string,
 ): Promise<FollowUpMessageRule> {
   return apiFetch<FollowUpMessageRule>(`/api/followups/message-rules/${ruleId}`, {
     method: 'PATCH',
-    body: JSON.stringify({ thresholdDays, messageTemplate, reason, metaTemplateId }),
+    body: JSON.stringify({ thresholdDays, reason, metaTemplateId }),
   });
 }
 

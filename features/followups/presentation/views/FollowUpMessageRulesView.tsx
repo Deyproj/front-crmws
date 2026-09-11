@@ -5,7 +5,7 @@ import { useFollowUpMessageRules } from '../hooks/useFollowUpMessageRules';
 import { REASON_LABELS, type FollowUpMessageRule, type FollowUpReason } from '@/features/followups';
 import { listOrganizationTemplates, type MessageTemplate } from '@/features/channel';
 
-/** Convención fija de las reglas de seguimiento: {{1}}=nombre (mismo dato que ya admite {{nombre}} en el texto libre). */
+/** Convención fija de las reglas de seguimiento: {{1}}=nombre — es la única fuente del mensaje. */
 const FOLLOW_UP_TEMPLATE_VARIABLE_COUNT = 1;
 
 const inputClass =
@@ -16,15 +16,24 @@ export function FollowUpMessageRulesView() {
   const { rules, loading, saving, error, create, update, remove } = useFollowUpMessageRules();
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<MessageTemplate[]>([]);
+
+  useEffect(() => {
+    listOrganizationTemplates()
+      .then(setTemplates)
+      .catch(() => setTemplates([]));
+  }, []);
+
+  const metaTemplates = templates.filter((t) => t.variableCount === FOLLOW_UP_TEMPLATE_VARIABLE_COUNT);
 
   return (
     <div className="flex w-full flex-col gap-[var(--space-6)]">
       <p className="max-w-3xl text-sm text-secondary">
         Mensajes automáticos por WhatsApp según cuánto tiempo lleve un contacto pendiente en{' '}
         <span className="font-semibold text-ink">Seguimientos</span>. Cada regla dispara una sola vez al cumplirse su
-        umbral; usa <code className="rounded bg-app px-1">{'{{nombre}}'}</code> para incluir el nombre del contacto.
-        Elige un motivo específico (ej. &quot;No asistió&quot;) para un mensaje distinto solo para ese caso, o &quot;Cualquier
-        motivo&quot; para una regla universal.
+        umbral, usando el texto de la plantilla de Meta que elijas. Elige un motivo específico (ej. &quot;No
+        asistió&quot;) para un mensaje distinto solo para ese caso, o &quot;Cualquier motivo&quot; para una regla
+        universal.
       </p>
 
       {error && <p className="text-sm text-danger">{error}</p>}
@@ -41,10 +50,11 @@ export function FollowUpMessageRulesView() {
               <FollowUpMessageRuleForm
                 key={rule.id}
                 initial={rule}
+                templates={metaTemplates}
                 saving={saving}
                 onCancel={() => setEditingId(null)}
-                onSubmit={async (thresholdDays, messageTemplate, reason, metaTemplateId) => {
-                  const ok = await update(rule.id, thresholdDays, messageTemplate, reason, metaTemplateId);
+                onSubmit={async (thresholdDays, reason, metaTemplateId) => {
+                  const ok = await update(rule.id, thresholdDays, reason, metaTemplateId);
                   if (ok) setEditingId(null);
                 }}
               />
@@ -52,6 +62,7 @@ export function FollowUpMessageRulesView() {
               <FollowUpMessageRuleCard
                 key={rule.id}
                 rule={rule}
+                templates={templates}
                 saving={saving}
                 onEdit={() => setEditingId(rule.id)}
                 onDelete={() => remove(rule.id)}
@@ -63,10 +74,11 @@ export function FollowUpMessageRulesView() {
 
       {creating ? (
         <FollowUpMessageRuleForm
+          templates={metaTemplates}
           saving={saving}
           onCancel={() => setCreating(false)}
-          onSubmit={async (thresholdDays, messageTemplate, reason, metaTemplateId) => {
-            const ok = await create(thresholdDays, messageTemplate, reason, metaTemplateId);
+          onSubmit={async (thresholdDays, reason, metaTemplateId) => {
+            const ok = await create(thresholdDays, reason, metaTemplateId);
             if (ok) setCreating(false);
           }}
         />
@@ -85,15 +97,18 @@ export function FollowUpMessageRulesView() {
 
 function FollowUpMessageRuleCard({
   rule,
+  templates,
   saving,
   onEdit,
   onDelete,
 }: {
   rule: FollowUpMessageRule;
+  templates: MessageTemplate[];
   saving: boolean;
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const template = templates.find((t) => t.id === rule.metaTemplateId);
   return (
     <div className="flex flex-col gap-[var(--space-4)] rounded-lg border border-border bg-surface p-[var(--space-7)]">
       <div className="flex items-start justify-between gap-[var(--space-5)]">
@@ -101,7 +116,9 @@ function FollowUpMessageRuleCard({
           A partir de {rule.thresholdDays} día(s) — {rule.reason ? REASON_LABELS[rule.reason] : 'cualquier motivo'}
         </p>
       </div>
-      <p className="whitespace-pre-wrap text-sm text-secondary">{rule.messageTemplate}</p>
+      <p className="whitespace-pre-wrap text-sm text-secondary">
+        {template ? template.bodyPreview : `Plantilla ${rule.metaTemplateId} (ya no disponible)`}
+      </p>
       <div className="flex gap-[var(--space-4)]">
         <button
           type="button"
@@ -130,41 +147,29 @@ function FollowUpMessageRuleCard({
 
 function FollowUpMessageRuleForm({
   initial,
+  templates,
   saving,
   onCancel,
   onSubmit,
 }: {
   initial?: FollowUpMessageRule;
+  templates: MessageTemplate[];
   saving: boolean;
   onCancel: () => void;
-  onSubmit: (
-    thresholdDays: number,
-    messageTemplate: string,
-    reason: FollowUpReason | null,
-    metaTemplateId: string | null,
-  ) => void;
+  onSubmit: (thresholdDays: number, reason: FollowUpReason | null, metaTemplateId: string) => void;
 }) {
   const [thresholdDays, setThresholdDays] = useState(String(initial?.thresholdDays ?? ''));
-  const [messageTemplate, setMessageTemplate] = useState(initial?.messageTemplate ?? '');
   const [reason, setReason] = useState<FollowUpReason | ''>(initial?.reason ?? '');
   const [metaTemplateId, setMetaTemplateId] = useState(initial?.metaTemplateId ?? '');
-  const [templates, setTemplates] = useState<MessageTemplate[]>([]);
-
-  useEffect(() => {
-    listOrganizationTemplates()
-      .then(setTemplates)
-      .catch(() => setTemplates([]));
-  }, []);
 
   const parsedDays = Number(thresholdDays);
-  const isValid = Number.isInteger(parsedDays) && parsedDays > 0 && messageTemplate.trim().length > 0;
-  const metaTemplates = templates.filter((t) => t.variableCount === FOLLOW_UP_TEMPLATE_VARIABLE_COUNT);
+  const isValid = Number.isInteger(parsedDays) && parsedDays > 0 && metaTemplateId.trim().length > 0;
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (isValid) onSubmit(parsedDays, messageTemplate.trim(), reason || null, metaTemplateId || null);
+        if (isValid) onSubmit(parsedDays, reason || null, metaTemplateId);
       }}
       className="flex flex-col gap-[var(--space-5)] rounded-lg border border-border bg-surface p-[var(--space-7)]"
     >
@@ -193,25 +198,19 @@ function FollowUpMessageRuleForm({
         />
       </div>
       <div>
-        <label className={labelClass}>Mensaje</label>
-        <textarea
-          value={messageTemplate}
-          onChange={(e) => setMessageTemplate(e.target.value)}
-          placeholder="ej. Hola {{nombre}}, ¿seguimos con tu inscripción?"
-          rows={3}
-          className={inputClass}
-        />
-      </div>
-      <div>
-        <label className={labelClass}>Plantilla de Meta (fuera de la ventana de 24h)</label>
+        <label className={labelClass}>Plantilla de Meta</label>
         <select value={metaTemplateId} onChange={(e) => setMetaTemplateId(e.target.value)} className={inputClass}>
-          <option value="">Ninguna — se omite el envío fuera de la ventana de 24h</option>
-          {metaTemplates.map((template) => (
+          <option value="">Selecciona una plantilla...</option>
+          {templates.map((template) => (
             <option key={template.id} value={template.id}>
               {template.name} ({template.languageCode})
             </option>
           ))}
         </select>
+        <p className="mt-[var(--space-2)] text-xs text-secondary">
+          Su texto es el mensaje que se envía — dentro de la ventana de 24h como mensaje normal, fuera de ella como
+          plantilla formal (BR-030). Solo se listan plantillas activas de exactamente 1 variable ({'{{1}}'}=nombre).
+        </p>
       </div>
       <div className="flex gap-[var(--space-4)]">
         <button
