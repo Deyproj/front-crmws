@@ -29,11 +29,8 @@ export function FollowUpMessageRulesView() {
   return (
     <div className="flex w-full flex-col gap-[var(--space-6)]">
       <p className="max-w-3xl text-sm text-secondary">
-        Mensajes automáticos por WhatsApp según cuánto tiempo lleve un contacto pendiente en{' '}
-        <span className="font-semibold text-ink">Seguimientos</span>. Cada regla dispara una sola vez al cumplirse su
-        umbral, usando el texto de la plantilla de Meta que elijas. Elige un motivo específico (ej. &quot;No
-        asistió&quot;) para un mensaje distinto solo para ese caso, o &quot;Cualquier motivo&quot; para una regla
-        universal.
+        Mensajes automáticos según cuánto tiempo lleve un contacto en <span className="font-semibold text-ink">Seguimientos</span>.
+        Cada regla dispara una sola vez, con el texto de la plantilla que elijas.
       </p>
 
       {error && <p className="text-sm text-danger">{error}</p>}
@@ -43,7 +40,7 @@ export function FollowUpMessageRulesView() {
       ) : (
         <div className="flex flex-col gap-[var(--space-5)]">
           {rules.length === 0 && !creating && (
-            <p className="text-sm text-secondary">Todavía no hay reglas configuradas — no se envía ningún mensaje.</p>
+            <p className="text-sm text-secondary">Todavía no hay reglas configuradas.</p>
           )}
           {rules.map((rule) =>
             editingId === rule.id ? (
@@ -207,10 +204,7 @@ function FollowUpMessageRuleForm({
             </option>
           ))}
         </select>
-        <p className="mt-[var(--space-2)] text-xs text-secondary">
-          Su texto es el mensaje que se envía — dentro de la ventana de 24h como mensaje normal, fuera de ella como
-          plantilla formal (BR-030). Solo se listan plantillas activas de exactamente 1 variable ({'{{1}}'}=nombre).
-        </p>
+        <p className="mt-[var(--space-2)] text-xs text-secondary">Solo plantillas de 1 variable ({'{{1}}'}=nombre).</p>
       </div>
       <div className="flex gap-[var(--space-4)]">
         <button

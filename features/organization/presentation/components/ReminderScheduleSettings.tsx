@@ -146,15 +146,12 @@ export function ReminderScheduleSettings() {
               </option>
             ))}
           </select>
-          <p className="mt-[var(--space-2)] text-xs text-secondary">
-            Sin plantilla, el recordatorio no sale si el contacto lleva más de 24h sin escribir.
-          </p>
         </div>
 
         <div className="flex items-center justify-between gap-[var(--space-5)]">
           <div>
             <p className="text-sm font-medium text-ink">Mensajes de seguimiento</p>
-            <p className="text-xs text-secondary">Reglas por umbral de días — configúralas justo debajo.</p>
+            <p className="text-xs text-secondary">Reglas por umbral de días.</p>
           </div>
           <ToggleSwitch
             label="Mensajes de seguimiento"
