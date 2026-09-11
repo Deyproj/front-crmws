@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { startConversation } from '@/features/conversations';
 import { listChannels, PROVIDER_LABELS, type Channel } from '@/features/channel';
+import type { Contact } from '@/features/contacts';
 import { XIcon } from '@/components/ui/icons';
 
 /**
@@ -26,11 +27,18 @@ export function NewConversationDialog({
   open,
   onClose,
   onStarted,
+  contact = null,
 }: {
   open: boolean;
   onClose: () => void;
   /** Se llama con el id de la conversación (nueva o ya existente) resuelta por el backend. */
   onStarted: (conversationId: string) => void;
+  /**
+   * Cuando se abre para un contacto ya conocido (p. ej. botón "Chat" en la lista de Clientes),
+   * se salta el paso de escribir indicativo/número — usa `contact.phone` directo, que ya llega
+   * en E.164 desde el backend. `null` (default) es el flujo original de "Nuevo chat" a mano.
+   */
+  contact?: Contact | null;
 }) {
   const [dial, setDial] = useState<string>(COUNTRY_CODES[0].dial);
   const [number, setNumber] = useState('');
@@ -72,10 +80,14 @@ export function NewConversationDialog({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const digits = number.replace(/\D/g, '');
-    if (!digits) {
-      setError('Escribe un número de teléfono.');
-      return;
+    let phone = contact?.phone ?? '';
+    if (!contact) {
+      const digits = number.replace(/\D/g, '');
+      if (!digits) {
+        setError('Escribe un número de teléfono.');
+        return;
+      }
+      phone = `${dial}${digits}`;
     }
     if (needsChannelChoice && !channelId) {
       setError('Elige desde qué canal iniciar la conversación.');
@@ -84,7 +96,7 @@ export function NewConversationDialog({
     setPending(true);
     setError(null);
     try {
-      const conversation = await startConversation(`${dial}${digits}`, channelId || undefined);
+      const conversation = await startConversation(phone, channelId || undefined);
       reset();
       onStarted(conversation.id);
     } catch (err) {
@@ -107,7 +119,7 @@ export function NewConversationDialog({
       >
         <div className="flex items-center justify-between">
           <p id="new-conversation-title" className="text-sm font-semibold text-ink">
-            Nuevo chat
+            {contact ? 'Abrir chat' : 'Nuevo chat'}
           </p>
           <button
             type="button"
@@ -137,33 +149,39 @@ export function NewConversationDialog({
               </select>
             </label>
           )}
-          <label className="flex flex-col gap-[var(--space-3)] text-xs font-semibold text-secondary">
-            Número de WhatsApp
-            <div className="flex gap-[var(--space-3)]">
-              <select
-                value={dial}
-                onChange={(e) => setDial(e.target.value)}
-                aria-label="Indicativo de país"
-                className="shrink-0 rounded-md border border-border bg-app px-[var(--space-4)] py-[var(--space-4)] text-xs text-ink focus:outline-none"
-              >
-                {COUNTRY_CODES.map((c) => (
-                  <option key={c.code} value={c.dial}>
-                    {c.label} ({c.dial})
-                  </option>
-                ))}
-              </select>
-              <input
-                autoFocus
-                type="tel"
-                inputMode="numeric"
-                value={number}
-                onChange={(e) => setNumber(e.target.value)}
-                placeholder="3001234567"
-                aria-label="Número de teléfono"
-                className="w-full min-w-0 flex-1 rounded-md border border-border bg-app px-[var(--space-4)] py-[var(--space-4)] text-xs font-normal normal-case text-ink placeholder-secondary focus:outline-none"
-              />
-            </div>
-          </label>
+          {contact ? (
+            <p className="rounded-md bg-app px-[var(--space-5)] py-[var(--space-5)] text-sm text-ink">
+              {contact.name || 'Contacto sin nombre'} <span className="text-secondary">· {contact.phone}</span>
+            </p>
+          ) : (
+            <label className="flex flex-col gap-[var(--space-3)] text-xs font-semibold text-secondary">
+              Número de WhatsApp
+              <div className="flex gap-[var(--space-3)]">
+                <select
+                  value={dial}
+                  onChange={(e) => setDial(e.target.value)}
+                  aria-label="Indicativo de país"
+                  className="shrink-0 rounded-md border border-border bg-app px-[var(--space-4)] py-[var(--space-4)] text-xs text-ink focus:outline-none"
+                >
+                  {COUNTRY_CODES.map((c) => (
+                    <option key={c.code} value={c.dial}>
+                      {c.label} ({c.dial})
+                    </option>
+                  ))}
+                </select>
+                <input
+                  autoFocus
+                  type="tel"
+                  inputMode="numeric"
+                  value={number}
+                  onChange={(e) => setNumber(e.target.value)}
+                  placeholder="3001234567"
+                  aria-label="Número de teléfono"
+                  className="w-full min-w-0 flex-1 rounded-md border border-border bg-app px-[var(--space-4)] py-[var(--space-4)] text-xs font-normal normal-case text-ink placeholder-secondary focus:outline-none"
+                />
+              </div>
+            </label>
+          )}
 
           {error && <p className="text-xs text-danger">{error}</p>}
 
@@ -181,7 +199,7 @@ export function NewConversationDialog({
               disabled={pending}
               className="rounded-md bg-brand px-[var(--space-6)] py-[var(--space-4)] text-xs font-semibold text-on-brand hover:bg-brand-hover disabled:opacity-50"
             >
-              {pending ? 'Iniciando...' : 'Iniciar chat'}
+              {pending ? 'Abriendo...' : contact ? 'Abrir chat' : 'Iniciar chat'}
             </button>
           </div>
         </form>

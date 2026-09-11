@@ -1,33 +1,13 @@
 import type { ContactStats } from '@/features/contacts';
-import type { ConversationStats } from '@/features/conversations';
-import type { AppointmentStats } from '@/features/appointments';
 
-export function ContactStatsCards({
-  stats,
-  conversationStats,
-  appointmentStats,
-}: {
-  stats: ContactStats | null;
-  conversationStats: ConversationStats | null;
-  appointmentStats: AppointmentStats | null;
-}) {
+/** Solo lo relacionado al número de clientes por etapa — conversaciones/citas viven en el Dashboard. */
+export function ContactStatsCards({ stats }: { stats: ContactStats | null }) {
   const cards = [
-    { label: 'Conversaciones', value: conversationStats?.total ?? null },
     { label: 'Prospectos', value: stats?.leads ?? null },
     { label: 'Calificados', value: stats?.qualified ?? null },
     { label: 'Oportunidades', value: stats?.opportunities ?? null },
     { label: 'Ganados', value: stats?.customers ?? null },
     { label: 'En seguimiento', value: stats?.followUp ?? null },
-    {
-      label: 'Transferidas a asesor',
-      value: conversationStats ? `${conversationStats.transferredPercentage.toFixed(0)}%` : null,
-    },
-    {
-      label: 'Primera respuesta (mediana)',
-      value: formatSeconds(conversationStats?.medianFirstResponseSeconds ?? null),
-    },
-    { label: 'Cortesías confirmadas', value: appointmentStats?.confirmed ?? null },
-    { label: 'Cortesías asistidas', value: appointmentStats?.completed ?? null },
   ];
 
   return (
@@ -40,10 +20,4 @@ export function ContactStatsCards({
       ))}
     </div>
   );
-}
-
-function formatSeconds(seconds: number | null): string | null {
-  if (seconds === null) return null;
-  if (seconds < 60) return `${Math.round(seconds)}s`;
-  return `${Math.round(seconds / 60)} min`;
 }

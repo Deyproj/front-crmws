@@ -9,9 +9,16 @@ import {
 } from '@/features/contacts';
 import { formatRelativeTime } from '@/lib/utils/formatRelativeTime';
 import { initials } from '@/lib/utils/initials';
-import { SearchIcon } from '@/components/ui/icons';
+import { SearchIcon, MessageSquareIcon } from '@/components/ui/icons';
 
-export function ContactsTable({ contacts }: { contacts: Contact[] }) {
+export function ContactsTable({
+  contacts,
+  onOpenChat,
+}: {
+  contacts: Contact[];
+  /** Botón "Chat" por fila — abre (o reabre) la conversación de ese contacto. */
+  onOpenChat: (contact: Contact) => void;
+}) {
   const [query, setQuery] = useState('');
   const [stage, setStage] = useState<ContactLifecycleStage | 'ALL'>('ALL');
 
@@ -49,12 +56,13 @@ export function ContactsTable({ contacts }: { contacts: Contact[] }) {
               <th className="px-[var(--space-7)] py-[var(--space-5)]">Teléfono</th>
               <th className="px-[var(--space-7)] py-[var(--space-5)]">Etapa</th>
               <th className="px-[var(--space-7)] py-[var(--space-5)]">Último contacto</th>
+              <th className="px-[var(--space-7)] py-[var(--space-5)]" />
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-[var(--space-7)] py-[var(--space-8)] text-center text-secondary">
+                <td colSpan={5} className="px-[var(--space-7)] py-[var(--space-8)] text-center text-secondary">
                   Sin clientes que coincidan.
                 </td>
               </tr>
@@ -77,6 +85,26 @@ export function ContactsTable({ contacts }: { contacts: Contact[] }) {
                 </td>
                 <td className="px-[var(--space-7)] py-[var(--space-5)] text-secondary">
                   {formatRelativeTime(contact.lastInteractionAt)}
+                </td>
+                <td className="px-[var(--space-7)] py-[var(--space-5)] text-right">
+                  {/* Un contacto identificado solo por LID de WhatsApp (sin teléfono, `Contact.createWithoutPhone`
+                      en el backend) no se puede resolver por `startConversation(phone)` — el botón se
+                      deshabilita en vez de fallar con "phone: must not be blank" al hacer clic. */}
+                  <button
+                    type="button"
+                    disabled={!contact.phone}
+                    onClick={() => onOpenChat(contact)}
+                    title={
+                      contact.phone
+                        ? `Abrir chat con ${contact.name || contact.phone}`
+                        : 'Este contacto no tiene teléfono registrado (solo identificado por WhatsApp)'
+                    }
+                    aria-label={`Abrir chat con ${contact.name || contact.phone || 'este contacto'}`}
+                    className="inline-flex items-center gap-[var(--space-3)] rounded-md border border-border px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold text-ink hover:bg-app disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+                  >
+                    <MessageSquareIcon className="size-[14px]" />
+                    Chat
+                  </button>
                 </td>
               </tr>
             ))}

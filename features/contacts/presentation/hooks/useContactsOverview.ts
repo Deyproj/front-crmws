@@ -2,32 +2,21 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { listContacts, getContactStats, type Contact, type ContactStats } from '@/features/contacts';
-import { getConversationStats, type ConversationStats } from '@/features/conversations';
-import { getAppointmentStats, type AppointmentStats } from '@/features/appointments';
 
 const POLL_INTERVAL_MS = 20000;
 
 export function useContactsOverview() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactStats, setContactStats] = useState<ContactStats | null>(null);
-  const [conversationStats, setConversationStats] = useState<ConversationStats | null>(null);
-  const [appointmentStats, setAppointmentStats] = useState<AppointmentStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async (opts?: { silent?: boolean }) => {
     if (!opts?.silent) setLoading(true);
     try {
-      const [contactsList, stats, convStats, apptStats] = await Promise.all([
-        listContacts(),
-        getContactStats(),
-        getConversationStats(),
-        getAppointmentStats(),
-      ]);
+      const [contactsList, stats] = await Promise.all([listContacts(), getContactStats()]);
       setContacts(contactsList);
       setContactStats(stats);
-      setConversationStats(convStats);
-      setAppointmentStats(apptStats);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo cargar la información de clientes');
@@ -45,5 +34,5 @@ export function useContactsOverview() {
     return () => clearInterval(interval);
   }, [load]);
 
-  return { contacts, contactStats, conversationStats, appointmentStats, loading, error, refetch: () => load({ silent: true }) };
+  return { contacts, contactStats, loading, error, refetch: () => load({ silent: true }) };
 }

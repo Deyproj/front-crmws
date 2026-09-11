@@ -147,9 +147,7 @@ export function ReminderScheduleSettings() {
             ))}
           </select>
           <p className="mt-[var(--space-2)] text-xs text-secondary">
-            Si el canal es Meta Cloud API y el contacto lleva más de 24h sin escribir, el recordatorio solo puede
-            salir con una plantilla ya aprobada (3 variables: nombre, fecha y hora) — sin ella, se omite en vez de
-            intentar texto libre.
+            Sin plantilla, el recordatorio no sale si el contacto lleva más de 24h sin escribir.
           </p>
         </div>
 

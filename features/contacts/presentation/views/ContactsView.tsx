@@ -1,11 +1,17 @@
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useContactsOverview } from '../hooks/useContactsOverview';
 import { ContactStatsCards } from '../components/ContactStatsCards';
 import { ContactsTable } from '../components/ContactsTable';
+import { NewConversationDialog } from '@/features/conversations/presentation/components/NewConversationDialog';
+import type { Contact } from '@/features/contacts';
 
 export function ContactsView() {
-  const { contacts, contactStats, conversationStats, appointmentStats, loading, error } = useContactsOverview();
+  const { contacts, contactStats, loading, error } = useContactsOverview();
+  const router = useRouter();
+  const [chatContact, setChatContact] = useState<Contact | null>(null);
 
   return (
     <div className="flex h-full flex-col">
@@ -20,11 +26,21 @@ export function ContactsView() {
             {error && (
               <p className="rounded-md border border-danger/30 bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>
             )}
-            <ContactStatsCards stats={contactStats} conversationStats={conversationStats} appointmentStats={appointmentStats} />
-            <ContactsTable contacts={contacts} />
+            <ContactStatsCards stats={contactStats} />
+            <ContactsTable contacts={contacts} onOpenChat={setChatContact} />
           </div>
         )}
       </div>
+
+      <NewConversationDialog
+        open={chatContact !== null}
+        contact={chatContact}
+        onClose={() => setChatContact(null)}
+        onStarted={(conversationId) => {
+          setChatContact(null);
+          router.push(`/?conversation=${conversationId}`);
+        }}
+      />
     </div>
   );
 }

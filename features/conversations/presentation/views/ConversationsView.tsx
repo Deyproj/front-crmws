@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/features/auth/presentation/context/AuthContext';
 import { useConversationsList } from '../hooks/useConversationsList';
 import { useConversationThread } from '../hooks/useConversationThread';
@@ -22,6 +23,19 @@ export function ConversationsView() {
     setSelectedId(id);
     setMobileView('chat');
   }
+
+  // Deep-link desde fuera de la bandeja (p. ej. botón "Chat" en Clientes: /?conversation=<id>) —
+  // se selecciona una sola vez al montar, sin depender de que la conversación ya esté en `items`
+  // (useConversationThread la trae directo por id, sin importar el quickFilter activo).
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const id = searchParams.get('conversation');
+    if (id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      handleSelect(id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // La conversación puede ser nueva (aún no está en `items`) — se refresca la bandeja
   // antes de seleccionarla para que ChatPanel/ContactPanel encuentren el contacto real.
