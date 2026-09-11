@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { Contact } from '@/features/contacts';
-import { LIFECYCLE_STAGE_LABELS, updateContactProfile } from '@/features/contacts';
+import { LIFECYCLE_STAGE_LABELS, updateContactProfile, setFollowUpOptedOut } from '@/features/contacts';
 import type { Conversation } from '@/features/conversations';
 import { initials } from '@/lib/utils/initials';
 import { StageActions } from '@/features/opportunities/presentation/components/StageActions';
@@ -128,6 +128,11 @@ export function ContactPanel({
             {summaryState.error && <p className="text-xs text-danger">{summaryState.error}</p>}
           </div>
         )}
+
+        <div className="flex flex-col gap-[var(--space-6)]">
+          <p className="text-xs font-semibold uppercase text-muted">Mensajes automáticos</p>
+          <FollowUpOptOutToggle contact={contact} onContactChanged={onContactChanged} />
+        </div>
 
         <div className="flex flex-col gap-[var(--space-6)]">
           <p className="text-xs font-semibold uppercase text-muted">Etapa comercial</p>
@@ -265,6 +270,64 @@ function ContactName({
           Cancelar
         </button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Da de baja (o reactiva) los tres envíos automáticos de este contacto — recordatorio de
+ * cortesía, mensajes de seguimiento y encuesta de satisfacción (BR-018, 2026-09-10). Nunca afecta
+ * la respuesta del agente de IA a un mensaje que el contacto escribe, ni los mensajes manuales
+ * del asesor — solo lo que el sistema enviaría por su cuenta sin que nadie se lo pida.
+ */
+function FollowUpOptOutToggle({
+  contact,
+  onContactChanged,
+}: {
+  contact: Contact;
+  onContactChanged: (contact: Contact) => void;
+}) {
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function toggle() {
+    const next = !contact.followUpOptedOut;
+    setPending(true);
+    setError(null);
+    try {
+      await setFollowUpOptedOut(contact.id, next, 'asesor');
+      onContactChanged({ ...contact, followUpOptedOut: next });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo actualizar');
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-[var(--space-3)]">
+      <button
+        type="button"
+        onClick={toggle}
+        disabled={pending}
+        className={`rounded-md border px-[var(--space-6)] py-[var(--space-4)] text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
+          contact.followUpOptedOut
+            ? 'border-success/30 bg-success-bg text-success hover:bg-success-bg/80'
+            : 'border-border text-secondary hover:bg-app hover:text-ink'
+        }`}
+      >
+        {pending
+          ? 'Guardando...'
+          : contact.followUpOptedOut
+            ? 'Reactivar mensajes automáticos'
+            : 'Dar de baja de mensajes automáticos'}
+      </button>
+      {contact.followUpOptedOut && (
+        <p className="text-[11px] text-secondary">
+          No recibirá recordatorio de cortesía, mensajes de seguimiento ni encuesta de satisfacción.
+        </p>
+      )}
+      {error && <p className="text-xs text-danger">{error}</p>}
     </div>
   );
 }

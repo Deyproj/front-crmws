@@ -4,8 +4,13 @@ import { useEffect, useState } from 'react';
 import { listOrganizationTemplates, type MessageTemplate } from '@/features/channel';
 import { useReminderSchedule } from '../hooks/useReminderSchedule';
 
-/** Convención fija del recordatorio de cortesía: {{1}}=nombre, {{2}}=fecha/hora (ver UpdateReminderScheduleHandler). */
-const COURTESY_REMINDER_TEMPLATE_VARIABLE_COUNT = 2;
+/**
+ * Convención fija del recordatorio de cortesía: {{1}}=nombre, {{2}}=fecha, {{3}}=hora (ver
+ * UpdateReminderScheduleHandler en api-crmws). Antes del 2026-09-10 eran 2 variables (fecha y
+ * hora combinadas en una sola) — si esto no coincide con el backend, el selector de abajo queda
+ * vacío en silencio porque ninguna plantilla real cumple el filtro.
+ */
+const COURTESY_REMINDER_TEMPLATE_VARIABLE_COUNT = 3;
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 
@@ -142,7 +147,7 @@ export function ReminderScheduleSettings() {
           </select>
           <p className="mt-[var(--space-2)] text-xs text-secondary">
             Si el canal es Meta Cloud API y el contacto lleva más de 24h sin escribir, el recordatorio solo puede
-            salir con una plantilla ya aprobada (2 variables: nombre y fecha) — sin ella, se omite en vez de
+            salir con una plantilla ya aprobada (3 variables: nombre, fecha y hora) — sin ella, se omite en vez de
             intentar texto libre.
           </p>
         </div>

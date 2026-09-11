@@ -41,6 +41,8 @@ export interface Contact {
   qualificationGoal: string | null;
   qualificationPlanOfInterest: string | null;
   qualificationIntent: string | null;
+  /** true si el contacto pidió no recibir más mensajes automáticos (recordatorio, seguimiento, encuesta). */
+  followUpOptedOut: boolean;
 }
 
 export async function listContacts(): Promise<Contact[]> {
@@ -90,5 +92,17 @@ export async function mergeContacts(keepContactId: string, duplicateContactId: s
   return apiFetch<Contact>(`/api/contacts/${keepContactId}/merge`, {
     method: 'POST',
     body: JSON.stringify({ duplicateContactId }),
+  });
+}
+
+/**
+ * Da de baja (o reactiva) los mensajes automáticos de este contacto — recordatorio de cortesía,
+ * seguimiento y encuesta de satisfacción. No afecta la respuesta reactiva del agente de IA ni los
+ * mensajes manuales del asesor. Ver ContactController#recordConsent / RecordConsentHandler.
+ */
+export async function setFollowUpOptedOut(contactId: string, optedOut: boolean, source: string): Promise<void> {
+  await apiFetch(`/api/contacts/${contactId}/consent`, {
+    method: 'POST',
+    body: JSON.stringify({ type: 'FOLLOW_UP', granted: !optedOut, source }),
   });
 }
