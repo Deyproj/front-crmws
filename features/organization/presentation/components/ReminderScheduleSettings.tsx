@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { listOrganizationTemplates, type MessageTemplate } from '@/features/channel';
 import { useReminderSchedule } from '../hooks/useReminderSchedule';
 import { FollowUpMessageRulesView } from '@/features/followups/presentation/views/FollowUpMessageRulesView';
+import { AutomationHistoryView } from '@/features/automation/presentation/views/AutomationHistoryView';
+import { GymSoftClientsDialog } from '@/features/gymsoft/presentation/components/GymSoftClientsDialog';
 
 /**
  * Convención fija del recordatorio de cortesía: {{1}}=nombre, {{2}}=fecha, {{3}}=hora (ver
@@ -13,7 +15,15 @@ import { FollowUpMessageRulesView } from '@/features/followups/presentation/view
  */
 const COURTESY_REMINDER_TEMPLATE_VARIABLE_COUNT = 3;
 
+/**
+ * Convención fija del recordatorio de vencimiento de plan (GymSoft, BR-034): {{1}}=nombre,
+ * {{2}}=fecha de vencimiento (ver UpdateReminderScheduleHandler en api-crmws).
+ */
+const GYMSOFT_REMINDER_TEMPLATE_VARIABLE_COUNT = 2;
+
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
+
+const DAYS_BEFORE_OPTIONS = [1, 2, 3, 5, 7, 10, 14];
 
 /** Mismo texto que `SatisfactionSurveyDirectoryServiceImpl.DEFAULT_QUESTIONS_TEXT` en api-crmws — se muestra como placeholder cuando la organización no lo personalizó. */
 const DEFAULT_SATISFACTION_SURVEY_MESSAGE =
@@ -73,6 +83,7 @@ export function ReminderScheduleSettings() {
   const { organization, loading, actionPending, error, update } = useReminderSchedule();
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const [surveyMessageDraft, setSurveyMessageDraft] = useState('');
+  const [gymSoftClientsOpen, setGymSoftClientsOpen] = useState(false);
 
   useEffect(() => {
     listOrganizationTemplates()
@@ -98,6 +109,9 @@ export function ReminderScheduleSettings() {
 
   const courtesyTemplates = templates.filter((t) => t.variableCount === COURTESY_REMINDER_TEMPLATE_VARIABLE_COUNT);
   const selectedCourtesyTemplate = courtesyTemplates.find((t) => t.id === organization.courtesyReminderTemplateId) ?? null;
+
+  const gymSoftTemplates = templates.filter((t) => t.variableCount === GYMSOFT_REMINDER_TEMPLATE_VARIABLE_COUNT);
+  const selectedGymSoftTemplate = gymSoftTemplates.find((t) => t.id === organization.gymSoftReminderTemplateId) ?? null;
 
   return (
     <div className="w-full rounded-lg border border-border bg-surface p-[var(--space-8)]">
@@ -241,7 +255,85 @@ export function ReminderScheduleSettings() {
             )}
           </div>
         </div>
+
+        <div className="flex items-center justify-between gap-[var(--space-5)] border-t border-border pt-[var(--space-6)]">
+          <div>
+            <p className="text-sm font-medium text-ink">Recordatorio de vencimiento de plan</p>
+            <p className="text-xs text-secondary">
+              Avisa a un cliente de GymSoft cuyo plan está por vencer. Requiere la integración GymSoft configurada.
+            </p>
+            <button
+              type="button"
+              onClick={() => setGymSoftClientsOpen(true)}
+              className="mt-[var(--space-3)] text-xs font-semibold text-brand hover:underline"
+            >
+              Ver clientes sincronizados
+            </button>
+          </div>
+          <ToggleSwitch
+            label="Recordatorio de vencimiento de plan"
+            checked={organization.gymSoftReminderEnabled}
+            disabled={actionPending}
+            onChange={(checked) => update({ gymSoftReminderEnabled: checked })}
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="gymSoftReminderDaysBefore"
+            className="mb-[var(--space-3)] block text-xs font-medium uppercase tracking-wide text-secondary"
+          >
+            Días de anticipación
+          </label>
+          <select
+            id="gymSoftReminderDaysBefore"
+            value={organization.gymSoftReminderDaysBefore}
+            onChange={(e) => update({ gymSoftReminderDaysBefore: Number(e.target.value) })}
+            disabled={actionPending}
+            className="w-full max-w-[160px] rounded-md border border-border bg-app px-[var(--space-6)] py-[var(--space-5)] text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
+          >
+            {DAYS_BEFORE_OPTIONS.map((days) => (
+              <option key={days} value={days}>
+                {days} {days === 1 ? 'día' : 'días'} antes
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label
+            htmlFor="gymSoftReminderTemplateId"
+            className="mb-[var(--space-3)] block text-xs font-medium uppercase tracking-wide text-secondary"
+          >
+            Plantilla de Meta (recordatorio de vencimiento)
+          </label>
+          <select
+            id="gymSoftReminderTemplateId"
+            value={organization.gymSoftReminderTemplateId ?? ''}
+            onChange={(e) => update({ gymSoftReminderTemplateId: e.target.value || null })}
+            disabled={actionPending}
+            className="w-full rounded-md border border-border bg-app px-[var(--space-6)] py-[var(--space-5)] text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
+          >
+            <option value="">Ninguna — se omite el envío a quien nunca ha escrito por WhatsApp</option>
+            {gymSoftTemplates.map((template) => (
+              <option key={template.id} value={template.id}>
+                {template.name} ({template.languageCode})
+              </option>
+            ))}
+          </select>
+          {selectedGymSoftTemplate && (
+            <p className="mt-[var(--space-3)] whitespace-pre-wrap rounded-md border border-border bg-app px-[var(--space-5)] py-[var(--space-4)] text-xs italic text-secondary">
+              {selectedGymSoftTemplate.bodyPreview}
+            </p>
+          )}
+        </div>
+
+        <div className="border-t border-border pt-[var(--space-6)]">
+          <AutomationHistoryView />
+        </div>
       </div>
+
+      <GymSoftClientsDialog open={gymSoftClientsOpen} onClose={() => setGymSoftClientsOpen(false)} />
     </div>
   );
 }

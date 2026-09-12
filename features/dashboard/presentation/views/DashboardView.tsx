@@ -4,9 +4,12 @@ import { useDashboardOverview } from '../hooks/useDashboardOverview';
 import { DashboardStatCards } from '../components/DashboardStatCards';
 import { RecentConversationsCard } from '../components/RecentConversationsCard';
 import { LifecycleFunnelCard } from '../components/LifecycleFunnelCard';
+import { AutomationDeliveryCountsCard } from '@/features/automation/presentation/components/AutomationDeliveryCountsCard';
+import { UsageProgressCard } from '@/features/usage/presentation/components/UsageProgressCard';
 
 export function DashboardView() {
-  const { contactStats, conversationStats, appointmentStats, recentConversations, loading, error } = useDashboardOverview();
+  const { contactStats, conversationStats, appointmentStats, recentConversations, aiUsage, loading, error } =
+    useDashboardOverview();
 
   return (
     <div className="flex h-full flex-col">
@@ -29,6 +32,10 @@ export function DashboardView() {
             <div className="grid grid-cols-1 gap-[var(--space-8)] lg:grid-cols-2">
               <RecentConversationsCard items={recentConversations} />
               <LifecycleFunnelCard stats={contactStats} />
+            </div>
+            <div className="grid grid-cols-1 gap-[var(--space-8)] lg:grid-cols-2">
+              <AutomationDeliveryCountsCard />
+              {aiUsage && <UsageProgressCard usage={aiUsage} />}
             </div>
           </div>
         )}
