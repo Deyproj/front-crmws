@@ -131,6 +131,35 @@ export async function reconnectMetaChannel(channelId: string, input: MetaCredent
   });
 }
 
+/** Refleja TemplateCategory (api-crmws, channel/domain/TemplateCategory.java). */
+export const TEMPLATE_CATEGORIES = [
+  'GENERAL',
+  'FOLLOW_UP',
+  'COURTESY_REMINDER',
+  'GYMSOFT_REMINDER',
+  'FIRST_CONTACT',
+] as const;
+export type TemplateCategory = (typeof TEMPLATE_CATEGORIES)[number];
+
+export const TEMPLATE_CATEGORY_LABELS: Record<TemplateCategory, string> = {
+  GENERAL: 'General (sin clasificar)',
+  FOLLOW_UP: 'Seguimiento',
+  COURTESY_REMINDER: 'Recordatorio de cortesía',
+  GYMSOFT_REMINDER: 'Recordatorio de vencimiento (GymSoft)',
+  FIRST_CONTACT: 'Primer contacto / reapertura manual',
+};
+
+/**
+ * Categorías que no deben ofrecerse en el selector de envío manual (`TemplateSendPanel`) —
+ * plantillas atadas a una automatización específica, que confundirían a un asesor eligiendo a
+ * mano. `GENERAL` (sin clasificar) y `FIRST_CONTACT` sí se muestran ahí.
+ */
+export const AUTOMATION_ONLY_TEMPLATE_CATEGORIES: readonly TemplateCategory[] = [
+  'FOLLOW_UP',
+  'COURTESY_REMINDER',
+  'GYMSOFT_REMINDER',
+];
+
 /** Refleja MessageTemplateResponse (api-crmws, channel/presentation/MessageTemplateResponse.java). */
 export interface MessageTemplate {
   id: string;
@@ -140,6 +169,7 @@ export interface MessageTemplate {
   bodyPreview: string;
   variableCount: number;
   active: boolean;
+  category: TemplateCategory;
   createdAt: string;
   updatedAt: string;
 }
@@ -155,6 +185,7 @@ export interface UpdateMessageTemplateInput {
   bodyPreview: string;
   variableCount: number;
   active: boolean;
+  category: TemplateCategory;
 }
 
 export async function listMessageTemplates(channelId: string): Promise<MessageTemplate[]> {
@@ -164,10 +195,14 @@ export async function listMessageTemplates(channelId: string): Promise<MessageTe
 /**
  * Plantillas Meta activas de la organización, sin importar a cuál de sus canales pertenece cada
  * una — alimenta los selectores de "qué plantilla usar" del recordatorio de cortesía y de cada
- * regla de seguimiento (BR-030, 2026-09-07).
+ * regla de seguimiento (BR-030, 2026-09-07). Sin `category`, trae todas (lo sigue usando el
+ * selector de envío manual, que no está atado a un propósito); con `category`, solo las
+ * clasificadas para ese propósito (2026-09-12) — reemplaza el filtro client-side por
+ * `variableCount` que se prestaba a confusión entre plantillas de propósitos distintos.
  */
-export async function listOrganizationTemplates(): Promise<MessageTemplate[]> {
-  return apiFetch<MessageTemplate[]>('/api/channels/templates');
+export async function listOrganizationTemplates(category?: TemplateCategory): Promise<MessageTemplate[]> {
+  const query = category ? `?category=${category}` : '';
+  return apiFetch<MessageTemplate[]>(`/api/channels/templates${query}`);
 }
 
 export async function createMessageTemplate(

@@ -6,7 +6,10 @@ import {
   listMessageTemplates,
   syncMessageTemplates,
   updateMessageTemplate,
+  TEMPLATE_CATEGORIES,
+  TEMPLATE_CATEGORY_LABELS,
   type MessageTemplate,
+  type TemplateCategory,
 } from '@/features/channel';
 
 const EMPTY_CREATE_FORM = { name: '', languageCode: 'es', bodyPreview: '', variableCount: '0' };
@@ -98,13 +101,22 @@ export function MessageTemplatesManager({ channelId }: { channelId: string }) {
   }
 
   async function handleToggleActive(template: MessageTemplate) {
+    await saveTemplate(template, { active: !template.active });
+  }
+
+  async function handleChangeCategory(template: MessageTemplate, category: TemplateCategory) {
+    await saveTemplate(template, { category });
+  }
+
+  async function saveTemplate(template: MessageTemplate, changes: Partial<Pick<MessageTemplate, 'active' | 'category'>>) {
     setSaving(true);
     setError(null);
     try {
       const updated = await updateMessageTemplate(channelId, template.id, {
         bodyPreview: template.bodyPreview,
         variableCount: template.variableCount,
-        active: !template.active,
+        active: changes.active ?? template.active,
+        category: changes.category ?? template.category,
       });
       setTemplates((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
     } catch (err) {
@@ -208,16 +220,30 @@ export function MessageTemplatesManager({ channelId }: { channelId: string }) {
                 </p>
                 <p className="mt-1 truncate text-xs text-secondary">{template.bodyPreview}</p>
               </div>
-              <button
-                type="button"
-                onClick={() => handleToggleActive(template)}
-                disabled={saving}
-                className={`shrink-0 rounded-md px-[var(--space-4)] py-[var(--space-3)] text-[10px] font-semibold ${
-                  template.active ? 'bg-success-bg text-success' : 'bg-danger-bg text-danger'
-                } disabled:opacity-50`}
-              >
-                {template.active ? 'Activa' : 'Inactiva'}
-              </button>
+              <div className="flex shrink-0 items-center gap-[var(--space-3)]">
+                <select
+                  value={template.category}
+                  onChange={(e) => handleChangeCategory(template, e.target.value as TemplateCategory)}
+                  disabled={saving}
+                  className="rounded-md border border-border bg-surface px-[var(--space-3)] py-[var(--space-3)] text-[10px] text-ink disabled:opacity-50"
+                >
+                  {TEMPLATE_CATEGORIES.map((category) => (
+                    <option key={category} value={category}>
+                      {TEMPLATE_CATEGORY_LABELS[category]}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => handleToggleActive(template)}
+                  disabled={saving}
+                  className={`rounded-md px-[var(--space-4)] py-[var(--space-3)] text-[10px] font-semibold ${
+                    template.active ? 'bg-success-bg text-success' : 'bg-danger-bg text-danger'
+                  } disabled:opacity-50`}
+                >
+                  {template.active ? 'Activa' : 'Inactiva'}
+                </button>
+              </div>
             </li>
           ))}
         </ul>

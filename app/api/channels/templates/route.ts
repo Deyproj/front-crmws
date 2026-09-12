@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   const apiBase = process.env.API_INTERNAL_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
   let upstream: Response;
   try {
-    upstream = await fetch(`${apiBase}/channels/templates`, {
+    upstream = await fetch(`${apiBase}/channels/templates${request.nextUrl.search}`, {
       headers: { 'Content-Type': 'application/json', ...forwardAuth(request) },
     });
   } catch (err) {

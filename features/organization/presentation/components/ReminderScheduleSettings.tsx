@@ -7,20 +7,6 @@ import { FollowUpMessageRulesView } from '@/features/followups/presentation/view
 import { AutomationHistoryView } from '@/features/automation/presentation/views/AutomationHistoryView';
 import { GymSoftClientsDialog } from '@/features/gymsoft/presentation/components/GymSoftClientsDialog';
 
-/**
- * Convención fija del recordatorio de cortesía: {{1}}=nombre, {{2}}=fecha, {{3}}=hora (ver
- * UpdateReminderScheduleHandler en api-crmws). Antes del 2026-09-10 eran 2 variables (fecha y
- * hora combinadas en una sola) — si esto no coincide con el backend, el selector de abajo queda
- * vacío en silencio porque ninguna plantilla real cumple el filtro.
- */
-const COURTESY_REMINDER_TEMPLATE_VARIABLE_COUNT = 3;
-
-/**
- * Convención fija del recordatorio de vencimiento de plan (GymSoft, BR-034): {{1}}=nombre,
- * {{2}}=fecha de vencimiento (ver UpdateReminderScheduleHandler en api-crmws).
- */
-const GYMSOFT_REMINDER_TEMPLATE_VARIABLE_COUNT = 2;
-
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 
 const DAYS_BEFORE_OPTIONS = [1, 2, 3, 5, 7, 10, 14];
@@ -107,10 +93,12 @@ export function ReminderScheduleSettings() {
     update({ satisfactionSurveyMessage: surveyMessageDraft.trim() || null });
   }
 
-  const courtesyTemplates = templates.filter((t) => t.variableCount === COURTESY_REMINDER_TEMPLATE_VARIABLE_COUNT);
+  // Filtra por categoría (2026-09-12), no por variableCount — evita confundir una plantilla de
+  // otro propósito que por coincidencia tenga la misma cantidad de variables.
+  const courtesyTemplates = templates.filter((t) => t.category === 'COURTESY_REMINDER');
   const selectedCourtesyTemplate = courtesyTemplates.find((t) => t.id === organization.courtesyReminderTemplateId) ?? null;
 
-  const gymSoftTemplates = templates.filter((t) => t.variableCount === GYMSOFT_REMINDER_TEMPLATE_VARIABLE_COUNT);
+  const gymSoftTemplates = templates.filter((t) => t.category === 'GYMSOFT_REMINDER');
   const selectedGymSoftTemplate = gymSoftTemplates.find((t) => t.id === organization.gymSoftReminderTemplateId) ?? null;
 
   return (

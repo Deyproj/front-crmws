@@ -1,12 +1,20 @@
 'use client';
 
 import { useEffect, useState, type FormEvent } from 'react';
-import { listMessageTemplates, type MessageTemplate } from '@/features/channel';
+import { AUTOMATION_ONLY_TEMPLATE_CATEGORIES, listMessageTemplates, type MessageTemplate } from '@/features/channel';
 
 /**
  * Reemplaza el cuadro de texto libre cuando `ChatPanel` detecta que el envío manual falló con
  * 422 (`OutsideServiceWindowException`, BR-030) — solo pasa en canales Meta Cloud API, más de
- * 24h después del último mensaje del contacto. Es el único camino para volver a escribirle.
+ * 24h después del último mensaje del contacto (incluida la apertura de un "Nuevo chat", que
+ * nunca tiene ventana porque no hay ningún mensaje entrante previo). Es el único camino para
+ * volver a escribirle.
+ *
+ * **Filtro por categoría (2026-09-12):** oculta las plantillas clasificadas para una
+ * automatización específica (`FOLLOW_UP`/`COURTESY_REMINDER`/`GYMSOFT_REMINDER`) — confundirían a
+ * un asesor eligiendo a mano. Sigue mostrando `GENERAL` (sin clasificar, para no esconder de
+ * golpe una plantilla que ya funcionaba acá antes de que existiera `category`) y `FIRST_CONTACT`
+ * (la categoría pensada a propósito para este selector).
  */
 export function TemplateSendPanel({
   channelId,
@@ -33,7 +41,7 @@ export function TemplateSendPanel({
     listMessageTemplates(channelId)
       .then((list) => {
         if (cancelled) return;
-        const active = list.filter((t) => t.active);
+        const active = list.filter((t) => t.active && !AUTOMATION_ONLY_TEMPLATE_CATEGORIES.includes(t.category));
         setTemplates(active);
         if (active[0]) {
           setSelectedId(active[0].id);

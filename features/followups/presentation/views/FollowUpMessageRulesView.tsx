@@ -5,9 +5,6 @@ import { useFollowUpMessageRules } from '../hooks/useFollowUpMessageRules';
 import { REASON_LABELS, type FollowUpMessageRule, type FollowUpReason } from '@/features/followups';
 import { listOrganizationTemplates, type MessageTemplate } from '@/features/channel';
 
-/** Convención fija de las reglas de seguimiento: {{1}}=nombre — es la única fuente del mensaje. */
-const FOLLOW_UP_TEMPLATE_VARIABLE_COUNT = 1;
-
 const inputClass =
   'w-full rounded-md border border-border bg-app px-[var(--space-6)] py-[var(--space-5)] text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand';
 const labelClass = 'mb-[var(--space-3)] block text-xs font-medium uppercase tracking-wide text-secondary';
@@ -24,7 +21,14 @@ export function FollowUpMessageRulesView() {
       .catch(() => setTemplates([]));
   }, []);
 
-  const metaTemplates = templates.filter((t) => t.variableCount === FOLLOW_UP_TEMPLATE_VARIABLE_COUNT);
+  /**
+   * El selector de "qué plantilla usar" solo ofrece las clasificadas como Seguimiento
+   * (2026-09-12) — reemplaza el filtro anterior por `variableCount`, que se prestaba a confundir
+   * una plantilla de otro propósito con la misma cantidad de variables. `templates` sin filtrar
+   * se sigue usando para mostrar el cuerpo de la plantilla ya asignada de una regla existente,
+   * aunque haya sido reclasificada después.
+   */
+  const metaTemplates = templates.filter((t) => t.category === 'FOLLOW_UP');
 
   return (
     <div className="flex w-full flex-col gap-[var(--space-6)]">

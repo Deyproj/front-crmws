@@ -8,6 +8,7 @@ export type {
   CreateMetaChannelInput,
   MetaCredentialsInput,
   MessageTemplate,
+  TemplateCategory,
   CreateMessageTemplateInput,
   UpdateMessageTemplateInput,
 } from './api';
@@ -28,4 +29,7 @@ export {
   setPreferredChannel,
   STATUS_LABELS,
   PROVIDER_LABELS,
+  TEMPLATE_CATEGORIES,
+  TEMPLATE_CATEGORY_LABELS,
+  AUTOMATION_ONLY_TEMPLATE_CATEGORIES,
 } from './api';
