@@ -15,6 +15,14 @@ const COURTESY_REMINDER_TEMPLATE_VARIABLE_COUNT = 3;
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 
+/** Mismo texto que `SatisfactionSurveyDirectoryServiceImpl.DEFAULT_QUESTIONS_TEXT` en api-crmws — se muestra como placeholder cuando la organización no lo personalizó. */
+const DEFAULT_SATISFACTION_SURVEY_MESSAGE =
+  'Antes de terminar, nos gustaría conocer tu opinión:\n' +
+  '1. ¿Tu consulta fue resuelta?\n' +
+  '2. ¿Cómo calificarías la atención recibida, de 1 a 5?\n' +
+  '3. ¿Deseas que te contacte un asesor?\n\n' +
+  'Puedes responder este mismo mensaje con lo que gustes, ¡gracias por tu tiempo!';
+
 function formatHour(hour: number): string {
   return `${String(hour).padStart(2, '0')}:00`;
 }
@@ -64,6 +72,7 @@ function ToggleSwitch({
 export function ReminderScheduleSettings() {
   const { organization, loading, actionPending, error, update } = useReminderSchedule();
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
+  const [surveyMessageDraft, setSurveyMessageDraft] = useState('');
 
   useEffect(() => {
     listOrganizationTemplates()
@@ -71,10 +80,24 @@ export function ReminderScheduleSettings() {
       .catch(() => setTemplates([]));
   }, []);
 
+  useEffect(() => {
+    if (!organization) return;
+    // Sincroniza el borrador con lo cargado del servidor — solo al llegar/cambiar de
+    // organización, no en cada tecleo (eso pisaría lo que el usuario está escribiendo).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSurveyMessageDraft(organization.satisfactionSurveyMessage ?? '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [organization?.satisfactionSurveyMessage]);
+
   if (loading) return <p className="text-sm text-secondary">Cargando...</p>;
   if (!organization) return null;
 
+  function saveSurveyMessage() {
+    update({ satisfactionSurveyMessage: surveyMessageDraft.trim() || null });
+  }
+
   const courtesyTemplates = templates.filter((t) => t.variableCount === COURTESY_REMINDER_TEMPLATE_VARIABLE_COUNT);
+  const selectedCourtesyTemplate = courtesyTemplates.find((t) => t.id === organization.courtesyReminderTemplateId) ?? null;
 
   return (
     <div className="w-full rounded-lg border border-border bg-surface p-[var(--space-8)]">
@@ -146,6 +169,11 @@ export function ReminderScheduleSettings() {
               </option>
             ))}
           </select>
+          {selectedCourtesyTemplate && (
+            <p className="mt-[var(--space-3)] whitespace-pre-wrap rounded-md border border-border bg-app px-[var(--space-5)] py-[var(--space-4)] text-xs italic text-secondary">
+              {selectedCourtesyTemplate.bodyPreview}
+            </p>
+          )}
         </div>
 
         <div className="flex items-center justify-between gap-[var(--space-5)]">
@@ -162,6 +190,57 @@ export function ReminderScheduleSettings() {
         </div>
 
         <FollowUpMessageRulesView />
+
+        <div className="flex items-center justify-between gap-[var(--space-5)] border-t border-border pt-[var(--space-6)]">
+          <div>
+            <p className="text-sm font-medium text-ink">Encuesta de satisfacción</p>
+            <p className="text-xs text-secondary">
+              Se envía al cerrar un caso comercial (cliente o en seguimiento) — a diferencia de los dos anteriores, no
+              corre a una hora fija, sino en el momento mismo del cierre.
+            </p>
+          </div>
+          <ToggleSwitch
+            label="Encuesta de satisfacción"
+            checked={organization.satisfactionSurveyEnabled}
+            disabled={actionPending}
+            onChange={(checked) => update({ satisfactionSurveyEnabled: checked })}
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="satisfactionSurveyMessage"
+            className="mb-[var(--space-3)] block text-xs font-medium uppercase tracking-wide text-secondary"
+          >
+            Texto de la encuesta
+          </label>
+          <textarea
+            id="satisfactionSurveyMessage"
+            value={surveyMessageDraft}
+            onChange={(e) => setSurveyMessageDraft(e.target.value)}
+            onBlur={saveSurveyMessage}
+            disabled={actionPending}
+            rows={5}
+            placeholder={DEFAULT_SATISFACTION_SURVEY_MESSAGE}
+            className="w-full resize-y rounded-md border border-border bg-app px-[var(--space-6)] py-[var(--space-5)] text-sm text-ink placeholder-secondary focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
+          />
+          <div className="mt-[var(--space-3)] flex items-center justify-between gap-[var(--space-4)]">
+            <p className="text-xs text-secondary">Vacío = se usa el texto por defecto (el que ves arriba en gris).</p>
+            {surveyMessageDraft.trim() !== '' && (
+              <button
+                type="button"
+                disabled={actionPending}
+                onClick={() => {
+                  setSurveyMessageDraft('');
+                  update({ satisfactionSurveyMessage: null });
+                }}
+                className="shrink-0 text-xs font-semibold text-brand hover:underline disabled:opacity-50"
+              >
+                Restablecer al texto por defecto
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -16,6 +16,10 @@ export interface Organization {
   automationEnabled: boolean;
   courtesyReminderEnabled: boolean;
   followUpReminderEnabled: boolean;
+  /** A diferencia de los dos anteriores, no depende de `dailyReminderHour` — se dispara al cerrar una oportunidad, no en un horario fijo. */
+  satisfactionSurveyEnabled: boolean;
+  /** `null` cuando la organización no lo personalizó — mostrar el texto por defecto en ese caso. */
+  satisfactionSurveyMessage: string | null;
   /** Hora local (0-23, zona horaria de `timezone`) en la que corren los recordatorios automáticos. */
   dailyReminderHour: number;
   /** Plantilla Meta a usar cuando el contacto lleva más de 24h sin escribir (BR-030); `null` = sin asignar (se omite el envío en ese caso). */
@@ -25,6 +29,8 @@ export interface Organization {
 export interface ReminderScheduleInput {
   courtesyReminderEnabled: boolean;
   followUpReminderEnabled: boolean;
+  satisfactionSurveyEnabled: boolean;
+  satisfactionSurveyMessage: string | null;
   dailyReminderHour: number;
   courtesyReminderTemplateId: string | null;
 }

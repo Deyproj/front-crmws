@@ -40,6 +40,8 @@ export function useReminderSchedule() {
         await updateReminderSchedule({
           courtesyReminderEnabled: organization.courtesyReminderEnabled,
           followUpReminderEnabled: organization.followUpReminderEnabled,
+          satisfactionSurveyEnabled: organization.satisfactionSurveyEnabled,
+          satisfactionSurveyMessage: organization.satisfactionSurveyMessage,
           dailyReminderHour: organization.dailyReminderHour,
           courtesyReminderTemplateId: organization.courtesyReminderTemplateId,
           ...partial,
