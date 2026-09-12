@@ -52,6 +52,12 @@ export function TemplateSendPanel({
   }, [channelId]);
 
   const selected = templates.find((t) => t.id === selectedId) ?? null;
+  const previewText = selected
+    ? params.reduce(
+        (text, value, i) => text.replace(`{{${i + 1}}}`, value.trim() ? value : `{{${i + 1}}}`),
+        selected.bodyPreview
+      )
+    : '';
 
   function handleSelect(id: string) {
     setSelectedId(id);
@@ -104,7 +110,11 @@ export function TemplateSendPanel({
               </option>
             ))}
           </select>
-          {selected && <p className="text-xs italic text-secondary">{selected.bodyPreview}</p>}
+          {selected && (
+            <p className="whitespace-pre-wrap rounded-md border border-border bg-app px-[var(--space-5)] py-[var(--space-4)] text-xs italic text-secondary">
+              {previewText}
+            </p>
+          )}
           {params.map((value, i) => (
             <input
               key={i}

@@ -161,6 +161,7 @@ function FollowUpMessageRuleForm({
 
   const parsedDays = Number(thresholdDays);
   const isValid = Number.isInteger(parsedDays) && parsedDays > 0 && metaTemplateId.trim().length > 0;
+  const selectedTemplate = templates.find((t) => t.id === metaTemplateId) ?? null;
 
   return (
     <form
@@ -205,6 +206,11 @@ function FollowUpMessageRuleForm({
           ))}
         </select>
         <p className="mt-[var(--space-2)] text-xs text-secondary">Solo plantillas de 1 variable ({'{{1}}'}=nombre).</p>
+        {selectedTemplate && (
+          <p className="mt-[var(--space-3)] whitespace-pre-wrap rounded-md border border-border bg-app px-[var(--space-5)] py-[var(--space-4)] text-xs italic text-secondary">
+            {selectedTemplate.bodyPreview}
+          </p>
+        )}
       </div>
       <div className="flex gap-[var(--space-4)]">
         <button
