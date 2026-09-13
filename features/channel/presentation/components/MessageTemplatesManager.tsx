@@ -227,15 +227,11 @@ export function MessageTemplatesManager({ channelId }: { channelId: string }) {
                   disabled={saving}
                   className="min-w-0 flex-1 truncate rounded-md border border-border bg-surface px-[var(--space-3)] py-[var(--space-3)] text-[10px] text-ink disabled:opacity-50 sm:flex-none sm:max-w-[10rem]"
                 >
-                  {/* GENERAL es el estado "todavía sin clasificar" que trae el sync, no una categoría
-                      elegible a propósito — se muestra deshabilitada solo mientras sigue así, y
-                      desaparece en cuanto el OWNER clasifica la plantilla (no se puede volver a elegir). */}
-                  {template.category === 'GENERAL' && (
-                    <option value="GENERAL" disabled>
-                      {TEMPLATE_CATEGORY_LABELS.GENERAL}
-                    </option>
-                  )}
-                  {TEMPLATE_CATEGORIES.filter((category) => category !== 'GENERAL').map((category) => (
+                  {/* GENERAL sigue siendo una opción elegible acá a propósito: es la forma de
+                      "retirar" una plantilla ya clasificada de todos los selectores de uso
+                      (FollowUpMessageRulesView/ReminderScheduleSettings/TemplateSendPanel, que
+                      nunca ofrecen GENERAL) sin desactivarla ni perder su configuración. */}
+                  {TEMPLATE_CATEGORIES.map((category) => (
                     <option key={category} value={category}>
                       {TEMPLATE_CATEGORY_LABELS[category]}
                     </option>
