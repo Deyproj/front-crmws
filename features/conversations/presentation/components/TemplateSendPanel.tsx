@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, type FormEvent } from 'react';
-import { AUTOMATION_ONLY_TEMPLATE_CATEGORIES, listMessageTemplates, type MessageTemplate } from '@/features/channel';
+import { listMessageTemplates, type MessageTemplate } from '@/features/channel';
 
 /**
  * Reemplaza el cuadro de texto libre cuando `ChatPanel` detecta que el envío manual falló con
@@ -10,11 +10,12 @@ import { AUTOMATION_ONLY_TEMPLATE_CATEGORIES, listMessageTemplates, type Message
  * nunca tiene ventana porque no hay ningún mensaje entrante previo). Es el único camino para
  * volver a escribirle.
  *
- * **Filtro por categoría (2026-09-12):** oculta las plantillas clasificadas para una
- * automatización específica (`FOLLOW_UP`/`COURTESY_REMINDER`/`GYMSOFT_REMINDER`) — confundirían a
- * un asesor eligiendo a mano. Sigue mostrando `GENERAL` (sin clasificar, para no esconder de
- * golpe una plantilla que ya funcionaba acá antes de que existiera `category`) y `FIRST_CONTACT`
- * (la categoría pensada a propósito para este selector).
+ * **Filtro por categoría:** solo ofrece plantillas clasificadas como `FIRST_CONTACT` — ni las
+ * atadas a una automatización específica (`FOLLOW_UP`/`COURTESY_REMINDER`/`GYMSOFT_REMINDER`, que
+ * confundirían a un asesor eligiendo a mano) ni `GENERAL` (sin clasificar todavía: a pedido
+ * explícito del usuario, 2026-09-12, una plantilla sin categoría asignada no debe poder elegirse
+ * para usarse en ningún selector — el OWNER tiene que clasificarla primero en
+ * `MessageTemplatesManager`).
  */
 export function TemplateSendPanel({
   channelId,
@@ -41,7 +42,7 @@ export function TemplateSendPanel({
     listMessageTemplates(channelId)
       .then((list) => {
         if (cancelled) return;
-        const active = list.filter((t) => t.active && !AUTOMATION_ONLY_TEMPLATE_CATEGORIES.includes(t.category));
+        const active = list.filter((t) => t.active && t.category === 'FIRST_CONTACT');
         setTemplates(active);
         if (active[0]) {
           setSelectedId(active[0].id);

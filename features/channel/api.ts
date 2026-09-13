@@ -149,17 +149,6 @@ export const TEMPLATE_CATEGORY_LABELS: Record<TemplateCategory, string> = {
   FIRST_CONTACT: 'Primer contacto / reapertura manual',
 };
 
-/**
- * Categorías que no deben ofrecerse en el selector de envío manual (`TemplateSendPanel`) —
- * plantillas atadas a una automatización específica, que confundirían a un asesor eligiendo a
- * mano. `GENERAL` (sin clasificar) y `FIRST_CONTACT` sí se muestran ahí.
- */
-export const AUTOMATION_ONLY_TEMPLATE_CATEGORIES: readonly TemplateCategory[] = [
-  'FOLLOW_UP',
-  'COURTESY_REMINDER',
-  'GYMSOFT_REMINDER',
-];
-
 /** Refleja MessageTemplateResponse (api-crmws, channel/presentation/MessageTemplateResponse.java). */
 export interface MessageTemplate {
   id: string;

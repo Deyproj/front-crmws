@@ -212,7 +212,7 @@ export function MessageTemplatesManager({ channelId }: { channelId: string }) {
           {templates.map((template) => (
             <li
               key={template.id}
-              className="flex items-start justify-between gap-[var(--space-4)] rounded-md border border-border bg-app px-[var(--space-5)] py-[var(--space-4)]"
+              className="flex flex-col gap-[var(--space-3)] rounded-md border border-border bg-app px-[var(--space-5)] py-[var(--space-4)] sm:flex-row sm:items-center sm:justify-between sm:gap-[var(--space-4)]"
             >
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-ink">
@@ -220,14 +220,22 @@ export function MessageTemplatesManager({ channelId }: { channelId: string }) {
                 </p>
                 <p className="mt-1 truncate text-xs text-secondary">{template.bodyPreview}</p>
               </div>
-              <div className="flex shrink-0 items-center gap-[var(--space-3)]">
+              <div className="flex items-center gap-[var(--space-3)] sm:shrink-0">
                 <select
                   value={template.category}
                   onChange={(e) => handleChangeCategory(template, e.target.value as TemplateCategory)}
                   disabled={saving}
-                  className="rounded-md border border-border bg-surface px-[var(--space-3)] py-[var(--space-3)] text-[10px] text-ink disabled:opacity-50"
+                  className="min-w-0 flex-1 truncate rounded-md border border-border bg-surface px-[var(--space-3)] py-[var(--space-3)] text-[10px] text-ink disabled:opacity-50 sm:flex-none sm:max-w-[10rem]"
                 >
-                  {TEMPLATE_CATEGORIES.map((category) => (
+                  {/* GENERAL es el estado "todavía sin clasificar" que trae el sync, no una categoría
+                      elegible a propósito — se muestra deshabilitada solo mientras sigue así, y
+                      desaparece en cuanto el OWNER clasifica la plantilla (no se puede volver a elegir). */}
+                  {template.category === 'GENERAL' && (
+                    <option value="GENERAL" disabled>
+                      {TEMPLATE_CATEGORY_LABELS.GENERAL}
+                    </option>
+                  )}
+                  {TEMPLATE_CATEGORIES.filter((category) => category !== 'GENERAL').map((category) => (
                     <option key={category} value={category}>
                       {TEMPLATE_CATEGORY_LABELS[category]}
                     </option>
@@ -237,7 +245,7 @@ export function MessageTemplatesManager({ channelId }: { channelId: string }) {
                   type="button"
                   onClick={() => handleToggleActive(template)}
                   disabled={saving}
-                  className={`rounded-md px-[var(--space-4)] py-[var(--space-3)] text-[10px] font-semibold ${
+                  className={`shrink-0 rounded-md px-[var(--space-4)] py-[var(--space-3)] text-[10px] font-semibold ${
                     template.active ? 'bg-success-bg text-success' : 'bg-danger-bg text-danger'
                   } disabled:opacity-50`}
                 >
