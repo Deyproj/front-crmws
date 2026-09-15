@@ -1,6 +1,9 @@
 export type {
+  AdvisorTransferCount,
   Conversation,
   ConversationFilters,
+  ConversationTransfer,
+  ConversationTransferSummary,
   ConversationMode,
   ConversationStats,
   ConversationStatus,
@@ -22,6 +25,8 @@ export {
   transferConversation,
   getConversationStats,
   getConversationSummary,
+  listConversationTransfers,
+  getConversationTransferSummary,
   MODE_LABELS,
   STATUS_LABELS,
 } from './api';

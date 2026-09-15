@@ -180,3 +180,55 @@ export interface ConversationSummary {
 export async function getConversationSummary(conversationId: string): Promise<ConversationSummary> {
   return apiFetch<ConversationSummary>(`/api/conversations/${conversationId}/summary`);
 }
+
+/** Refleja ConversationTransferResponse (api-crmws, conversation/presentation/ConversationTransferResponse.java). */
+export interface ConversationTransfer {
+  id: string;
+  conversationId: string;
+  contactId: string;
+  contactName: string;
+  fromMembershipId: string;
+  fromName: string;
+  toMembershipId: string;
+  toName: string;
+  transferredAt: string;
+}
+
+export interface AdvisorTransferCount {
+  membershipId: string;
+  name: string;
+  /** Transferencias que este asesor entregó a otro. */
+  sent: number;
+  /** Transferencias que este asesor recibió de otro. */
+  received: number;
+}
+
+/** Refleja ConversationTransferSummaryResponse. `byHour` siempre trae 24 posiciones (0-23) en `timezone`. */
+export interface ConversationTransferSummary {
+  total: number;
+  timezone: string;
+  byAdvisor: AdvisorTransferCount[];
+  byHour: number[];
+}
+
+const TRANSFERS_PAGE_SIZE = 20;
+
+export async function listConversationTransfers(
+  range: { from: string; to: string },
+  membershipId: string | null,
+  page = 0
+): Promise<PageResponse<ConversationTransfer>> {
+  const params = new URLSearchParams({
+    from: range.from,
+    to: range.to,
+    page: String(page),
+    size: String(TRANSFERS_PAGE_SIZE),
+  });
+  if (membershipId) params.set('membershipId', membershipId);
+  return apiFetch<PageResponse<ConversationTransfer>>(`/api/conversations/transfers?${params.toString()}`);
+}
+
+export async function getConversationTransferSummary(range: { from: string; to: string }): Promise<ConversationTransferSummary> {
+  const params = new URLSearchParams({ from: range.from, to: range.to });
+  return apiFetch<ConversationTransferSummary>(`/api/conversations/transfers/summary?${params.toString()}`);
+}

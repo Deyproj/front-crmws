@@ -24,6 +24,7 @@ import { AgentSimulator } from '@/features/agent/presentation/components/AgentSi
 import { KnowledgeEntriesManager } from '@/features/agent/presentation/components/KnowledgeEntriesManager';
 import { SatisfactionSurveysView } from '@/features/feedback/presentation/views/SatisfactionSurveysView';
 import { AiUsagePanel } from '@/features/usage/presentation/components/AiUsagePanel';
+import { TransferHistoryCard } from '@/features/conversations/presentation/components/TransferHistoryCard';
 
 const MANAGER_ROLES = new Set(['OWNER']);
 
@@ -103,6 +104,7 @@ const MAIN_TABS = [
   { id: 'feedback', label: 'Encuestas' },
   { id: 'usage', label: 'Consumo IA' },
   { id: 'team', label: 'Equipo' },
+  { id: 'transfers', label: 'Transferencias' },
   { id: 'channel', label: 'Canal de WhatsApp' },
 ];
 
@@ -157,6 +159,7 @@ export function ChannelSettingsView() {
               {mainTab === 'feedback' && <SatisfactionSurveysView />}
               {mainTab === 'usage' && <AiUsagePanel />}
               {mainTab === 'team' && <TeamManager />}
+              {mainTab === 'transfers' && <TransferHistoryCard />}
             </div>
           </div>
         </>
