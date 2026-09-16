@@ -5,6 +5,7 @@ export type {
   BroadcastRecipientStatus,
   BroadcastReplyHandling,
   BroadcastStatus,
+  BroadcastTestResult,
   CreateBroadcastInput,
 } from './api';
 export {
@@ -20,4 +21,5 @@ export {
   listBroadcastRecipients,
   listBroadcasts,
   previewBroadcastAudience,
+  sendBroadcastTest,
 } from './api';

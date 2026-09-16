@@ -93,6 +93,24 @@ export interface CreateBroadcastInput {
   scheduledAt: string | null;
 }
 
+/**
+ * Refleja BroadcastTestResponse. Responde 200 aunque el mensaje no salga: el motivo del rechazo de
+ * Meta es justamente lo que la prueba viene a averiguar.
+ */
+export interface BroadcastTestResult {
+  sent: boolean;
+  conversationId: string | null;
+  failureReason: string | null;
+}
+
+/** Envía la plantilla a un solo número, sin crear ninguna campaña. */
+export async function sendBroadcastTest(templateId: string, phone: string): Promise<BroadcastTestResult> {
+  return apiFetch<BroadcastTestResult>('/api/broadcasts/test', {
+    method: 'POST',
+    body: JSON.stringify({ templateId, phone }),
+  });
+}
+
 export async function previewBroadcastAudience(dailyLimit: number): Promise<BroadcastAudiencePreview> {
   return apiFetch<BroadcastAudiencePreview>(`/api/broadcasts/audience/preview?dailyLimit=${dailyLimit}`);
 }
