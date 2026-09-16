@@ -16,14 +16,26 @@ import { listMessageTemplates, type MessageTemplate } from '@/features/channel';
  * explícito del usuario, 2026-09-12, una plantilla sin categoría asignada no debe poder elegirse
  * para usarse en ningún selector — el OWNER tiene que clasificarla primero en
  * `MessageTemplatesManager`).
+ *
+ * **Prellenado (2026-09-15, a pedido explícito del usuario):** la primera plantilla del catálogo
+ * queda seleccionada y su variable `{{1}}` se rellena con el nombre del contacto — el caso real de
+ * toda plantilla de reapertura ("Hola {{1}}, ..."), así el asesor solo confirma con un click en vez
+ * de reescribir un nombre que la plataforma ya conoce. Sigue siendo editable, y si el contacto no
+ * tiene nombre cargado el campo queda vacío como antes.
  */
 export function TemplateSendPanel({
   channelId,
+  contactName,
+  draft,
   pending,
   onSend,
   onCancel,
 }: {
   channelId: string;
+  /** Nombre real del contacto — prellena `{{1}}`; `null` si todavía no tiene uno cargado. */
+  contactName: string | null;
+  /** Texto libre que el asesor había escrito y no pudo salir — solo para avisarle que no se perdió. */
+  draft: string;
   pending: boolean;
   onSend: (templateId: string, parameters: string[]) => Promise<boolean>;
   onCancel: () => void;
@@ -46,7 +58,7 @@ export function TemplateSendPanel({
         setTemplates(active);
         if (active[0]) {
           setSelectedId(active[0].id);
-          setParams(Array(active[0].variableCount).fill(''));
+          setParams(initialParams(active[0].variableCount, contactName));
         }
       })
       .catch((err) => {
@@ -58,7 +70,7 @@ export function TemplateSendPanel({
     return () => {
       cancelled = true;
     };
-  }, [channelId]);
+  }, [channelId, contactName]);
 
   const selected = templates.find((t) => t.id === selectedId) ?? null;
   const previewText = selected
@@ -71,14 +83,14 @@ export function TemplateSendPanel({
   function handleSelect(id: string) {
     setSelectedId(id);
     const template = templates.find((t) => t.id === id);
-    setParams(Array(template?.variableCount ?? 0).fill(''));
+    setParams(initialParams(template?.variableCount ?? 0, contactName));
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!selected || params.some((v) => !v.trim())) return;
     const ok = await onSend(selected.id, params);
-    if (ok) setParams(Array(selected.variableCount).fill(''));
+    if (ok) setParams(initialParams(selected.variableCount, contactName));
   }
 
   return (
@@ -96,6 +108,12 @@ export function TemplateSendPanel({
           Cancelar
         </button>
       </div>
+
+      {draft.trim() && (
+        <p className="mb-[var(--space-4)] text-xs text-secondary">
+          Lo que escribiste queda guardado en el cuadro de texto — vas a poder enviarlo apenas el contacto responda.
+        </p>
+      )}
 
       {loading && <p className="text-xs text-secondary">Cargando plantillas...</p>}
       {loadError && <p className="text-xs text-danger">{loadError}</p>}
@@ -129,7 +147,7 @@ export function TemplateSendPanel({
               key={i}
               value={value}
               onChange={(e) => setParams((prev) => prev.map((v, idx) => (idx === i ? e.target.value : v)))}
-              placeholder={`Variable {{${i + 1}}}`}
+              placeholder={i === 0 ? 'Nombre del cliente' : `Variable {{${i + 1}}}`}
               className="rounded-md border border-border bg-app px-[var(--space-5)] py-[var(--space-4)] text-xs text-ink placeholder-secondary focus:outline-none"
             />
           ))}
@@ -144,4 +162,16 @@ export function TemplateSendPanel({
       )}
     </div>
   );
+}
+
+/**
+ * Variables vacías salvo la primera, que arranca con el nombre del contacto — toda plantilla de
+ * reapertura lo usa como `{{1}}` y el asesor no debería tener que escribirlo a mano.
+ */
+function initialParams(variableCount: number, contactName: string | null): string[] {
+  const values = Array<string>(variableCount).fill('');
+  if (values.length > 0 && contactName?.trim()) {
+    values[0] = contactName.trim();
+  }
+  return values;
 }

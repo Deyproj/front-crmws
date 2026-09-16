@@ -259,6 +259,8 @@ export function ChatPanel({
         {canSend && outsideServiceWindow ? (
           <TemplateSendPanel
             channelId={conversation.channelId}
+            contactName={contact?.name ?? null}
+            draft={draft}
             pending={actionPending}
             onSend={onSendTemplate}
             onCancel={onDismissTemplateRequirement}
