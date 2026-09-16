@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/features/auth/presentation/context/AuthContext';
 import { useWaitingConversationsCount } from '@/features/conversations/presentation/hooks/useWaitingConversationsCount';
 import { useMineConversationsCount } from '@/features/conversations/presentation/hooks/useMineConversationsCount';
-import { HomeIcon, MessageSquareIcon, UsersIcon, CalendarIcon, ClockIcon, SendIcon, SettingsIcon, LogOutIcon, XIcon } from '@/components/ui/icons';
+import { HomeIcon, MessageSquareIcon, UsersIcon, CalendarIcon, ClockIcon, SendIcon, BarChartIcon, SettingsIcon, LogOutIcon, XIcon } from '@/components/ui/icons';
 import { BASE_PATH } from '@/lib/runtime/basePath';
 
 /**
@@ -82,7 +82,12 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
               </NavItem>
             )}
             {user?.role === 'OWNER' && (
-              <NavItem href="/settings" icon={<SettingsIcon className="size-[18px]" />} active={pathname === '/settings'} onNavigate={onClose}>
+              <NavItem href="/reports/usage" icon={<BarChartIcon className="size-[18px]" />} active={pathname.startsWith('/reports')} onNavigate={onClose}>
+                Reportes
+              </NavItem>
+            )}
+            {user?.role === 'OWNER' && (
+              <NavItem href="/settings/whatsapp" icon={<SettingsIcon className="size-[18px]" />} active={pathname.startsWith('/settings')} onNavigate={onClose}>
                 Configuración
               </NavItem>
             )}

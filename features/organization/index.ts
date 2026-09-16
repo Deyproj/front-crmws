@@ -3,6 +3,7 @@ export {
   MEMBERSHIP_ROLES,
   getOrganization,
   setAutomationEnabled,
+  setAutomatedMessagingEnabled,
   updateReminderSchedule,
   listMembers,
   changeMembershipRole,

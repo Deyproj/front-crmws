@@ -14,6 +14,8 @@ export interface Organization {
   timezone: string;
   status: OrganizationStatus;
   automationEnabled: boolean;
+  /** Pausa general de los envíos automáticos por WhatsApp (BR-036) — independiente de `automationEnabled`, que solo pausa las respuestas del agente. */
+  automatedMessagingEnabled: boolean;
   courtesyReminderEnabled: boolean;
   followUpReminderEnabled: boolean;
   /** A diferencia de los dos anteriores, no depende de `dailyReminderHour` — se dispara al cerrar una oportunidad, no en un horario fijo. */
@@ -63,6 +65,13 @@ export async function getOrganization(): Promise<Organization> {
 
 export async function setAutomationEnabled(enabled: boolean): Promise<Organization> {
   return apiFetch<Organization>('/api/organizations/me/automation', {
+    method: 'PATCH',
+    body: JSON.stringify({ enabled }),
+  });
+}
+
+export async function setAutomatedMessagingEnabled(enabled: boolean): Promise<Organization> {
+  return apiFetch<Organization>('/api/organizations/me/automated-messaging', {
     method: 'PATCH',
     body: JSON.stringify({ enabled }),
   });

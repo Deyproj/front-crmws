@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useAutomationToggle } from '../hooks/useAutomationToggle';
 
 /**
@@ -20,11 +21,19 @@ export function AutomationToggle() {
     <div className="w-full rounded-lg border border-border bg-surface p-[var(--space-8)]">
       <div className="mb-[var(--space-6)] flex items-center justify-between">
         <div>
-          <p className="text-sm font-semibold text-ink">Respuestas automáticas</p>
+          <p className="text-sm font-semibold text-ink">Respuestas del agente de IA</p>
           <p className="text-xs text-secondary">
             {enabled
               ? 'El agente responde automáticamente en las conversaciones en modo IA.'
               : 'Pausado: los mensajes nuevos se escalan directo a un asesor, sin respuesta automática.'}
+          </p>
+          {/* Aclaración agregada el 2026-09-16: el usuario esperaba que esta pausa también detuviera los recordatorios (BR-036). */}
+          <p className="mt-[var(--space-2)] text-xs text-secondary">
+            No detiene recordatorios, seguimientos, encuestas ni vencimientos de plan —{' '}
+            <Link href="/settings/automations" className="font-semibold text-brand hover:underline">
+              esos se pausan en Automatizaciones
+            </Link>
+            .
           </p>
         </div>
         <span className={`size-3 shrink-0 rounded-full ${enabled ? 'bg-success' : 'bg-warning'}`} />

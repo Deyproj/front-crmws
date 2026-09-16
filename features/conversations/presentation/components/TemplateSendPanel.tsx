@@ -119,8 +119,8 @@ export function TemplateSendPanel({
       {loadError && <p className="text-xs text-danger">{loadError}</p>}
       {!loading && !loadError && templates.length === 0 && (
         <p className="text-xs text-secondary">
-          No hay plantillas cargadas para este canal — un propietario puede agregarlas en Configuración → Canal de
-          WhatsApp.
+          No hay plantillas cargadas para este canal — un propietario puede sincronizarlas en Configuración → Plantillas
+          de Meta.
         </p>
       )}
 

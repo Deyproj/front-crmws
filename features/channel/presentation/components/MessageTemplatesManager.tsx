@@ -127,7 +127,7 @@ export function MessageTemplatesManager({ channelId }: { channelId: string }) {
   }
 
   return (
-    <div className="mt-[var(--space-6)] border-t border-border pt-[var(--space-6)]">
+    <div className="w-full rounded-xl border border-border bg-surface p-[var(--space-8)]">
       <div className="mb-[var(--space-5)] flex items-center justify-between">
         <p className="text-xs font-semibold uppercase tracking-wide text-secondary">Plantillas aprobadas</p>
         <div className="flex items-center gap-[var(--space-4)]">
@@ -229,7 +229,7 @@ export function MessageTemplatesManager({ channelId }: { channelId: string }) {
                 >
                   {/* GENERAL sigue siendo una opción elegible acá a propósito: es la forma de
                       "retirar" una plantilla ya clasificada de todos los selectores de uso
-                      (FollowUpMessageRulesView/ReminderScheduleSettings/TemplateSendPanel, que
+                      (FollowUpMessageRulesView/AutomationSettingsView/TemplateSendPanel, que
                       nunca ofrecen GENERAL) sin desactivarla ni perder su configuración. */}
                   {TEMPLATE_CATEGORIES.map((category) => (
                     <option key={category} value={category}>

@@ -71,7 +71,7 @@ function FollowUpCriteriaInfo() {
         </p>
         <p>
           Según cuánto tiempo lleve un contacto aquí, el sistema puede enviarle mensajes automáticos por WhatsApp —
-          configúralos en Configuración → Seguimientos.
+          configúralos en Configuración → Automatizaciones.
         </p>
       </span>
     </span>

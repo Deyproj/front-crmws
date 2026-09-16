@@ -10,14 +10,14 @@ import { formatRelativeTime } from '@/lib/utils/formatRelativeTime';
  * de seguimiento, encuesta de satisfacción y vencimiento de plan de GymSoft) — cada fila es un
  * envío realmente entregado (ver AutomationDelivery en api-crmws), no un intento omitido.
  */
-export function AutomationHistoryView() {
+export function AutomationHistoryView({ initialKind = null }: { initialKind?: AutomationKind | null }) {
   const { preset, setPreset, customFrom, setCustomFrom, customTo, setCustomTo, range } = useDateRangePreset('thisMonth');
-  const { deliveries, page, totalPages, loading, error, kind, setKind, goToPage } = useAutomationHistory(range);
+  const { deliveries, page, totalPages, loading, error, kind, setKind, goToPage } = useAutomationHistory(range, initialKind);
 
   return (
-    <div className="flex w-full flex-col gap-[var(--space-5)]">
+    <div className="flex w-full flex-col gap-[var(--space-5)] rounded-xl border border-border bg-surface p-[var(--space-8)]">
       <div className="flex flex-wrap items-center justify-between gap-[var(--space-4)]">
-        <p className="text-sm font-semibold uppercase text-muted">Historial de automatizaciones</p>
+        <p className="text-sm font-semibold text-ink">Envíos automáticos entregados</p>
         <div className="flex flex-wrap items-center gap-[var(--space-4)]">
           <select
             value={kind ?? ''}

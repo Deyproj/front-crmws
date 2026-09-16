@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { listAutomationDeliveries, type AutomationDelivery, type AutomationKind, type DateRange } from '@/features/automation';
 
-export function useAutomationHistory(range: DateRange) {
-  const [kind, setKind] = useState<AutomationKind | null>(null);
+export function useAutomationHistory(range: DateRange, initialKind: AutomationKind | null = null) {
+  const [kind, setKind] = useState<AutomationKind | null>(initialKind);
   const [deliveries, setDeliveries] = useState<AutomationDelivery[]>([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);

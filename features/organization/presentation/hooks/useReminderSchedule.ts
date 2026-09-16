@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   getOrganization,
+  setAutomatedMessagingEnabled,
   updateReminderSchedule,
   type Organization,
   type ReminderScheduleInput,
@@ -57,5 +58,18 @@ export function useReminderSchedule() {
     }
   }
 
-  return { organization, loading, actionPending, error, update };
+  /** Pausa general (BR-036) — mismo estado que `update` para que las tarjetas vean el cambio al instante. */
+  async function setAutomatedMessaging(enabled: boolean) {
+    setActionPending(true);
+    setError(null);
+    try {
+      setOrganization(await setAutomatedMessagingEnabled(enabled));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo actualizar la pausa de envíos automáticos');
+    } finally {
+      setActionPending(false);
+    }
+  }
+
+  return { organization, loading, actionPending, error, update, setAutomatedMessaging };
 }

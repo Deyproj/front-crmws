@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type FormEvent } from 'react';
+import Link from 'next/link';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SendIcon } from '@/components/ui/icons';
@@ -222,8 +223,9 @@ export function BroadcastsView() {
               {templatesError && <p className="text-xs text-danger">{templatesError}</p>}
               {!templatesError && templates.length === 0 && (
                 <p className="text-xs text-secondary">
-                  No hay plantillas de difusión todavía. Créala en Meta, sincronízala en Configuración → Canal de
-                  WhatsApp y clasifícala como &ldquo;Difusión masiva&rdquo;.
+                  No hay plantillas de difusión todavía. Créala en Meta, sincronízala en{' '}
+                  <Link href="/settings/templates" className="font-semibold text-brand hover:underline">Configuración → Plantillas de Meta</Link>{' '}
+                  y clasifícala como &ldquo;Difusión masiva&rdquo;.
                 </p>
               )}
               {selectedTemplate && (

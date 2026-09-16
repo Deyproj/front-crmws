@@ -11,6 +11,16 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_BASE_PATH: basePath,
   },
+  // Configuración y Reportes no tienen pantalla propia en la raíz, solo secciones (ver
+  // components/layout/SectionLayout.tsx). Se redirige acá y no con redirect() en un page.tsx: dentro
+  // del layout con AppShell ese redirect llega como 200 con la instrucción embebida en el stream, no
+  // como un 307 real. Next antepone el basePath solo en source y destination.
+  async redirects() {
+    return [
+      { source: "/settings", destination: "/settings/whatsapp", permanent: false },
+      { source: "/reports", destination: "/reports/usage", permanent: false },
+    ];
+  },
 };
 
 export default nextConfig;

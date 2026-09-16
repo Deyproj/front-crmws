@@ -30,7 +30,7 @@ function formatDateTime(iso: string, timeZone: string | undefined): string {
 }
 
 /**
- * Configuración → Transferencias (solo OWNER, también exigido por el backend): historial de
+ * Reportes → Transferencias (solo OWNER, también exigido por el backend): historial de
  * transferencias entre asesores — cuántas entregó/recibió cada uno, en qué horas del día ocurren y
  * el detalle (quién a quién, cuándo, qué contacto).
  */

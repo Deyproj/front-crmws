@@ -45,7 +45,7 @@ export function NewConversationDialog({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Con Baileys + Meta Cloud API coexistiendo (ADR-017), el backend ya no puede elegir un canal
-  // solo con más de uno activo — salvo que el OWNER haya marcado uno "preferido" en Configuración
+  // solo con más de uno activo — salvo que el OWNER haya marcado uno "preferido" en Configuración → Canales
   // (ver ChannelCard), en cuyo caso ni hace falta preguntar acá.
   const [channels, setChannels] = useState<Channel[]>([]);
   const [channelId, setChannelId] = useState('');

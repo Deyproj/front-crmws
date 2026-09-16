@@ -3,7 +3,7 @@
 import { PLAN_BILLING_CYCLE_LABELS, type CurrentUsage } from '@/features/usage';
 
 /**
- * Barra de progreso de consumo de IA — extraída de `AiUsagePanel` (Configuración → Canal) para
+ * Barra de progreso de consumo de IA — extraída de `AiUsagePanel` (Reportes → Consumo IA) para
  * reusarla también como tarjeta compacta en el Dashboard. El costo en dólares nunca se muestra
  * acá (ver javadoc de `AiUsagePanel`); lo único monetario es el costo del excedente ya pactado.
  */

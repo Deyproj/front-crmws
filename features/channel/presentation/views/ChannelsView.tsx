@@ -1,11 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
-import { useAuth } from '@/features/auth/presentation/context/AuthContext';
 import { useChannels } from '../hooks/useChannels';
 import { MetaChannelConnectDialog } from '../components/MetaChannelConnectDialog';
-import { MessageTemplatesManager } from '../components/MessageTemplatesManager';
 import {
   STATUS_LABELS,
   type Channel,
@@ -16,17 +15,6 @@ import {
 } from '@/features/channel';
 import { CopyIcon, QrCodeIcon, ShieldCheckIcon } from '@/components/ui/icons';
 import { Tabs } from '@/components/ui/Tabs';
-import { AutomationToggle } from '@/features/organization/presentation/components/AutomationToggle';
-import { ReminderScheduleSettings } from '@/features/organization/presentation/components/ReminderScheduleSettings';
-import { TeamManager } from '@/features/organization/presentation/components/TeamManager';
-import { AgentConfigForm } from '@/features/agent/presentation/components/AgentConfigForm';
-import { AgentSimulator } from '@/features/agent/presentation/components/AgentSimulator';
-import { KnowledgeEntriesManager } from '@/features/agent/presentation/components/KnowledgeEntriesManager';
-import { SatisfactionSurveysView } from '@/features/feedback/presentation/views/SatisfactionSurveysView';
-import { AiUsagePanel } from '@/features/usage/presentation/components/AiUsagePanel';
-import { TransferHistoryCard } from '@/features/conversations/presentation/components/TransferHistoryCard';
-
-const MANAGER_ROLES = new Set(['OWNER']);
 
 /**
  * Identidad visual fija por proveedor (icono + insignia "Oficial"/"No oficial") — comunica
@@ -99,83 +87,19 @@ function StatusBadge({ tone, label, pulsing = false }: { tone: StatusTone; label
   );
 }
 
-const MAIN_TABS = [
-  { id: 'agent', label: 'Agente' },
-  { id: 'feedback', label: 'Encuestas' },
-  { id: 'usage', label: 'Consumo IA' },
-  { id: 'team', label: 'Equipo' },
-  { id: 'transfers', label: 'Transferencias' },
-  { id: 'channel', label: 'Canal de WhatsApp' },
-];
-
-const AGENT_TABS = [
-  { id: 'automation', label: 'Automatización' },
-  { id: 'personalization', label: 'Personalización' },
-  { id: 'knowledge', label: 'Conocimiento' },
-  { id: 'simulator', label: 'Probar agente' },
-];
-
 // META_CLOUD_API primero: es el canal oficial recomendado, Baileys (QR) es el respaldo no oficial.
 const CHANNEL_TABS: { id: ChannelProvider; label: string }[] = [
   { id: 'META_CLOUD_API', label: 'API' },
   { id: 'BAILEYS', label: 'QR' },
 ];
 
-export function ChannelSettingsView() {
-  const { user } = useAuth();
-  const canManage = !!user && MANAGER_ROLES.has(user.role);
-  const [mainTab, setMainTab] = useState(MAIN_TABS[0].id);
-  const [agentTab, setAgentTab] = useState(AGENT_TABS[0].id);
-
-  return (
-    <div className="flex h-full flex-col">
-      <header className="flex h-12 shrink-0 items-center border-b border-border bg-surface px-[var(--space-7)] sm:px-[var(--space-9)]">
-        <h1 className="text-base font-bold tracking-tight text-ink">Configuración</h1>
-      </header>
-      {canManage ? (
-        <>
-          <div className="shrink-0 border-b border-border bg-surface px-[var(--space-9)]">
-            <Tabs tabs={MAIN_TABS} activeId={mainTab} onChange={setMainTab} label="Secciones de configuración" />
-          </div>
-          <div className="flex-1 overflow-y-auto p-[var(--space-9)]">
-            <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-[var(--space-7)]">
-              {mainTab === 'agent' && (
-                <div className="flex w-full flex-col items-center gap-[var(--space-7)]">
-                  <Tabs tabs={AGENT_TABS} activeId={agentTab} onChange={setAgentTab} size="sm" label="Secciones del agente" />
-                  <div className="w-full flex flex-col items-center gap-[var(--space-7)]">
-                    {agentTab === 'automation' && (
-                      <>
-                        <AutomationToggle />
-                        <ReminderScheduleSettings />
-                      </>
-                    )}
-                    {agentTab === 'personalization' && <AgentConfigForm />}
-                    {agentTab === 'knowledge' && <KnowledgeEntriesManager />}
-                    {agentTab === 'simulator' && <AgentSimulator />}
-                  </div>
-                </div>
-              )}
-              {mainTab === 'channel' && <ChannelManager />}
-              {mainTab === 'feedback' && <SatisfactionSurveysView />}
-              {mainTab === 'usage' && <AiUsagePanel />}
-              {mainTab === 'team' && <TeamManager />}
-              {mainTab === 'transfers' && <TransferHistoryCard />}
-            </div>
-          </div>
-        </>
-      ) : (
-        <div className="flex-1 overflow-y-auto p-[var(--space-9)]">
-          <p className="text-sm text-secondary">
-            Solo el propietario o un administrador de la organización puede gestionar la automatización o el canal de
-            WhatsApp.
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ChannelManager() {
+/**
+ * Configuración → WhatsApp → Canales (`/settings/whatsapp`). Hasta el 2026-09-16 este archivo era
+ * `ChannelSettingsView` y además orquestaba todas las pestañas de Configuración; ahora cada sección
+ * tiene su propia ruta bajo `app/settings/**` y esta vista solo gestiona los canales. El control de
+ * rol (solo OWNER) lo hace `middleware.ts` para todo `/settings/**`.
+ */
+export function ChannelsView() {
   const { entries, loading, actionPending, error, create, connect, disconnect, unlink, reconnectMeta, setPreferred } =
     useChannels();
   const [externalAccountId, setExternalAccountId] = useState('');
@@ -467,7 +391,13 @@ function ChannelCard({
         </div>
       )}
 
-      {isMeta && <MessageTemplatesManager channelId={channel.id} />}
+      {isMeta && (
+        <div className="mt-[var(--space-6)] border-t border-border pt-[var(--space-6)]">
+          <Link href="/settings/templates" className="text-xs font-semibold text-brand hover:underline">
+            Gestionar plantillas de Meta →
+          </Link>
+        </div>
+      )}
 
       {isMeta && (
         <MetaChannelConnectDialog

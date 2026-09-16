@@ -51,8 +51,10 @@ export function middleware(request: NextRequest) {
   }
 
   // Difusión masiva: crear y cancelar son solo del OWNER en el backend (BR-035), así que un
-  // asesor no debería ni llegar a montar la pantalla.
-  if (pathname.startsWith('/settings') || pathname.startsWith('/broadcasts')) {
+  // asesor no debería ni llegar a montar la pantalla. Reportes (consumo IA, transferencias,
+  // encuestas, historial de automatizaciones) vivía dentro de Configuración hasta el 2026-09-16 y
+  // conserva su misma restricción — en el backend solo transferencias exige OWNER.
+  if (pathname.startsWith('/settings') || pathname.startsWith('/broadcasts') || pathname.startsWith('/reports')) {
     if (!role || !MANAGER_ROLES.has(role)) {
       return NextResponse.redirect(withBasePath('/'));
     }
