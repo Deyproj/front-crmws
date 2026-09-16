@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/features/auth/presentation/context/AuthContext';
 import { useWaitingConversationsCount } from '@/features/conversations/presentation/hooks/useWaitingConversationsCount';
 import { useMineConversationsCount } from '@/features/conversations/presentation/hooks/useMineConversationsCount';
-import { HomeIcon, MessageSquareIcon, UsersIcon, CalendarIcon, ClockIcon, SettingsIcon, LogOutIcon, XIcon } from '@/components/ui/icons';
+import { HomeIcon, MessageSquareIcon, UsersIcon, CalendarIcon, ClockIcon, SendIcon, SettingsIcon, LogOutIcon, XIcon } from '@/components/ui/icons';
 import { BASE_PATH } from '@/lib/runtime/basePath';
 
 /**
@@ -76,6 +76,11 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
             <NavItem href="/followups" icon={<ClockIcon className="size-[18px]" />} active={pathname === '/followups'} onNavigate={onClose}>
               Seguimientos
             </NavItem>
+            {user?.role === 'OWNER' && (
+              <NavItem href="/broadcasts" icon={<SendIcon className="size-[18px]" />} active={pathname === '/broadcasts'} onNavigate={onClose}>
+                Difusión
+              </NavItem>
+            )}
             {user?.role === 'OWNER' && (
               <NavItem href="/settings" icon={<SettingsIcon className="size-[18px]" />} active={pathname === '/settings'} onNavigate={onClose}>
                 Configuración

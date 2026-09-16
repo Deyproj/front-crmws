@@ -118,10 +118,23 @@ export function GymSoftClientsDialog({ open, onClose }: { open: boolean; onClose
                         <td className="px-[var(--space-6)] py-[var(--space-4)] text-ink">
                           {subscription.fullName || 'Sin nombre'}
                         </td>
-                        <td className="px-[var(--space-6)] py-[var(--space-4)] text-secondary">{subscription.phone}</td>
+                        <td className="px-[var(--space-6)] py-[var(--space-4)] text-secondary">
+                          {subscription.phoneE164 ?? (
+                            <span className="text-danger" title={`GymSoft entregó "${subscription.phone}", que no es un número de WhatsApp`}>
+                              {subscription.phone} · sin WhatsApp
+                            </span>
+                          )}
+                        </td>
                         <td className="px-[var(--space-6)] py-[var(--space-4)] text-secondary">{subscription.expiresAt}</td>
                         <td className="px-[var(--space-6)] py-[var(--space-4)]">
-                          {subscription.remindedForExpiresAt === subscription.expiresAt ? (
+                          {!subscription.active ? (
+                            <span
+                              className="rounded-full bg-app px-[var(--space-4)] py-[2px] text-[11px] font-semibold text-muted"
+                              title="La última sincronización ya no trajo a este cliente"
+                            >
+                              No vigente
+                            </span>
+                          ) : subscription.remindedForExpiresAt === subscription.expiresAt ? (
                             <span className="rounded-full bg-success-bg px-[var(--space-4)] py-[2px] text-[11px] font-semibold text-success">
                               Ya avisado
                             </span>

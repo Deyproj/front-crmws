@@ -138,6 +138,7 @@ export const TEMPLATE_CATEGORIES = [
   'COURTESY_REMINDER',
   'GYMSOFT_REMINDER',
   'FIRST_CONTACT',
+  'BROADCAST',
 ] as const;
 export type TemplateCategory = (typeof TEMPLATE_CATEGORIES)[number];
 
@@ -147,6 +148,7 @@ export const TEMPLATE_CATEGORY_LABELS: Record<TemplateCategory, string> = {
   COURTESY_REMINDER: 'Recordatorio de cortesía',
   GYMSOFT_REMINDER: 'Recordatorio de vencimiento (GymSoft)',
   FIRST_CONTACT: 'Primer contacto / reapertura manual',
+  BROADCAST: 'Difusión masiva',
 };
 
 /** Refleja MessageTemplateResponse (api-crmws, channel/presentation/MessageTemplateResponse.java). */

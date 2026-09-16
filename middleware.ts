@@ -50,7 +50,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(withBasePath('/'));
   }
 
-  if (pathname.startsWith('/settings')) {
+  // Difusión masiva: crear y cancelar son solo del OWNER en el backend (BR-035), así que un
+  // asesor no debería ni llegar a montar la pantalla.
+  if (pathname.startsWith('/settings') || pathname.startsWith('/broadcasts')) {
     if (!role || !MANAGER_ROLES.has(role)) {
       return NextResponse.redirect(withBasePath('/'));
     }

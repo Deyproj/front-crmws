@@ -9,6 +9,7 @@ export const AUTOMATION_KINDS = [
   'FOLLOW_UP',
   'SATISFACTION_SURVEY',
   'GYMSOFT_EXPIRATION_REMINDER',
+  'BROADCAST',
 ] as const;
 export type AutomationKind = (typeof AUTOMATION_KINDS)[number];
 
@@ -17,6 +18,7 @@ export const AUTOMATION_KIND_LABELS: Record<AutomationKind, string> = {
   FOLLOW_UP: 'Mensaje de seguimiento',
   SATISFACTION_SURVEY: 'Encuesta de satisfacción',
   GYMSOFT_EXPIRATION_REMINDER: 'Vencimiento de plan (GymSoft)',
+  BROADCAST: 'Difusión masiva',
 };
 
 /** Refleja AutomationDeliveryResponse. */
