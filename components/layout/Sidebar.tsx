@@ -7,7 +7,9 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/features/auth/presentation/context/AuthContext';
 import { useWaitingConversationsCount } from '@/features/conversations/presentation/hooks/useWaitingConversationsCount';
 import { useMineConversationsCount } from '@/features/conversations/presentation/hooks/useMineConversationsCount';
-import { HomeIcon, MessageSquareIcon, UsersIcon, CalendarIcon, ClockIcon, SendIcon, BarChartIcon, SettingsIcon, LogOutIcon, XIcon } from '@/components/ui/icons';
+import { HomeIcon, MessageSquareIcon, UsersIcon, CalendarIcon, ClockIcon, BarChartIcon, SettingsIcon, LogOutIcon, XIcon } from '@/components/ui/icons';
+// SendIcon: solo lo usaba el ítem de Difusión de abajo, comentado a propósito — volver a
+// importarlo junto con ese bloque cuando se reactive.
 import { BASE_PATH } from '@/lib/runtime/basePath';
 
 /**
@@ -76,11 +78,15 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
             <NavItem href="/followups" icon={<ClockIcon className="size-[18px]" />} active={pathname === '/followups'} onNavigate={onClose}>
               Seguimientos
             </NavItem>
+            {/* Difusión desactivada a propósito (2026-09-16): la audiencia sale de la sincronización
+                de GymSoft, y las credenciales conectadas son de Power Club, no de Dinamo Fitness —
+                ver docs/04-architecture/gymsoft-api-reference.md en api-crmws. Reactivar junto con
+                SyncGymSoftSubscriptionsService.sync() cuando se tengan las credenciales correctas.
             {user?.role === 'OWNER' && (
               <NavItem href="/broadcasts" icon={<SendIcon className="size-[18px]" />} active={pathname === '/broadcasts'} onNavigate={onClose}>
                 Difusión
               </NavItem>
-            )}
+            )} */}
             {user?.role === 'OWNER' && (
               <NavItem href="/reports/usage" icon={<BarChartIcon className="size-[18px]" />} active={pathname.startsWith('/reports')} onNavigate={onClose}>
                 Reportes
