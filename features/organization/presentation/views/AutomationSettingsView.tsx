@@ -8,11 +8,10 @@ import type { Organization, ReminderScheduleInput } from '@/features/organizatio
 import { useReminderSchedule } from '../hooks/useReminderSchedule';
 import { FollowUpMessageRulesView } from '@/features/followups/presentation/views/FollowUpMessageRulesView';
 import { GymSoftClientsDialog } from '@/features/gymsoft/presentation/components/GymSoftClientsDialog';
+import { GymSoftReminderRulesView } from '@/features/gymsoft/presentation/components/GymSoftReminderRulesView';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
-
-const DAYS_BEFORE_OPTIONS = [1, 2, 3, 5, 7, 10, 14];
 
 /** Mismo texto que `SatisfactionSurveyDirectoryServiceImpl.DEFAULT_QUESTIONS_TEXT` en api-crmws — se muestra como placeholder cuando la organización no lo personalizó. */
 const DEFAULT_SATISFACTION_SURVEY_MESSAGE =
@@ -130,12 +129,7 @@ export function AutomationSettingsView() {
 
         <SatisfactionSurveyCard organization={organization} actionPending={actionPending} update={update} />
 
-        <GymSoftReminderCard
-          organization={organization}
-          templates={templates}
-          actionPending={actionPending}
-          update={update}
-        />
+        <GymSoftReminderCard organization={organization} actionPending={actionPending} update={update} />
       </div>
     </>
   );
@@ -368,12 +362,10 @@ function SatisfactionSurveyCard({
 
 function GymSoftReminderCard({
   organization,
-  templates,
   actionPending,
   update,
 }: {
   organization: Organization;
-  templates: MessageTemplate[];
   actionPending: boolean;
   update: Update;
 }) {
@@ -401,36 +393,7 @@ function GymSoftReminderCard({
         onChange: (checked) => update({ gymSoftReminderEnabled: checked }),
       }}
     >
-      <div>
-        <label htmlFor="gymSoftReminderDaysBefore" className={labelClass}>
-          Días de anticipación
-        </label>
-        <select
-          id="gymSoftReminderDaysBefore"
-          value={organization.gymSoftReminderDaysBefore}
-          onChange={(e) => update({ gymSoftReminderDaysBefore: Number(e.target.value) })}
-          disabled={actionPending}
-          className={`${selectClass} max-w-[160px]`}
-        >
-          {DAYS_BEFORE_OPTIONS.map((days) => (
-            <option key={days} value={days}>
-              {days} {days === 1 ? 'día' : 'días'} antes
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <TemplateSelect
-        id="gymSoftReminderTemplateId"
-        label="Plantilla de Meta (recordatorio de vencimiento)"
-        emptyLabel="Ninguna — se omite el envío a quien nunca ha escrito por WhatsApp"
-        templates={templates}
-        category="GYMSOFT_REMINDER"
-        value={organization.gymSoftReminderTemplateId}
-        disabled={actionPending}
-        onChange={(templateId) => update({ gymSoftReminderTemplateId: templateId })}
-      />
-
+      <GymSoftReminderRulesView />
       <GymSoftClientsDialog open={clientsOpen} onClose={() => setClientsOpen(false)} />
     </AutomationCard>
   );

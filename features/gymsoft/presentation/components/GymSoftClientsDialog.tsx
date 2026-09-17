@@ -134,8 +134,11 @@ export function GymSoftClientsDialog({ open, onClose }: { open: boolean; onClose
                             >
                               No vigente
                             </span>
-                          ) : subscription.remindedForExpiresAt === subscription.expiresAt ? (
-                            <span className="rounded-full bg-success-bg px-[var(--space-4)] py-[2px] text-[11px] font-semibold text-success">
+                          ) : subscription.remindedDaysBefore.length > 0 ? (
+                            <span
+                              className="rounded-full bg-success-bg px-[var(--space-4)] py-[2px] text-[11px] font-semibold text-success"
+                              title={`Avisado con ${subscription.remindedDaysBefore.length} regla(s): ${subscription.remindedDaysBefore.join(', ')} día(s) antes`}
+                            >
                               Ya avisado
                             </span>
                           ) : (

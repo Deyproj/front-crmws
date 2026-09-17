@@ -26,12 +26,14 @@ export interface Organization {
   dailyReminderHour: number;
   /** Plantilla Meta a usar cuando el contacto lleva más de 24h sin escribir (BR-030); `null` = sin asignar (se omite el envío en ese caso). */
   courtesyReminderTemplateId: string | null;
-  /** Recordatorio de vencimiento de plan (datos de GymSoft, BR-034) — nace en `false`, requiere integración GymSoft configurada. */
+  /**
+   * Interruptor maestro de todas las reglas de vencimiento de plan (datos de GymSoft, BR-034) —
+   * nace en `false`, requiere integración GymSoft configurada. El día de anticipación y la
+   * plantilla ya no son un valor único acá (2026-09-17, a pedido explícito del usuario: "poder
+   * crear 2, una de 2 días y otra de 1 día") — viven en `GymSoftReminderRule`
+   * (`features/gymsoft`), una lista abierta gestionada por su propio CRUD.
+   */
   gymSoftReminderEnabled: boolean;
-  /** Días de anticipación antes del vencimiento del plan en que se envía el recordatorio. */
-  gymSoftReminderDaysBefore: number;
-  /** Plantilla Meta del recordatorio de vencimiento (2 variables: nombre y fecha); `null` = sin asignar (se omite el envío). */
-  gymSoftReminderTemplateId: string | null;
 }
 
 export interface ReminderScheduleInput {
@@ -42,8 +44,6 @@ export interface ReminderScheduleInput {
   dailyReminderHour: number;
   courtesyReminderTemplateId: string | null;
   gymSoftReminderEnabled: boolean;
-  gymSoftReminderDaysBefore: number;
-  gymSoftReminderTemplateId: string | null;
 }
 
 /**

@@ -46,8 +46,6 @@ export function useReminderSchedule() {
           dailyReminderHour: organization.dailyReminderHour,
           courtesyReminderTemplateId: organization.courtesyReminderTemplateId,
           gymSoftReminderEnabled: organization.gymSoftReminderEnabled,
-          gymSoftReminderDaysBefore: organization.gymSoftReminderDaysBefore,
-          gymSoftReminderTemplateId: organization.gymSoftReminderTemplateId,
           ...partial,
         })
       );
