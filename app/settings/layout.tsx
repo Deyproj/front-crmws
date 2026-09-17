@@ -7,13 +7,7 @@ import { SectionLayout, type SectionNavGroup } from '@/components/layout/Section
  * lo exige `middleware.ts` para todo `/settings/**`.
  */
 const SETTINGS_NAV: SectionNavGroup[] = [
-  {
-    title: 'WhatsApp',
-    items: [
-      { href: '/settings/whatsapp', label: 'Canales' },
-      { href: '/settings/templates', label: 'Plantillas de Meta' },
-    ],
-  },
+  
   {
     title: 'Agente IA',
     items: [
@@ -29,6 +23,13 @@ const SETTINGS_NAV: SectionNavGroup[] = [
       { href: '/settings/team', label: 'Equipo' },
     ],
   },
+  {
+    title: 'WhatsApp',
+    items: [
+      { href: '/settings/whatsapp', label: 'Canales' },
+      { href: '/settings/templates', label: 'Plantillas de Meta' },
+    ],
+  }
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
