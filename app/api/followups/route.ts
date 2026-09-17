@@ -4,10 +4,11 @@ import { proxyJsonResponse } from '@/lib/http/proxyJsonResponse';
 
 export async function GET(request: NextRequest) {
   const apiBase = process.env.API_INTERNAL_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
+  const query = request.nextUrl.search;
 
   let upstream: Response;
   try {
-    upstream = await fetch(`${apiBase}/followups`, {
+    upstream = await fetch(`${apiBase}/followups${query}`, {
       headers: { 'Content-Type': 'application/json', ...forwardAuth(request) },
     });
   } catch (err) {

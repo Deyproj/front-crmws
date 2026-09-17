@@ -1,8 +1,10 @@
 import { apiFetch } from '@/lib/http/apiFetch';
 import type { PageResponse } from '@/lib/http/pageResponse';
 
-/** Ver el mismo comentario en features/contacts/api.ts — ventana fija, sin "cargar más" todavía. */
-const DEFAULT_PAGE_SIZE = 100;
+/** Conversaciones por tanda en la bandeja ("Cargar más conversaciones"). */
+export const CONVERSATIONS_PAGE_SIZE = 30;
+/** Mensajes por tanda en el chat ("Cargar mensajes anteriores"); también es lo que se refresca en cada poll. */
+export const MESSAGES_PAGE_SIZE = 50;
 
 export const CONVERSATION_MODES = ['AI', 'HUMAN', 'HYBRID', 'PAUSED'] as const;
 export type ConversationMode = (typeof CONVERSATION_MODES)[number];
@@ -57,27 +59,36 @@ export interface Message {
   messageType: MessageType;
   /** Solo presente cuando messageType no es TEXT — archivo servido por service-whatsapp. */
   mediaUrl: string | null;
+  /** Orden real del hilo (asignado por Postgres) y cursor para pedir mensajes anteriores. */
+  sequenceNumber: number | null;
 }
 
 export interface ConversationFilters {
   mode?: ConversationMode;
   status?: ConversationStatus;
   assignedTo?: string;
+  /** Búsqueda por nombre o teléfono del contacto, resuelta en el backend sobre todas las conversaciones. */
+  q?: string;
 }
 
 function buildConversationFilterParams(filters: ConversationFilters): URLSearchParams {
   const params = new URLSearchParams();
+  if (filters.q?.trim()) params.set('q', filters.q.trim());
   if (filters.mode) params.set('mode', filters.mode);
   if (filters.status) params.set('status', filters.status);
   if (filters.assignedTo) params.set('assignedTo', filters.assignedTo);
   return params;
 }
 
-export async function listConversations(filters: ConversationFilters = {}): Promise<Conversation[]> {
+export async function listConversations(
+  filters: ConversationFilters = {},
+  page = 0,
+  size = CONVERSATIONS_PAGE_SIZE
+): Promise<PageResponse<Conversation>> {
   const params = buildConversationFilterParams(filters);
-  params.set('size', String(DEFAULT_PAGE_SIZE));
-  const result = await apiFetch<PageResponse<Conversation>>(`/api/conversations?${params.toString()}`);
-  return result.content;
+  params.set('page', String(page));
+  params.set('size', String(size));
+  return apiFetch<PageResponse<Conversation>>(`/api/conversations?${params.toString()}`);
 }
 
 /**
@@ -111,11 +122,15 @@ export async function startConversation(phone: string, channelId?: string): Prom
   });
 }
 
-export async function listMessages(conversationId: string): Promise<Message[]> {
-  const result = await apiFetch<PageResponse<Message>>(
-    `/api/conversations/${conversationId}/messages?size=${DEFAULT_PAGE_SIZE}`
-  );
-  return result.content;
+/**
+ * Últimos mensajes del hilo, o los anteriores a `beforeSequence` si se indica (cursor por
+ * sequenceNumber — con `page` los mensajes nuevos desplazarían las páginas). Llega en orden
+ * cronológico; `totalElements` cuenta los mensajes que hay antes del cursor (o del hilo).
+ */
+export async function listMessages(conversationId: string, beforeSequence?: number): Promise<PageResponse<Message>> {
+  const params = new URLSearchParams({ size: String(MESSAGES_PAGE_SIZE) });
+  if (beforeSequence != null) params.set('before', String(beforeSequence));
+  return apiFetch<PageResponse<Message>>(`/api/conversations/${conversationId}/messages?${params.toString()}`);
 }
 
 export async function sendMessage(conversationId: string, text: string): Promise<Message> {

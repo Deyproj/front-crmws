@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/http/apiFetch';
+import type { PageResponse } from '@/lib/http/pageResponse';
 
 export const FOLLOWUP_REASONS = ['APPOINTMENT_NO_SHOW', 'INTENT_WITHOUT_APPOINTMENT', 'OPPORTUNITY_FOLLOW_UP'] as const;
 export type FollowUpReason = (typeof FOLLOWUP_REASONS)[number];
@@ -19,8 +20,11 @@ export interface FollowUpTask {
   resolvedAt: string | null;
 }
 
-export async function listFollowUpTasks(): Promise<FollowUpTask[]> {
-  return apiFetch<FollowUpTask[]>('/api/followups');
+export const FOLLOW_UP_PAGE_SIZE = 25;
+
+/** Seguimientos pendientes, más recientes primero, paginados en el backend. */
+export async function listFollowUpTasks(page = 0): Promise<PageResponse<FollowUpTask>> {
+  return apiFetch<PageResponse<FollowUpTask>>(`/api/followups?page=${page}&size=${FOLLOW_UP_PAGE_SIZE}`);
 }
 
 /** Escanea la organización actual y crea tareas nuevas (idempotente) — no envía ningún mensaje. */

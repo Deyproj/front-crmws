@@ -1,12 +1,8 @@
 import { apiFetch } from '@/lib/http/apiFetch';
 import type { PageResponse } from '@/lib/http/pageResponse';
 
-/**
- * Ventana fija sin UI de "cargar más" todavía (ver mvp-roadmap.md, "Trabajo condicional"):
- * el backend sí pagina de verdad (page/size), pero mientras el piloto no demuestre más
- * volumen que esto en una sola organización, alcanza con pedir la primera página grande.
- */
-const DEFAULT_PAGE_SIZE = 100;
+/** Tamaño de cada lote al resolver contactos por id (`getContactsByIds`). */
+const IDS_BATCH_SIZE = 100;
 
 export const CONTACT_LIFECYCLE_STAGES = ['LEAD', 'QUALIFIED', 'OPPORTUNITY', 'CUSTOMER', 'FOLLOW_UP'] as const;
 export type ContactLifecycleStage = (typeof CONTACT_LIFECYCLE_STAGES)[number];
@@ -45,9 +41,48 @@ export interface Contact {
   followUpOptedOut: boolean;
 }
 
-export async function listContacts(): Promise<Contact[]> {
-  const result = await apiFetch<PageResponse<Contact>>(`/api/contacts?size=${DEFAULT_PAGE_SIZE}`);
-  return result.content;
+export interface ContactFilters {
+  /** Nombre, nombre de WhatsApp o dígitos del teléfono — se resuelve en el backend sobre todo el catálogo. */
+  q?: string;
+  stage?: ContactLifecycleStage;
+}
+
+/** Contactos por página en la tabla de Clientes. */
+export const CONTACTS_PAGE_SIZE = 25;
+
+/**
+ * Una página del catálogo (los contactos con interacción más reciente primero), filtrada en el
+ * backend. `size` por defecto es el de la tabla de Clientes; el buscador de "Fusionar contacto"
+ * pide una sola página más grande porque solo muestra coincidencias de la búsqueda.
+ */
+export async function searchContacts(
+  filters: ContactFilters = {},
+  page = 0,
+  size = CONTACTS_PAGE_SIZE
+): Promise<PageResponse<Contact>> {
+  const params = new URLSearchParams({ page: String(page), size: String(size) });
+  if (filters.q?.trim()) params.set('q', filters.q.trim());
+  if (filters.stage) params.set('stage', filters.stage);
+  return apiFetch<PageResponse<Contact>>(`/api/contacts?${params.toString()}`);
+}
+
+/**
+ * Contactos puntuales por id, sin depender de que caigan en la primera página del
+ * catálogo (p. ej. los de las conversaciones visibles en la bandeja). Se parte en
+ * lotes para no pasarse del tamaño de página ni alargar demasiado la URL.
+ */
+export async function getContactsByIds(ids: string[]): Promise<Contact[]> {
+  const unique = [...new Set(ids)];
+  const chunks: string[][] = [];
+  for (let i = 0; i < unique.length; i += IDS_BATCH_SIZE) chunks.push(unique.slice(i, i + IDS_BATCH_SIZE));
+  const pages = await Promise.all(
+    chunks.map((chunk) => {
+      const params = new URLSearchParams({ size: String(chunk.length) });
+      chunk.forEach((id) => params.append('ids', id));
+      return apiFetch<PageResponse<Contact>>(`/api/contacts?${params.toString()}`);
+    })
+  );
+  return pages.flatMap((p) => p.content);
 }
 
 /** Refleja ContactStatsResponse (api-crmws, contact/presentation/ContactStatsResponse.java). */

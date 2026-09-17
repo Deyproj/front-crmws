@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { listFollowUpTasks, detectFollowUpTasks, dismissFollowUpTask, type FollowUpTask } from '@/features/followups';
-import { listContacts, type Contact } from '@/features/contacts';
+import { getContactsByIds, type Contact } from '@/features/contacts';
 
 export interface FollowUpItem {
   task: FollowUpTask;
@@ -11,17 +11,28 @@ export interface FollowUpItem {
 
 export function useFollowUps() {
   const [items, setItems] = useState<FollowUpItem[]>([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [detecting, setDetecting] = useState(false);
   const [actionPending, setActionPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (targetPage: number) => {
     setLoading(true);
     try {
-      const [tasks, contacts] = await Promise.all([listFollowUpTasks(), listContacts()]);
+      const result = await listFollowUpTasks(targetPage);
+      // Una página descartada por completo deja de existir: se vuelve a la última que queda.
+      if (targetPage > 0 && result.content.length === 0 && result.totalPages > 0) {
+        setPage(result.totalPages - 1);
+        return;
+      }
+      const tasks = result.content;
+      // Solo los contactos de la página visible, por id (ver useAgenda).
+      const contacts = await getContactsByIds(tasks.map((t) => t.contactId));
       const contactsById = new Map(contacts.map((c) => [c.id, c]));
       setItems(tasks.map((task) => ({ task, contact: contactsById.get(task.contactId) ?? null })));
+      setTotalPages(result.totalPages);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudieron cargar los seguimientos');
@@ -32,15 +43,17 @@ export function useFollowUps() {
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    load();
-  }, [load]);
+    load(page);
+  }, [load, page]);
 
   async function detect() {
     setDetecting(true);
     setError(null);
     try {
       await detectFollowUpTasks();
-      await load();
+      // Las tareas nuevas quedan arriba (más recientes primero): se vuelve a la primera página.
+      if (page === 0) await load(0);
+      else setPage(0);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo actualizar la detección');
     } finally {
@@ -53,7 +66,7 @@ export function useFollowUps() {
     setError(null);
     try {
       await action();
-      await load();
+      await load(page);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'La acción no se pudo completar');
     } finally {
@@ -63,6 +76,9 @@ export function useFollowUps() {
 
   return {
     items,
+    page,
+    totalPages,
+    goToPage: setPage,
     loading,
     detecting,
     actionPending,

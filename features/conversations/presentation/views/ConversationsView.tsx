@@ -9,11 +9,15 @@ import { ConversationListPanel, type QuickFilter } from '../components/Conversat
 import { ChatPanel } from '../components/ChatPanel';
 import { ContactPanel } from '../components/ContactPanel';
 import type { ConversationFilters } from '@/features/conversations';
+import { useDebouncedValue } from '@/lib/utils/useDebouncedValue';
 
 export function ConversationsView() {
   const { user } = useAuth();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [quickFilter, setQuickFilter] = useState<QuickFilter>('ALL');
+  const [query, setQuery] = useState('');
+  // Espera a que el asesor deje de escribir antes de consultar al backend.
+  const debouncedQuery = useDebouncedValue(query.trim());
   // Por debajo de lg solo cabe una columna a la vez: la bandeja arranca mostrando la
   // lista y pasa a "chat" al elegir una conversación (con botón de volver en ChatPanel).
   const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
@@ -45,20 +49,26 @@ export function ConversationsView() {
   }
 
   const filters = useMemo<ConversationFilters>(() => {
+    const q = debouncedQuery || undefined;
     switch (quickFilter) {
       case 'MINE':
-        return user?.membershipId ? { assignedTo: user.membershipId } : {};
+        return user?.membershipId ? { assignedTo: user.membershipId, q } : { q };
       case 'WAITING':
-        return { status: 'WAITING' };
+        return { status: 'WAITING', q };
       case 'AI':
-        return { mode: 'AI' };
+        return { mode: 'AI', q };
       default:
-        return {};
+        return { q };
     }
-  }, [quickFilter, user]);
+  }, [quickFilter, user, debouncedQuery]);
 
-  const { items, contactsById, loading, error, refetch } = useConversationsList(filters);
+  const { items, hasMore, loadingMore, loadMore, contactsById, loading, error, refetch, ensureContact } =
+    useConversationsList(filters);
   const thread = useConversationThread(selectedId, refetch);
+  const threadContactId = thread.conversation?.contactId ?? null;
+  useEffect(() => {
+    ensureContact(threadContactId);
+  }, [threadContactId, ensureContact]);
 
   // Se resuelve contra contactsById (sin filtrar por quickFilter) y no contra `items`:
   // si la conversación abierta deja de estar en la pestaña activa (p. ej. ya se tomó y
@@ -85,10 +95,15 @@ export function ConversationsView() {
           <>
             <ConversationListPanel
               items={items}
+              hasMore={hasMore}
+              loadingMore={loadingMore}
+              onLoadMore={loadMore}
               selectedId={selectedId}
               onSelect={handleSelect}
               quickFilter={quickFilter}
               onQuickFilterChange={setQuickFilter}
+              query={query}
+              onQueryChange={setQuery}
               myMembershipId={user?.membershipId}
               onBulkTransferred={refetch}
               onConversationStarted={handleConversationStarted}
@@ -97,6 +112,9 @@ export function ConversationsView() {
             <ChatPanel
               conversation={thread.conversation}
               messages={thread.messages}
+              hasOlderMessages={thread.hasOlderMessages}
+              loadingOlder={thread.loadingOlder}
+              onLoadOlder={thread.loadOlderMessages}
               contact={selectedContact}
               myMembershipId={user?.membershipId ?? ''}
               actionPending={thread.actionPending}

@@ -1,6 +1,7 @@
-export type { Contact, ContactLifecycleStage, ContactStats } from './api';
+export type { Contact, ContactFilters, ContactLifecycleStage, ContactStats } from './api';
 export {
-  listContacts,
+  searchContacts,
+  getContactsByIds,
   changeLifecycleStage,
   updateContactProfile,
   mergeContacts,

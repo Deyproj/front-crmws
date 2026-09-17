@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { listContacts, getContactStats, type Contact, type ContactStats } from '@/features/contacts';
+import { getContactsByIds, getContactStats, type Contact, type ContactStats } from '@/features/contacts';
 import { listConversations, getConversationStats, type Conversation, type ConversationStats } from '@/features/conversations';
 import { getAppointmentStats, type AppointmentStats } from '@/features/appointments';
 import { getCurrentUsage, type CurrentUsage } from '@/features/usage';
@@ -16,7 +16,7 @@ export interface RecentConversationItem {
 
 /**
  * Snapshot liviano para el Dashboard — a diferencia de `useConversationsList` (bandeja en vivo,
- * SSE + catálogo completo de contactos), esto es un vistazo de solo lectura: un `poll` simple
+ * SSE + contactos resueltos por id), esto es un vistazo de solo lectura: un `poll` simple
  * alcanza, no hace falta enganchar el contexto de tiempo real de conversaciones.
  */
 export function useDashboardOverview() {
@@ -31,19 +31,20 @@ export function useDashboardOverview() {
   const load = useCallback(async (opts?: { silent?: boolean }) => {
     if (!opts?.silent) setLoading(true);
     try {
-      const [contacts, cStats, convStats, apptStats, conversations, usage] = await Promise.all([
-        listContacts(),
+      const [cStats, convStats, apptStats, conversationsPage, usage] = await Promise.all([
         getContactStats(),
         getConversationStats(),
         getAppointmentStats(),
-        listConversations(),
+        // Solo las que se muestran, no una página grande de la bandeja.
+        listConversations({}, 0, RECENT_CONVERSATIONS_LIMIT),
         getCurrentUsage(),
       ]);
-      const contactsById = new Map(contacts.map((c) => [c.id, c]));
       // listConversations() ya llega ordenado por lastMessageAt desc (ver ConversationRepository.search).
-      const recent = conversations
-        .slice(0, RECENT_CONVERSATIONS_LIMIT)
-        .map((conversation) => ({ conversation, contact: contactsById.get(conversation.contactId) ?? null }));
+      const recentConversationsSlice = conversationsPage.content;
+      // Solo los contactos de las conversaciones que se muestran, por id (ver useAgenda).
+      const contacts = await getContactsByIds(recentConversationsSlice.map((c) => c.contactId));
+      const contactsById = new Map(contacts.map((c) => [c.id, c]));
+      const recent = recentConversationsSlice.map((conversation) => ({ conversation, contact: contactsById.get(conversation.contactId) ?? null }));
       setContactStats(cStats);
       setConversationStats(convStats);
       setAppointmentStats(apptStats);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ConversationListItem } from '../hooks/useConversationsList';
 import { useWaitingConversationsCount } from '../hooks/useWaitingConversationsCount';
 import { useMineConversationsCount } from '../hooks/useMineConversationsCount';
@@ -26,20 +26,32 @@ const QUICK_FILTERS: { value: QuickFilter; label: string }[] = [
 
 export function ConversationListPanel({
   items,
+  hasMore = false,
+  loadingMore = false,
+  onLoadMore,
   selectedId,
   onSelect,
   quickFilter,
   onQuickFilterChange,
+  query,
+  onQueryChange,
   myMembershipId,
   onBulkTransferred,
   onConversationStarted,
   className = 'flex',
 }: {
   items: ConversationListItem[];
+  /** Quedan conversaciones sin cargar con el filtro/búsqueda actual. */
+  hasMore?: boolean;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
   selectedId: string | null;
   onSelect: (id: string) => void;
   quickFilter: QuickFilter;
   onQuickFilterChange: (filter: QuickFilter) => void;
+  /** Búsqueda por nombre o teléfono — la resuelve el backend (ver useConversationsList), no se filtra aquí. */
+  query: string;
+  onQueryChange: (query: string) => void;
   myMembershipId?: string | null;
   /** Se llama luego de una transferencia masiva exitosa (al menos parcial) para refrescar la bandeja. */
   onBulkTransferred?: () => void;
@@ -47,7 +59,6 @@ export function ConversationListPanel({
   onConversationStarted?: (conversationId: string) => void;
   className?: string;
 }) {
-  const [query, setQuery] = useState('');
   const [newChatOpen, setNewChatOpen] = useState(false);
   // Independiente de quickFilter a propósito: debe verse aunque el asesor esté en otra
   // pestaña (Todas, Mías, IA) — es la señal de "hay gente esperando respuesta".
@@ -68,16 +79,6 @@ export function ConversationListPanel({
   const [bulkError, setBulkError] = useState<string | null>(null);
   const selectAllRef = useRef<HTMLInputElement>(null);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter(({ contact }) => {
-      const name = contact?.name?.toLowerCase() ?? '';
-      const phone = contact?.phone?.toLowerCase() ?? '';
-      return name.includes(q) || phone.includes(q);
-    });
-  }, [items, query]);
-
   // La selección no sobrevive a un cambio de pestaña ni a que una conversación
   // seleccionada desaparezca del filtro actual (p. ej. otro asesor la tomó).
   useEffect(() => {
@@ -88,17 +89,17 @@ export function ConversationListPanel({
     setSelectedIds((prev) => {
       if (prev.size === 0) return prev;
       if (!selectionEnabled) return new Set();
-      const validIds = new Set(filtered.map((i) => i.conversation.id));
+      const validIds = new Set(items.map((i) => i.conversation.id));
       const next = new Set([...prev].filter((id) => validIds.has(id)));
       return next.size === prev.size ? prev : next;
     });
-  }, [selectionEnabled, filtered]);
+  }, [selectionEnabled, items]);
 
   useEffect(() => {
     if (selectAllRef.current) {
-      selectAllRef.current.indeterminate = selectedIds.size > 0 && selectedIds.size < filtered.length;
+      selectAllRef.current.indeterminate = selectedIds.size > 0 && selectedIds.size < items.length;
     }
-  }, [selectedIds, filtered.length]);
+  }, [selectedIds, items.length]);
 
   function toggleSelect(id: string) {
     setSelectedIds((prev) => {
@@ -111,7 +112,7 @@ export function ConversationListPanel({
 
   function toggleSelectAll() {
     setSelectedIds((prev) =>
-      prev.size === filtered.length && filtered.length > 0 ? new Set() : new Set(filtered.map((i) => i.conversation.id))
+      prev.size === items.length && items.length > 0 ? new Set() : new Set(items.map((i) => i.conversation.id))
     );
   }
 
@@ -155,8 +156,8 @@ export function ConversationListPanel({
             <SearchIcon className="size-[14px] text-secondary" />
             <input
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar conversación..."
+              onChange={(e) => onQueryChange(e.target.value)}
+              placeholder="Buscar por nombre o teléfono..."
               className="w-full bg-transparent text-xs text-ink placeholder-secondary focus:outline-none"
             />
           </div>
@@ -209,14 +210,14 @@ export function ConversationListPanel({
       </div>
 
       <div className="flex flex-1 flex-col overflow-y-auto">
-        {filtered.length === 0 && (
+        {items.length === 0 && (
           <EmptyState
             icon={<MessageSquareIcon className="size-6" />}
             title="Sin conversaciones"
             description={query ? 'Nada coincide con tu búsqueda.' : 'No hay conversaciones en este filtro todavía.'}
           />
         )}
-        {filtered.map(({ conversation, contact }) => {
+        {items.map(({ conversation, contact }) => {
           const active = conversation.id === selectedId;
           const label = contact?.name || contact?.phone || 'Contacto sin nombre';
           return (
@@ -261,9 +262,19 @@ export function ConversationListPanel({
             </div>
           );
         })}
+        {hasMore && onLoadMore && (
+          <button
+            type="button"
+            onClick={onLoadMore}
+            disabled={loadingMore}
+            className="m-[var(--space-6)] rounded-md border border-border px-[var(--space-6)] py-[var(--space-4)] text-xs font-semibold text-secondary hover:bg-app hover:text-ink disabled:opacity-50"
+          >
+            {loadingMore ? 'Cargando...' : 'Cargar más conversaciones'}
+          </button>
+        )}
       </div>
 
-      {selectionEnabled && filtered.length > 0 && (
+      {selectionEnabled && items.length > 0 && (
         <div className="flex flex-col gap-[var(--space-3)] border-t border-border bg-surface p-[var(--space-6)]">
           {bulkError && <p className="text-xs text-danger">{bulkError}</p>}
           <div className="flex items-center justify-between gap-[var(--space-4)]">
@@ -271,7 +282,7 @@ export function ConversationListPanel({
               <input
                 ref={selectAllRef}
                 type="checkbox"
-                checked={selectedIds.size > 0 && selectedIds.size === filtered.length}
+                checked={selectedIds.size > 0 && selectedIds.size === items.length}
                 onChange={toggleSelectAll}
                 aria-label="Seleccionar todas las conversaciones"
                 className="size-4 accent-brand"

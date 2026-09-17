@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Conversation, Message } from '@/features/conversations';
 import { MODE_LABELS, STATUS_LABELS } from '@/features/conversations';
 import { useAgentConfig } from '@/features/agent/presentation/hooks/useAgentConfig';
@@ -20,6 +20,9 @@ import { EmptyState } from '@/components/ui/EmptyState';
 export function ChatPanel({
   conversation,
   messages,
+  hasOlderMessages = false,
+  loadingOlder = false,
+  onLoadOlder,
   contact,
   myMembershipId,
   actionPending,
@@ -37,6 +40,10 @@ export function ChatPanel({
 }: {
   conversation: Conversation | null;
   messages: Message[];
+  /** Hay mensajes anteriores a los cargados — muestra "Cargar mensajes anteriores" arriba del hilo. */
+  hasOlderMessages?: boolean;
+  loadingOlder?: boolean;
+  onLoadOlder?: () => void;
   contact: Contact | null;
   myMembershipId: string;
   actionPending: boolean;
@@ -56,6 +63,10 @@ export function ChatPanel({
   const [draft, setDraft] = useState('');
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  // Alto del hilo justo antes de pedir mensajes anteriores, para que al insertarlos arriba la
+  // vista no salte (se mantiene el mismo mensaje en pantalla).
+  const scrollHeightBeforeOlder = useRef<number | null>(null);
   const composeRef = useRef<HTMLDivElement>(null);
   const draftInputRef = useRef<HTMLInputElement>(null);
   const { config: agentConfig } = useAgentConfig();
@@ -132,9 +143,26 @@ export function ChatPanel({
     [members]
   );
 
+  // Solo baja al final cuando cambia el último mensaje (uno nuevo, o se abrió otra conversación) —
+  // no cuando se cargan mensajes anteriores arriba.
+  const lastMessageId = messages[messages.length - 1]?.id;
+  const firstMessageId = messages[0]?.id;
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' });
-  }, [messages.length]);
+  }, [lastMessageId]);
+
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (el && scrollHeightBeforeOlder.current !== null) {
+      el.scrollTop += el.scrollHeight - scrollHeightBeforeOlder.current;
+      scrollHeightBeforeOlder.current = null;
+    }
+  }, [firstMessageId]);
+
+  function handleLoadOlder() {
+    scrollHeightBeforeOlder.current = scrollRef.current?.scrollHeight ?? null;
+    onLoadOlder?.();
+  }
 
   if (!conversation) {
     return (
@@ -238,8 +266,18 @@ export function ChatPanel({
         </p>
       )}
 
-      <div className="flex-1 overflow-y-auto px-[var(--space-8)] py-[var(--space-7)]">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-[var(--space-8)] py-[var(--space-7)]">
         <div className="flex flex-col gap-[var(--space-7)]">
+          {hasOlderMessages && onLoadOlder && (
+            <button
+              type="button"
+              onClick={handleLoadOlder}
+              disabled={loadingOlder}
+              className="self-center rounded-full border border-border bg-surface px-[var(--space-6)] py-[var(--space-3)] text-xs font-semibold text-secondary hover:text-ink disabled:opacity-50"
+            >
+              {loadingOlder ? 'Cargando...' : 'Cargar mensajes anteriores'}
+            </button>
+          )}
           {messages.map((message) => (
             <ChatBubble
               key={message.id}

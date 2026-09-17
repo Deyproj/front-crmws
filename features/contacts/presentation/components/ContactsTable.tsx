@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo, useState } from 'react';
 import {
   type Contact,
   type ContactLifecycleStage,
@@ -10,29 +9,32 @@ import {
 import { formatRelativeTime } from '@/lib/utils/formatRelativeTime';
 import { initials } from '@/lib/utils/initials';
 import { SearchIcon, MessageSquareIcon } from '@/components/ui/icons';
+import { PaginationControls } from '@/components/ui/PaginationControls';
 
 export function ContactsTable({
   contacts,
+  page,
+  totalPages,
+  onPageChange,
+  query,
+  onQueryChange,
+  stage,
+  onStageChange,
   onOpenChat,
 }: {
+  /** Ya filtrados por búsqueda y etapa en el backend (ver useContactsOverview) — aquí no se filtra. */
   contacts: Contact[];
+  /** Página actual (base 0) y total, paginados en el backend con los filtros aplicados. */
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  query: string;
+  onQueryChange: (query: string) => void;
+  stage: ContactLifecycleStage | 'ALL';
+  onStageChange: (stage: ContactLifecycleStage | 'ALL') => void;
   /** Botón "Chat" por fila — abre (o reabre) la conversación de ese contacto. */
   onOpenChat: (contact: Contact) => void;
 }) {
-  const [query, setQuery] = useState('');
-  const [stage, setStage] = useState<ContactLifecycleStage | 'ALL'>('ALL');
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return contacts.filter((contact) => {
-      if (stage !== 'ALL' && contact.lifecycleStage !== stage) return false;
-      if (!q) return true;
-      const name = contact.name?.toLowerCase() ?? '';
-      const phone = contact.phone?.toLowerCase() ?? '';
-      return name.includes(q) || phone.includes(q);
-    });
-  }, [contacts, query, stage]);
-
   return (
     <div className="flex flex-col gap-[var(--space-6)]">
       <div className="flex flex-wrap items-center gap-[var(--space-5)]">
@@ -40,13 +42,14 @@ export function ContactsTable({
           <SearchIcon className="size-[14px] text-secondary" />
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => onQueryChange(e.target.value)}
             placeholder="Buscar por nombre o teléfono..."
             className="w-full bg-transparent text-sm text-ink placeholder-secondary focus:outline-none"
           />
         </div>
-        <StageFilter stage={stage} onChange={setStage} />
+        <StageFilter stage={stage} onChange={onStageChange} />
       </div>
+
 
       <div className="overflow-x-auto rounded-lg border border-border bg-surface">
         <table className="w-full min-w-[560px] text-left text-sm">
@@ -60,14 +63,14 @@ export function ContactsTable({
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && (
+            {contacts.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-[var(--space-7)] py-[var(--space-8)] text-center text-secondary">
                   Sin clientes que coincidan.
                 </td>
               </tr>
             )}
-            {filtered.map((contact) => (
+            {contacts.map((contact) => (
               <tr key={contact.id} className="border-b border-border last:border-0">
                 <td className="px-[var(--space-7)] py-[var(--space-5)]">
                   <div className="flex items-center gap-[var(--space-5)]">
@@ -111,6 +114,8 @@ export function ContactsTable({
           </tbody>
         </table>
       </div>
+
+      <PaginationControls page={page} totalPages={totalPages} onPageChange={onPageChange} />
     </div>
   );
 }

@@ -1,17 +1,17 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { listContacts, mergeContacts, type Contact } from '@/features/contacts';
+import { useEffect, useState } from 'react';
+import { searchContacts, mergeContacts, type Contact } from '@/features/contacts';
+import { useDebouncedValue } from '@/lib/utils/useDebouncedValue';
 import { XIcon, SearchIcon } from '@/components/ui/icons';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 /**
  * Fusiona otro contacto dentro de `contact` (el que se conserva) — caso real: el mismo
  * cliente de WhatsApp quedó dividido en dos contactos porque su primer mensaje llegó
- * identificado solo por LID, sin teléfono (ver BR-026, business-rules.md). Se busca sobre
- * la lista completa de contactos (mismo límite de `listContacts()` que el resto de la
- * bandeja — sin "cargar más" todavía) y se filtra en el cliente, igual que la búsqueda de
- * `ConversationListPanel`.
+ * identificado solo por LID, sin teléfono (ver BR-026, business-rules.md). La búsqueda se
+ * resuelve en el backend sobre todo el catálogo (nombre, nombre de WhatsApp o dígitos del
+ * teléfono); sin búsqueda se listan los 50 contactos con interacción más reciente.
  */
 export function MergeContactDialog({
   contact,
@@ -31,24 +31,35 @@ export function MergeContactDialog({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const debouncedQuery = useDebouncedValue(query.trim());
+
   useEffect(() => {
     if (!open) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setQuery('');
     setTarget(null);
     setError(null);
-    setLoading(true);
-    listContacts()
-      .then((all) => setContacts(all.filter((c) => c.id !== contact.id)))
-      .catch((err) => setError(err instanceof Error ? err.message : 'No se pudieron cargar los contactos'))
-      .finally(() => setLoading(false));
   }, [open, contact.id]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return contacts;
-    return contacts.filter((c) => (c.name?.toLowerCase().includes(q) ?? false) || c.phone.toLowerCase().includes(q));
-  }, [contacts, query]);
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(true);
+    searchContacts({ q: debouncedQuery || undefined }, 0, 50)
+      .then((page) => {
+        if (!cancelled) setContacts(page.content.filter((c) => c.id !== contact.id));
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'No se pudieron cargar los contactos');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, contact.id, debouncedQuery]);
 
   if (!open) return null;
 
@@ -100,10 +111,10 @@ export function MergeContactDialog({
 
         <div className="flex-1 overflow-y-auto">
           {loading && <p className="p-[var(--space-4)] text-xs text-secondary">Cargando contactos...</p>}
-          {!loading && filtered.length === 0 && (
+          {!loading && contacts.length === 0 && (
             <p className="p-[var(--space-4)] text-xs text-secondary">Sin coincidencias.</p>
           )}
-          {filtered.map((c) => (
+          {contacts.map((c) => (
             <button
               key={c.id}
               type="button"

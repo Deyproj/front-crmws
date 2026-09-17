@@ -5,9 +5,10 @@ import { SURVEY_STATUS_LABELS } from '@/features/feedback';
 import { initials } from '@/lib/utils/initials';
 import { MessageSquareIcon } from '@/components/ui/icons';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { PaginationControls } from '@/components/ui/PaginationControls';
 
 export function SatisfactionSurveysView() {
-  const { items, loading, error } = useSatisfactionSurveys();
+  const { items, page, totalPages, goToPage, loading, error } = useSatisfactionSurveys();
 
   return (
     <div className="flex w-full flex-col gap-[var(--space-6)]">
@@ -56,6 +57,7 @@ export function SatisfactionSurveysView() {
               </div>
             </div>
           ))}
+          <PaginationControls page={page} totalPages={totalPages} onPageChange={goToPage} />
         </div>
       )}
     </div>

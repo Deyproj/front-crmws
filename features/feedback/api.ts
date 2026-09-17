@@ -1,8 +1,8 @@
 import { apiFetch } from '@/lib/http/apiFetch';
 import type { PageResponse } from '@/lib/http/pageResponse';
 
-/** Ventana fija sin UI de "cargar más" todavía — mismo criterio que features/contacts. */
-const DEFAULT_PAGE_SIZE = 100;
+/** Encuestas por página (paginación Anterior/Siguiente en la vista). */
+const DEFAULT_PAGE_SIZE = 20;
 
 export const SURVEY_STATUSES = ['SENT', 'ANSWERED'] as const;
 export type SurveyStatus = (typeof SURVEY_STATUSES)[number];
@@ -23,7 +23,6 @@ export interface SatisfactionSurvey {
   answeredAt: string | null;
 }
 
-export async function listSatisfactionSurveys(): Promise<SatisfactionSurvey[]> {
-  const result = await apiFetch<PageResponse<SatisfactionSurvey>>(`/api/feedback/surveys?size=${DEFAULT_PAGE_SIZE}`);
-  return result.content;
+export async function listSatisfactionSurveys(page = 0): Promise<PageResponse<SatisfactionSurvey>> {
+  return apiFetch<PageResponse<SatisfactionSurvey>>(`/api/feedback/surveys?page=${page}&size=${DEFAULT_PAGE_SIZE}`);
 }

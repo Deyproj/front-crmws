@@ -8,7 +8,7 @@ import {
   type Appointment,
   type AppointmentStatus,
 } from '@/features/appointments';
-import { listContacts, type Contact } from '@/features/contacts';
+import { getContactsByIds, type Contact } from '@/features/contacts';
 
 export interface AgendaItem {
   appointment: Appointment;
@@ -40,10 +40,10 @@ export function useAgenda() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [appointments, contacts] = await Promise.all([
-        listAppointmentsByRange(range.from, range.to),
-        listContacts(),
-      ]);
+      const appointments = await listAppointmentsByRange(range.from, range.to);
+      // Por id y no contra la primera página del catálogo: un contacto con poca interacción
+      // reciente quedaba fuera de los 100 y la cita salía "sin nombre".
+      const contacts = await getContactsByIds(appointments.map((a) => a.contactId));
       const contactsById = new Map(contacts.map((c) => [c.id, c]));
       setItems(appointments.map((appointment) => ({ appointment, contact: contactsById.get(appointment.contactId) ?? null })));
       setError(null);

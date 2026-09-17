@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   getConversation,
   listMessages,
@@ -16,11 +16,32 @@ import { ApiError } from '@/lib/http/apiFetch';
 
 const POLL_INTERVAL_MS = 5000;
 
+/**
+ * Une mensajes ya cargados con los recién traídos (poll o "cargar anteriores") sin perder
+ * ninguno: el poll solo trae la última tanda, así que reemplazar la lista borraría los
+ * anteriores que el asesor ya cargó. Orden por sequenceNumber, el orden real del hilo.
+ */
+function mergeMessages(current: Message[], incoming: Message[]): Message[] {
+  const byId = new Map(current.map((m) => [m.id, m]));
+  incoming.forEach((m) => byId.set(m.id, m));
+  return Array.from(byId.values()).sort(
+    (a, b) => (a.sequenceNumber ?? Number.MAX_SAFE_INTEGER) - (b.sequenceNumber ?? Number.MAX_SAFE_INTEGER)
+  );
+}
+
 export function useConversationThread(conversationId: string | null, onConversationChanged?: () => void) {
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasOlderMessages, setHasOlderMessages] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Evita mezclar mensajes de la conversación anterior si su respuesta llega después del cambio.
+  const conversationIdRef = useRef(conversationId);
+  useEffect(() => {
+    // Declarado antes del efecto de carga para que ya esté actualizado cuando este corra.
+    conversationIdRef.current = conversationId;
+  }, [conversationId]);
   const [actionPending, setActionPending] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   // 422 en el envío manual = OutsideServiceWindowException (BR-030, solo canales Meta Cloud
@@ -33,9 +54,15 @@ export function useConversationThread(conversationId: string | null, onConversat
       if (!conversationId) return;
       if (!opts?.silent) setLoading(true);
       try {
-        const [conv, msgs] = await Promise.all([getConversation(conversationId), listMessages(conversationId)]);
+        const [conv, latest] = await Promise.all([getConversation(conversationId), listMessages(conversationId)]);
+        if (conversationIdRef.current !== conversationId) return;
         setConversation(conv);
-        setMessages(msgs);
+        if (opts?.silent) {
+          setMessages((prev) => mergeMessages(prev, latest.content));
+        } else {
+          setMessages(latest.content);
+          setHasOlderMessages(latest.totalElements > latest.content.length);
+        }
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'No se pudo cargar la conversación');
@@ -54,14 +81,34 @@ export function useConversationThread(conversationId: string | null, onConversat
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setConversation(null);
       setMessages([]);
+      setHasOlderMessages(false);
       setOutsideServiceWindow(false);
       return;
     }
+    setMessages([]);
+    setHasOlderMessages(false);
     setOutsideServiceWindow(false);
     load();
     const interval = setInterval(() => load({ silent: true }), POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [conversationId, load]);
+
+  /** Trae la tanda anterior al mensaje más antiguo cargado (cursor por sequenceNumber). */
+  async function loadOlderMessages() {
+    const oldest = messages[0]?.sequenceNumber;
+    if (!conversationId || oldest == null || loadingOlder) return;
+    setLoadingOlder(true);
+    try {
+      const older = await listMessages(conversationId, oldest);
+      if (conversationIdRef.current !== conversationId) return;
+      setMessages((prev) => mergeMessages(prev, older.content));
+      setHasOlderMessages(older.totalElements > older.content.length);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudieron cargar los mensajes anteriores');
+    } finally {
+      setLoadingOlder(false);
+    }
+  }
 
   async function runAction(action: () => Promise<Conversation>) {
     setActionPending(true);
@@ -134,6 +181,9 @@ export function useConversationThread(conversationId: string | null, onConversat
   return {
     conversation,
     messages,
+    hasOlderMessages,
+    loadingOlder,
+    loadOlderMessages,
     loading,
     error,
     actionPending,

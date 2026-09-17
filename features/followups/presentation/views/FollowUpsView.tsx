@@ -7,6 +7,7 @@ import type { Contact } from '@/features/contacts';
 import { initials } from '@/lib/utils/initials';
 import { InfoIcon, ClockIcon } from '@/components/ui/icons';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { PaginationControls } from '@/components/ui/PaginationControls';
 
 interface FollowUpGroup {
   contactId: string;
@@ -79,7 +80,7 @@ function FollowUpCriteriaInfo() {
 }
 
 export function FollowUpsView() {
-  const { items, loading, detecting, actionPending, error, detect, dismiss } = useFollowUps();
+  const { items, page, totalPages, goToPage, loading, detecting, actionPending, error, detect, dismiss } = useFollowUps();
   const groups = useMemo(() => groupByContact(items), [items]);
 
   return (
@@ -153,6 +154,7 @@ export function FollowUpsView() {
                 </div>
               </div>
             ))}
+            <PaginationControls page={page} totalPages={totalPages} onPageChange={goToPage} disabled={actionPending} />
           </div>
         )}
       </div>
