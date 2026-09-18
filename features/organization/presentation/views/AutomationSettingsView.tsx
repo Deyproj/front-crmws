@@ -69,13 +69,13 @@ export function AutomationSettingsView() {
         <p className="rounded-md border border-danger/30 bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>
       )}
 
-      <AutomatedMessagingPauseCard paused={paused} actionPending={actionPending} onChange={setAutomatedMessaging} />
-
       <AutoReleaseConversationsCard
         organization={organization}
         actionPending={actionPending}
         onChange={setAutoReleaseConversations}
       />
+
+      <AutomatedMessagingPauseCard paused={paused} actionPending={actionPending} onChange={setAutomatedMessaging} />
 
       {/* Atenuadas, no deshabilitadas: durante la pausa se pueden seguir ajustando para cuando se reanude. */}
       <div className={`flex flex-col gap-[var(--space-7)] transition-opacity ${paused ? 'opacity-60' : ''}`}>
@@ -161,18 +161,25 @@ function AutomatedMessagingPauseCard({
     <section
       className={`w-full rounded-xl border p-[var(--space-8)] ${paused ? 'border-warning/40 bg-warning-bg' : 'border-border bg-surface'}`}
     >
-      <div className="mb-[var(--space-6)] flex items-start justify-between gap-[var(--space-5)]">
-        <div className="min-w-0">
+      <div className="mb-[var(--space-6)]">
+        <div className="flex flex-wrap items-center gap-[var(--space-4)]">
           <h2 className="text-sm font-semibold text-ink">
             {paused ? 'Envíos automáticos en pausa' : 'Envíos automáticos activos'}
           </h2>
-          <p className="text-xs text-secondary">
-            {paused
-              ? 'No sale ningún recordatorio, seguimiento, encuesta ni aviso de vencimiento de plan. Las difusiones masivas no se pausan acá: siguen su envío o su programación y se detienen cancelando la campaña en Difusión.'
-              : 'Cada automatización respeta su propio interruptor. Pausar detiene todas a la vez sin perder esa configuración.'}
-          </p>
+          <span
+            className={`inline-flex items-center gap-[var(--space-2)] rounded-full border px-[var(--space-4)] py-[var(--space-1)] text-[11px] font-semibold ${
+              paused ? 'border-warning/40 bg-surface text-warning' : 'border-success/30 bg-success-bg text-success'
+            }`}
+          >
+            <span className={`size-[7px] rounded-full ${paused ? 'bg-warning' : 'bg-success'}`} />
+            {paused ? 'En pausa' : 'Activo'}
+          </span>
         </div>
-        <span className={`mt-1 size-3 shrink-0 rounded-full ${paused ? 'bg-warning' : 'bg-success'}`} />
+        <p className="mt-[var(--space-3)] text-xs text-secondary">
+          {paused
+            ? 'No sale ningún recordatorio, seguimiento, encuesta ni aviso de vencimiento de plan. Las difusiones masivas no se pausan acá: siguen su envío o su programación y se detienen cancelando la campaña en Difusión.'
+            : 'Cada automatización respeta su propio interruptor. Pausar detiene todas a la vez sin perder esa configuración.'}
+        </p>
       </div>
 
       {paused ? (
