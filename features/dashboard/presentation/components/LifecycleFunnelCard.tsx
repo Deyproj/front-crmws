@@ -12,7 +12,7 @@ import type { ContactStats } from '@/features/contacts';
 const STAGES: { key: keyof ContactStats; label: string; color: string }[] = [
   { key: 'leads', label: 'Prospecto', color: 'var(--color-info)' },
   { key: 'customers', label: 'Ganado', color: 'var(--color-success)' },
-  { key: 'followUp', label: 'En seguimiento', color: 'var(--color-danger)' },
+  { key: 'followUp', label: 'Pausado', color: 'var(--color-danger)' },
 ];
 
 export function LifecycleFunnelCard({ stats }: { stats: ContactStats | null }) {

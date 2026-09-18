@@ -7,7 +7,7 @@ export function ContactStatsCards({ stats }: { stats: ContactStats | null }) {
     { label: 'Calificados', value: stats?.qualified ?? null },
     { label: 'Oportunidades', value: stats?.opportunities ?? null },
     { label: 'Ganados', value: stats?.customers ?? null },
-    { label: 'En seguimiento', value: stats?.followUp ?? null },
+    { label: 'Pausados', value: stats?.followUp ?? null },
   ];
 
   return (
