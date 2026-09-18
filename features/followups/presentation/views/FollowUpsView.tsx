@@ -106,7 +106,9 @@ export function FollowUpsView() {
 
       <div className="flex-1 overflow-y-auto p-[var(--space-9)]">
         <p className="mb-[var(--space-7)] text-sm text-secondary">
-          Contactos que probablemente necesitan que un asesor los retome — no se les envía ningún mensaje automático.
+          Contactos que probablemente necesitan que un asesor los retome. Aparecer aquí no les envía nada por sí solo —
+          pero según cuánto tiempo lleven, sí pueden recibir un mensaje automático por WhatsApp si hay una regla
+          configurada en Configuración → Automatizaciones.
         </p>
 
         {error && (
