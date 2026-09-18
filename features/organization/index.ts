@@ -5,6 +5,7 @@ export {
   setAutomationEnabled,
   setAutomatedMessagingEnabled,
   updateReminderSchedule,
+  setAutoReleaseConversationsSchedule,
   listMembers,
   changeMembershipRole,
   revokeMembership,

@@ -43,7 +43,8 @@ function formatHour(hour: number): string {
  * con una instancia por tarjeta, cada una reenviaría valores viejos y pisaría los cambios de las demás.
  */
 export function AutomationSettingsView() {
-  const { organization, loading, actionPending, error, update, setAutomatedMessaging } = useReminderSchedule();
+  const { organization, loading, actionPending, error, update, setAutomatedMessaging, setAutoReleaseConversations } =
+    useReminderSchedule();
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
 
   useEffect(() => {
@@ -69,6 +70,12 @@ export function AutomationSettingsView() {
       )}
 
       <AutomatedMessagingPauseCard paused={paused} actionPending={actionPending} onChange={setAutomatedMessaging} />
+
+      <AutoReleaseConversationsCard
+        organization={organization}
+        actionPending={actionPending}
+        onChange={setAutoReleaseConversations}
+      />
 
       {/* Atenuadas, no deshabilitadas: durante la pausa se pueden seguir ajustando para cuando se reanude. */}
       <div className={`flex flex-col gap-[var(--space-7)] transition-opacity ${paused ? 'opacity-60' : ''}`}>
@@ -195,6 +202,49 @@ function AutomatedMessagingPauseCard({
         </p>
       )}
     </section>
+  );
+}
+
+/**
+ * Liberación automática diaria de toda conversación en manos de un asesor de vuelta a la IA
+ * (2026-09-17, a pedido explícito del usuario). No envía ningún mensaje al contacto — es una
+ * reasignación interna — por eso vive fuera de la tarjeta de pausa de envíos automáticos de
+ * arriba y con su propia hora, independiente de la hora de recordatorios.
+ */
+function AutoReleaseConversationsCard({
+  organization,
+  actionPending,
+  onChange,
+}: {
+  organization: Organization;
+  actionPending: boolean;
+  onChange: (enabled: boolean, hour: number) => void;
+}) {
+  return (
+    <AutomationCard
+      title="Liberación automática de conversaciones"
+      description={`No envía ningún mensaje al contacto — solo libera internamente a la IA toda conversación que un asesor tenga asignada, a esta hora local (${organization.timezone}). No se ve afectada por la pausa de envíos automáticos de arriba.`}
+      toggle={{
+        checked: organization.autoReleaseConversationsEnabled,
+        disabled: actionPending,
+        onChange: (checked) => onChange(checked, organization.autoReleaseConversationsHour),
+      }}
+    >
+      <select
+        id="autoReleaseConversationsHour"
+        aria-label="Hora del día"
+        value={organization.autoReleaseConversationsHour}
+        onChange={(e) => onChange(organization.autoReleaseConversationsEnabled, Number(e.target.value))}
+        disabled={actionPending}
+        className={`${selectClass} max-w-[160px]`}
+      >
+        {HOURS.map((hour) => (
+          <option key={hour} value={hour}>
+            {formatHour(hour)}
+          </option>
+        ))}
+      </select>
+    </AutomationCard>
   );
 }
 

@@ -34,6 +34,14 @@ export interface Organization {
    * (`features/gymsoft`), una lista abierta gestionada por su propio CRUD.
    */
   gymSoftReminderEnabled: boolean;
+  /**
+   * Liberación automática diaria de toda conversación en manos de un asesor de vuelta a la IA
+   * (2026-09-17, a pedido explícito del usuario) — nace en `false`. Independiente de
+   * `automatedMessagingEnabled`: no envía ningún mensaje al contacto, es una reasignación interna.
+   */
+  autoReleaseConversationsEnabled: boolean;
+  /** Hora local (0-23, zona horaria de `timezone`), independiente de `dailyReminderHour`. */
+  autoReleaseConversationsHour: number;
 }
 
 export interface ReminderScheduleInput {
@@ -81,6 +89,13 @@ export async function updateReminderSchedule(input: ReminderScheduleInput): Prom
   return apiFetch<Organization>('/api/organizations/me/reminders', {
     method: 'PATCH',
     body: JSON.stringify(input),
+  });
+}
+
+export async function setAutoReleaseConversationsSchedule(enabled: boolean, hour: number): Promise<Organization> {
+  return apiFetch<Organization>('/api/organizations/me/auto-release-conversations', {
+    method: 'PATCH',
+    body: JSON.stringify({ enabled, hour }),
   });
 }
 

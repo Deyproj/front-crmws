@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   getOrganization,
   setAutomatedMessagingEnabled,
+  setAutoReleaseConversationsSchedule,
   updateReminderSchedule,
   type Organization,
   type ReminderScheduleInput,
@@ -69,5 +70,18 @@ export function useReminderSchedule() {
     }
   }
 
-  return { organization, loading, actionPending, error, update, setAutomatedMessaging };
+  /** Liberación automática de conversaciones (2026-09-17) — endpoint propio, hora independiente de `dailyReminderHour`. */
+  async function setAutoReleaseConversations(enabled: boolean, hour: number) {
+    setActionPending(true);
+    setError(null);
+    try {
+      setOrganization(await setAutoReleaseConversationsSchedule(enabled, hour));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo actualizar la liberación automática de conversaciones');
+    } finally {
+      setActionPending(false);
+    }
+  }
+
+  return { organization, loading, actionPending, error, update, setAutomatedMessaging, setAutoReleaseConversations };
 }
