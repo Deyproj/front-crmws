@@ -117,6 +117,7 @@ export function ConversationsView() {
               onLoadOlder={thread.loadOlderMessages}
               contact={selectedContact}
               myMembershipId={user?.membershipId ?? ''}
+              myRole={user?.role ?? ''}
               actionPending={thread.actionPending}
               actionError={thread.actionError}
               onTakeOver={thread.takeOver}

@@ -247,7 +247,12 @@ function TransferList({
                 </td>
                 <td className="px-[var(--space-6)] py-[var(--space-4)] text-ink">{transfer.contactName}</td>
                 <td className="px-[var(--space-6)] py-[var(--space-4)] text-secondary">{transfer.fromName}</td>
-                <td className="px-[var(--space-6)] py-[var(--space-4)] text-secondary">{transfer.toName}</td>
+                <td className="px-[var(--space-6)] py-[var(--space-4)] text-secondary">
+                  {transfer.toName}
+                  {transfer.forcedByName && (
+                    <span className="block text-[11px] text-muted">forzado por {transfer.forcedByName}</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

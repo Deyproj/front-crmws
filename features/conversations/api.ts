@@ -207,6 +207,9 @@ export interface ConversationTransfer {
   toMembershipId: string;
   toName: string;
   transferredAt: string;
+  /** Presente solo si el OWNER forzó esta asignación sin ser quien tenía la conversación (BR-022 ampliado). */
+  forcedByMembershipId: string | null;
+  forcedByName: string | null;
 }
 
 export interface AdvisorTransferCount {

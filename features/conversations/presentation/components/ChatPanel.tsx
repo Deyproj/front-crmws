@@ -25,6 +25,7 @@ export function ChatPanel({
   onLoadOlder,
   contact,
   myMembershipId,
+  myRole,
   actionPending,
   actionError,
   onTakeOver,
@@ -46,6 +47,8 @@ export function ChatPanel({
   onLoadOlder?: () => void;
   contact: Contact | null;
   myMembershipId: string;
+  /** 'OWNER' habilita liberar/asignar cualquier conversación, no solo la propia (BR-022/BR-023 ampliadas). */
+  myRole: string;
   actionPending: boolean;
   actionError: string | null;
   onTakeOver: () => void;
@@ -181,15 +184,19 @@ export function ChatPanel({
   const isUnassignedHuman = conversation.mode === 'HUMAN' && !conversation.currentAssigneeMembershipId;
   const canTakeOver = conversation.mode === 'AI' || conversation.mode === 'HYBRID' || isUnassignedHuman;
   const isMine = conversation.currentAssigneeMembershipId === myMembershipId;
+  const isOwner = myRole === 'OWNER';
   // Si otro asesor tiene la conversación asignada, solo él puede liberarla a la IA —
   // sin asignar (recién escalada, WAITING) cualquiera puede hacerlo, nadie es "dueño" todavía.
-  const canRelease = conversation.mode !== 'AI' && (isMine || !conversation.currentAssigneeMembershipId);
+  // El OWNER es la única excepción: puede forzarlo sin ser quien la tiene asignada.
+  const canRelease = conversation.mode !== 'AI' && (isMine || !conversation.currentAssigneeMembershipId || isOwner);
   const canSend = conversation.mode === 'HUMAN' && isMine;
   // Transferir solo tiene sentido sobre una conversación que el propio asesor tiene
   // asignada, y solo si hay a quién pasársela — en una organización de un solo
   // miembro (el owner solo) la lista de destinos queda vacía y el botón no aparece.
+  // El OWNER puede además asignar cualquier conversación (incluida una en modo AI/sin
+  // asignar, o la de otro asesor) directamente a un asesor específico.
   const transferCandidates = members.filter((m) => m.id !== myMembershipId && m.active);
-  const canTransfer = isMine && transferCandidates.length > 0;
+  const canTransfer = (isMine || isOwner) && transferCandidates.length > 0 && conversation.mode !== 'PAUSED';
   const label = contact?.name || contact?.phone || 'Contacto sin nombre';
 
   async function handleSubmit(e: React.FormEvent) {
@@ -244,7 +251,12 @@ export function ChatPanel({
             </button>
           )}
           {canTransfer && (
-            <TransferMenu members={transferCandidates} disabled={actionPending} onSelect={onTransfer} />
+            <TransferMenu
+              members={transferCandidates}
+              disabled={actionPending}
+              onSelect={onTransfer}
+              assigningOthers={!isMine}
+            />
           )}
           {canRelease && (
             <button
@@ -362,10 +374,13 @@ function TransferMenu({
   members,
   disabled,
   onSelect,
+  assigningOthers = false,
 }: {
   members: Membership[];
   disabled: boolean;
   onSelect: (targetMembershipId: string) => void;
+  /** true = el OWNER está asignando una conversación que no es la suya (BR-022 ampliado), no transfiriendo la propia. */
+  assigningOthers?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [pendingTarget, setPendingTarget] = useState<Membership | null>(null);
@@ -391,7 +406,7 @@ function TransferMenu({
         className="flex items-center gap-[var(--space-3)] rounded-md border border-border px-[var(--space-6)] py-[var(--space-4)] text-xs font-semibold text-ink hover:bg-app disabled:opacity-50"
       >
         <UsersIcon className="size-3" />
-        Transferir
+        {assigningOthers ? 'Asignar' : 'Transferir'}
       </button>
       {open && (
         <div className="absolute right-0 top-full z-10 mt-[var(--space-3)] w-56 rounded-md border border-border bg-surface py-[var(--space-3)] shadow-sm">
@@ -412,9 +427,13 @@ function TransferMenu({
       )}
       <ConfirmDialog
         open={pendingTarget !== null}
-        title="Transferir conversación"
-        description={`¿Transferir esta conversación a ${pendingTarget?.name || pendingTarget?.email || 'este asesor'}? Dejarás de poder responderla hasta que te la transfieran de vuelta.`}
-        confirmLabel="Transferir"
+        title={assigningOthers ? 'Asignar conversación' : 'Transferir conversación'}
+        description={
+          assigningOthers
+            ? `¿Asignar esta conversación a ${pendingTarget?.name || pendingTarget?.email || 'este asesor'}?`
+            : `¿Transferir esta conversación a ${pendingTarget?.name || pendingTarget?.email || 'este asesor'}? Dejarás de poder responderla hasta que te la transfieran de vuelta.`
+        }
+        confirmLabel={assigningOthers ? 'Asignar' : 'Transferir'}
         pending={disabled}
         onConfirm={() => {
           if (!pendingTarget) return;
