@@ -93,7 +93,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
               </NavItem>
             )}
             {user?.role === 'OWNER' && (
-              <NavItem href="/settings/whatsapp" icon={<SettingsIcon className="size-[18px]" />} active={pathname.startsWith('/settings')} onNavigate={onClose}>
+              <NavItem href="/settings/agent" icon={<SettingsIcon className="size-[18px]" />} active={pathname.startsWith('/settings')} onNavigate={onClose}>
                 Configuración
               </NavItem>
             )}

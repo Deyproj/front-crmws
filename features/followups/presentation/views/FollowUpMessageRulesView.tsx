@@ -114,7 +114,7 @@ function FollowUpMessageRuleCard({
     <div className="flex flex-col gap-[var(--space-4)] rounded-lg border border-border bg-surface p-[var(--space-7)]">
       <div className="flex items-start justify-between gap-[var(--space-5)]">
         <p className="text-sm font-semibold text-ink">
-          A partir de {rule.thresholdDays} día(s) — {rule.reason ? REASON_LABELS[rule.reason] : 'cualquier motivo'}
+          Después de {rule.thresholdDays} día(s) — {rule.reason ? REASON_LABELS[rule.reason] : 'cualquier motivo'}
         </p>
       </div>
       <p className="whitespace-pre-wrap text-sm text-secondary">
@@ -187,7 +187,7 @@ function FollowUpMessageRuleForm({
         </select>
       </div>
       <div>
-        <label className={labelClass}>A partir de cuántos días</label>
+        <label className={labelClass}>Después de cuántos días</label>
         <input
           type="number"
           min={1}
