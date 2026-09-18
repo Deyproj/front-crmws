@@ -57,7 +57,7 @@ function FollowUpCriteriaInfo() {
         <p className="mb-[var(--space-3)] font-semibold text-ink">Cómo se arma esta lista</p>
         <p className="mb-[var(--space-2)]">
           Se detecta sola todos los días a la 1:00 a.m. (hora local de la organización). &quot;Detectar
-          seguimientos&quot; sigue disponible para forzar una revisión puntual sin esperar a esa hora.
+          contactos de alto interés&quot; sigue disponible para forzar una revisión puntual sin esperar a esa hora.
         </p>
         <p className="mb-[var(--space-2)]">Hoy detecta tres señales:</p>
         <ul className="mb-[var(--space-2)] list-disc space-y-1 pl-4">
@@ -91,7 +91,7 @@ export function FollowUpsView() {
     <div className="flex h-full flex-col">
       <header className="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-y-[var(--space-3)] border-b border-border bg-surface px-[var(--space-7)] py-[var(--space-3)] sm:px-[var(--space-9)]">
         <div className="flex items-center gap-[var(--space-3)]">
-          <h1 className="text-base font-bold tracking-tight text-ink">Seguimientos</h1>
+          <h1 className="text-base font-bold tracking-tight text-ink">Alto interés</h1>
           <FollowUpCriteriaInfo />
         </div>
         <button
@@ -100,7 +100,7 @@ export function FollowUpsView() {
           disabled={detecting}
           className="rounded-md bg-brand px-[var(--space-6)] py-[var(--space-4)] text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {detecting ? 'Detectando...' : 'Detectar seguimientos'}
+          {detecting ? 'Detectando...' : 'Detectar contactos de alto interés'}
         </button>
       </header>
 
@@ -122,8 +122,8 @@ export function FollowUpsView() {
         ) : groups.length === 0 ? (
           <EmptyState
             icon={<ClockIcon className="size-6" />}
-            title="Sin seguimientos pendientes"
-            description='Prueba "Detectar seguimientos" para buscar contactos que necesiten que un asesor los retome.'
+            title="Sin contactos de alto interés"
+            description='Prueba "Detectar contactos de alto interés" para buscar contactos que necesiten que un asesor los retome.'
           />
         ) : (
           <div className="flex flex-col gap-[var(--space-5)]">

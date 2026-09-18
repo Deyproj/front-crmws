@@ -76,7 +76,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
               Agenda
             </NavItem>
             <NavItem href="/followups" icon={<ClockIcon className="size-[18px]" />} active={pathname === '/followups'} onNavigate={onClose}>
-              Seguimientos
+              Alto interés
             </NavItem>
             {/* Difusión desactivada a propósito (2026-09-16): la audiencia sale de la sincronización
                 de GymSoft, y las credenciales conectadas son de Power Club, no de Dinamo Fitness —

@@ -33,7 +33,7 @@ export function FollowUpMessageRulesView() {
   return (
     <div className="flex w-full flex-col gap-[var(--space-6)]">
       <p className="max-w-3xl text-sm text-secondary">
-        Mensajes automáticos según cuánto tiempo lleve un contacto en <span className="font-semibold text-ink">Seguimientos</span>.
+        Mensajes automáticos según cuánto tiempo lleve un contacto en <span className="font-semibold text-ink">Alto interés</span>.
         Cada regla dispara una sola vez, con el texto de la plantilla que elijas.
       </p>
 
