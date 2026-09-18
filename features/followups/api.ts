@@ -18,6 +18,8 @@ export interface FollowUpTask {
   status: 'PENDING' | 'RESOLVED' | 'DISMISSED';
   detectedAt: string;
   resolvedAt: string | null;
+  /** Conversación más reciente del contacto, para el botón "Ver conversación" — null si nunca tuvo una. */
+  conversationId: string | null;
 }
 
 export const FOLLOW_UP_PAGE_SIZE = 25;

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useFollowUps } from '../hooks/useFollowUps';
 import { REASON_LABELS, type FollowUpTask } from '@/features/followups';
 import type { Contact } from '@/features/contacts';
@@ -13,6 +14,8 @@ interface FollowUpGroup {
   contactId: string;
   contact: Contact | null;
   tasks: FollowUpTask[];
+  /** Todas las tareas de un mismo contacto comparten conversación — se toma la del primer task. */
+  conversationId: string | null;
 }
 
 /**
@@ -29,7 +32,7 @@ function groupByContact(items: { task: FollowUpTask; contact: Contact | null }[]
     if (group) {
       group.tasks.push(task);
     } else {
-      groups.set(key, { contactId: key, contact, tasks: [task] });
+      groups.set(key, { contactId: key, contact, tasks: [task], conversationId: task.conversationId });
     }
   }
   return Array.from(groups.values());
@@ -53,8 +56,8 @@ function FollowUpCriteriaInfo() {
       >
         <p className="mb-[var(--space-3)] font-semibold text-ink">Cómo se arma esta lista</p>
         <p className="mb-[var(--space-2)]">
-          Solo se llena al presionar &quot;Detectar seguimientos&quot; — no corre en segundo plano ni hay un
-          horario automático.
+          Se detecta sola todos los días a la 1:00 a.m. (hora local de la organización). &quot;Detectar
+          seguimientos&quot; sigue disponible para forzar una revisión puntual sin esperar a esa hora.
         </p>
         <p className="mb-[var(--space-2)]">Hoy detecta tres señales:</p>
         <ul className="mb-[var(--space-2)] list-disc space-y-1 pl-4">
@@ -80,6 +83,7 @@ function FollowUpCriteriaInfo() {
 }
 
 export function FollowUpsView() {
+  const router = useRouter();
   const { items, page, totalPages, goToPage, loading, detecting, actionPending, error, detect, dismiss } = useFollowUps();
   const groups = useMemo(() => groupByContact(items), [items]);
 
@@ -152,6 +156,15 @@ export function FollowUpsView() {
                     ))}
                   </div>
                 </div>
+                {group.conversationId && (
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/?conversation=${group.conversationId}`)}
+                    className="shrink-0 self-center rounded-md border border-border px-[var(--space-5)] py-[var(--space-3)] text-xs font-semibold text-ink hover:bg-app"
+                  >
+                    Ver conversación
+                  </button>
+                )}
               </div>
             ))}
             <PaginationControls page={page} totalPages={totalPages} onPageChange={goToPage} disabled={actionPending} />
