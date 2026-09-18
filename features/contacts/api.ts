@@ -141,3 +141,24 @@ export async function setFollowUpOptedOut(contactId: string, optedOut: boolean, 
     body: JSON.stringify({ type: 'FOLLOW_UP', granted: !optedOut, source }),
   });
 }
+
+/** Refleja FollowUpOptOutResponse (api-crmws, contact/presentation/FollowUpOptOutResponse.java). */
+export interface FollowUpOptOut {
+  contactId: string;
+  contactName: string | null;
+  contactPhone: string;
+  optedOutAt: string;
+  source: string;
+  performedByMembershipId: string | null;
+  performedByName: string | null;
+  conversationId: string | null;
+}
+
+/**
+ * Contactos con los mensajes automáticos desactivados ahora mismo — solo OWNER (Configuración →
+ * Organización → Notificaciones). Ver ContactController#notificationsOptOut / GetFollowUpOptOutsHandler.
+ */
+export async function listFollowUpOptOuts(page = 0, size = 25): Promise<PageResponse<FollowUpOptOut>> {
+  const params = new URLSearchParams({ page: String(page), size: String(size) });
+  return apiFetch<PageResponse<FollowUpOptOut>>(`/api/contacts/notifications-opt-out?${params.toString()}`);
+}

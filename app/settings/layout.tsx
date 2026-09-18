@@ -20,6 +20,7 @@ const SETTINGS_NAV: SectionNavGroup[] = [
     title: 'Organización',
     items: [
       { href: '/settings/automations', label: 'Automatizaciones' },
+      { href: '/settings/notifications', label: 'Notificaciones' },
       { href: '/settings/team', label: 'Equipo' },
     ],
   },

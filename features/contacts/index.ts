@@ -1,4 +1,4 @@
-export type { Contact, ContactFilters, ContactLifecycleStage, ContactStats } from './api';
+export type { Contact, ContactFilters, ContactLifecycleStage, ContactStats, FollowUpOptOut } from './api';
 export {
   searchContacts,
   getContactsByIds,
@@ -6,6 +6,7 @@ export {
   updateContactProfile,
   mergeContacts,
   setFollowUpOptedOut,
+  listFollowUpOptOuts,
   getContactStats,
   CONTACT_LIFECYCLE_STAGES,
   LIFECYCLE_STAGE_LABELS,
