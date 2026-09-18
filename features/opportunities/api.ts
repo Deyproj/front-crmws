@@ -7,9 +7,7 @@ export const STAGE_LABELS: Record<OpportunityStage, string> = {
   QUALIFIED: 'Calificado',
   OPPORTUNITY: 'Oportunidad',
   CUSTOMER: 'Ganado',
-  /** "Pausado", no "En seguimiento" (2026-09-18) — para no competir con el título de /followups, una
-   *  lista operativa completamente distinta (ver BR-021 en business-rules.md). */
-  FOLLOW_UP: 'Pausado',
+  FOLLOW_UP: 'En seguimiento',
 };
 
 /** Refleja OpportunityResponse (api-crmws, opportunity/presentation/OpportunityResponse.java). */

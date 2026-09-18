@@ -10,7 +10,7 @@ const STAGE_ACTION_LABELS: Record<Exclude<ContactLifecycleStage, 'LEAD'>, string
   QUALIFIED: 'Calificar',
   OPPORTUNITY: 'Marcar como oportunidad',
   CUSTOMER: 'Marcar como ganado',
-  FOLLOW_UP: 'Pausar',
+  FOLLOW_UP: 'Pasar a seguimiento',
 };
 
 export function StageActions({ contact, onChanged }: { contact: Contact; onChanged: (contact: Contact) => void }) {
