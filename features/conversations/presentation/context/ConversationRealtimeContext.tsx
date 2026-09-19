@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { getSession } from '@/lib/runtime/tokenStorage';
 import { BASE_PATH } from '@/lib/runtime/basePath';
 import { subscribeToPush } from './pushSubscriptionClient';
@@ -44,19 +45,26 @@ const RECONNECT_DELAY_MS = 4000;
 // el polling de 8s/5s de antes, solo protege contra un stream que no llegó a conectar.
 const POLL_INTERVAL_MS = 45000;
 
-function notifyBrowser(title: string, body: string, tag: string) {
+function notifyBrowser(title: string, body: string, tag: string, onOpen: () => void) {
   if (typeof window === 'undefined' || !('Notification' in window)) return;
   if (Notification.permission !== 'granted') return;
   // La pestaña visible ya se entera por el badge/lista (useConversationsSignal) — evita
   // duplicar el aviso con una notificación del sistema encima.
   if (document.visibilityState === 'visible') return;
 
-  // `tag` colapsa avisos repetidos en una sola notificación en vez de apilarlos si
-  // escalan/transfieren varias conversaciones seguidas.
-  const notification = new Notification(title, { body, tag });
+  // `tag` colapsa avisos repetidos del mismo chat en una sola notificación en vez de apilarlos;
+  // es `conversation-<id>`, el mismo que arma el backend para el Web Push, así que si llegan
+  // ambos (pestaña abierta pero oculta + push) el navegador deja uno solo.
+  const notification = new Notification(title, {
+    body,
+    tag,
+    icon: `${BASE_PATH}/push-icon.png`,
+    badge: `${BASE_PATH}/push-badge.png`,
+  });
   notification.onclick = () => {
     window.focus();
     notification.close();
+    onOpen();
   };
 }
 
@@ -79,36 +87,36 @@ function notifyBrowser(title: string, body: string, tag: string) {
  * Con el permiso concedido, además suscribe el navegador a Web Push
  * (`pushSubscriptionClient.ts`) — a diferencia de la notificación de arriba, esa
  * sí llega con la pestaña o el navegador cerrados, mientras el backend tenga
- * `app.push.vapid.*` configurado.
+ * `app.push.vapid.*` configurado. El permiso lo pide `NotificationPermissionBanner`
+ * con un clic del asesor, no este provider.
  */
 export function ConversationRealtimeProvider({ children }: { children: React.ReactNode }) {
   const [conversationsSignal, setConversationsSignal] = useState(0);
   const [contactsSignal, setContactsSignal] = useState(0);
   const [pollTick, setPollTick] = useState(0);
+  const router = useRouter();
+  // El efecto del SSE se monta una sola vez — guarda el router más reciente en un ref en vez de
+  // volver a abrir el stream cada vez que cambie su identidad.
+  const routerRef = useRef(router);
+  useEffect(() => {
+    routerRef.current = router;
+  }, [router]);
+
+  function openConversation(conversationId: string) {
+    routerRef.current.push(`/?conversation=${conversationId}`);
+  }
 
   useEffect(() => {
     const interval = setInterval(() => setPollTick((n) => n + 1), POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, []);
 
+  // El permiso ya concedido solo necesita (re)suscribir el navegador. Pedirlo por primera vez
+  // NO se hace aquí: sin un clic del asesor Chrome lo muestra como un ícono discreto y otros
+  // navegadores lo ignoran — lo pide NotificationPermissionBanner desde un gesto real.
   useEffect(() => {
     if (typeof window === 'undefined' || !('Notification' in window)) return;
-
-    if (Notification.permission === 'granted') {
-      subscribeToPush();
-      return;
-    }
-    // Pedirlo una sola vez al montar la sesión — si el asesor lo niega, no se
-    // vuelve a insistir (Notification.permission queda en "denied", no "default").
-    if (Notification.permission === 'default') {
-      Notification.requestPermission()
-        .then((permission) => {
-          if (permission === 'granted') subscribeToPush();
-        })
-        .catch(() => {
-          // el navegador rechazó la solicitud (p. ej. fuera de un gesto del usuario) — sin notificación, el polling sigue cubriendo esto
-        });
-    }
+    if (Notification.permission === 'granted') subscribeToPush();
   }, []);
 
   useEffect(() => {
@@ -129,7 +137,17 @@ export function ConversationRealtimeProvider({ children }: { children: React.Rea
       if (eventName === 'conversation.waiting') {
         setConversationsSignal((n) => n + 1);
         setContactsSignal((n) => n + 1);
-        notifyBrowser('Conversación en espera', 'Un contacto necesita la atención de un asesor.', 'conversation-waiting');
+        try {
+          const { conversationId } = JSON.parse(data) as { conversationId: string };
+          notifyBrowser(
+            'Conversación en espera',
+            'Un contacto necesita la atención de un asesor.',
+            `conversation-${conversationId}`,
+            () => openConversation(conversationId)
+          );
+        } catch {
+          // payload inesperado — el badge/lista ya refrescó y el Web Push cubre el aviso con el detalle
+        }
         return;
       }
 
@@ -141,10 +159,15 @@ export function ConversationRealtimeProvider({ children }: { children: React.Rea
       if (eventName === 'conversation.transferred') {
         setConversationsSignal((n) => n + 1);
         try {
-          const payload = JSON.parse(data) as { targetMembershipId?: string };
+          const payload = JSON.parse(data) as { conversationId: string; targetMembershipId?: string };
           const myMembershipId = getSession()?.user.membershipId;
           if (myMembershipId && payload.targetMembershipId === myMembershipId) {
-            notifyBrowser('Conversación transferida', 'Te transfirieron una conversación.', 'conversation-transferred');
+            notifyBrowser(
+              'Conversación transferida',
+              'Te transfirieron una conversación.',
+              `conversation-${payload.conversationId}`,
+              () => openConversation(payload.conversationId)
+            );
           }
         } catch {
           // payload inesperado — sin notificación puntual, el refresco de "Mías" ya cubrió el aviso

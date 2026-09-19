@@ -28,18 +28,19 @@ export function ConversationsView() {
     setMobileView('chat');
   }
 
-  // Deep-link desde fuera de la bandeja (p. ej. botón "Chat" en Clientes: /?conversation=<id>) —
-  // se selecciona una sola vez al montar, sin depender de que la conversación ya esté en `items`
-  // (useConversationThread la trae directo por id, sin importar el quickFilter activo).
+  // Deep-link desde fuera de la bandeja (botón "Chat" en Clientes, clic en una notificación:
+  // /?conversation=<id>) — se selecciona al montar y cada vez que cambia el parámetro (la
+  // notificación de la pestaña ya abierta navega sin recargar), sin depender de que la
+  // conversación ya esté en `items` (useConversationThread la trae directo por id, sin importar
+  // el quickFilter activo).
   const searchParams = useSearchParams();
+  const deepLinkedConversationId = searchParams.get('conversation');
   useEffect(() => {
-    const id = searchParams.get('conversation');
-    if (id) {
+    if (deepLinkedConversationId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      handleSelect(id);
+      handleSelect(deepLinkedConversationId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [deepLinkedConversationId]);
 
   // La conversación puede ser nueva (aún no está en `items`) — se refresca la bandeja
   // antes de seleccionarla para que ChatPanel/ContactPanel encuentren el contacto real.

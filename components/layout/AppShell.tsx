@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/features/auth/presentation/context/AuthContext';
 import { ConversationRealtimeProvider } from '@/features/conversations/presentation/context/ConversationRealtimeContext';
+import { NotificationPermissionBanner } from '@/features/conversations/presentation/components/NotificationPermissionBanner';
 import { Sidebar } from './Sidebar';
 import { MenuIcon } from '@/components/ui/icons';
 import { BASE_PATH } from '@/lib/runtime/basePath';
@@ -58,6 +59,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <p className="text-sm font-bold text-ink">Dinabot</p>
             </div>
           </div>
+          <NotificationPermissionBanner />
           <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-app">{children}</main>
         </div>
       </div>
