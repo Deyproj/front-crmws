@@ -71,7 +71,7 @@ export function ChatPanel({
   // vista no salte (se mantiene el mismo mensaje en pantalla).
   const scrollHeightBeforeOlder = useRef<number | null>(null);
   const composeRef = useRef<HTMLDivElement>(null);
-  const draftInputRef = useRef<HTMLInputElement>(null);
+  const draftInputRef = useRef<HTMLTextAreaElement>(null);
   const { config: agentConfig } = useAgentConfig();
 
   // Pila flotante de mensajes rápidos (2026-09-03, a pedido del usuario): escribir "/" al
@@ -117,7 +117,14 @@ export function ChatPanel({
     draftInputRef.current?.focus();
   }
 
-  function handleDraftKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+  function handleDraftKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    // Enter envía y Shift+Enter inserta salto de línea (como WhatsApp Web); durante la
+    // composición de un IME (acentos, etc.) Enter confirma el carácter, no envía.
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && !quickReplyOpen) {
+      e.preventDefault();
+      e.currentTarget.form?.requestSubmit();
+      return;
+    }
     if (!quickReplyOpen) return;
     if (e.key === 'Escape') {
       e.preventDefault();
@@ -161,6 +168,15 @@ export function ChatPanel({
       scrollHeightBeforeOlder.current = null;
     }
   }, [firstMessageId]);
+
+  // El cuadro de texto crece con el contenido (el texto pasa a la línea siguiente al llegar
+  // al borde derecho) hasta un máximo, a partir del cual hace scroll interno.
+  useLayoutEffect(() => {
+    const el = draftInputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [draft, conversation]);
 
   function handleLoadOlder() {
     scrollHeightBeforeOlder.current = scrollRef.current?.scrollHeight ?? null;
@@ -336,14 +352,15 @@ export function ChatPanel({
             )}
             <form onSubmit={handleSubmit}>
               {canSend ? (
-                <div className="flex items-center gap-[var(--space-6)]">
-                  <input
+                <div className="flex items-end gap-[var(--space-6)]">
+                  <textarea
                     ref={draftInputRef}
+                    rows={1}
                     value={draft}
                     onChange={(e) => handleDraftChange(e.target.value)}
                     onKeyDown={handleDraftKeyDown}
                     placeholder="Escribe un mensaje... (usa / para mensajes rápidos)"
-                    className="flex-1 rounded-full bg-app px-[var(--space-8)] py-[var(--space-5)] text-sm text-ink placeholder-secondary focus:outline-none focus:ring-2 focus:ring-brand"
+                    className="min-h-10 flex-1 resize-none rounded-[var(--radius-lg)] bg-app px-[var(--space-8)] py-[var(--space-5)] text-sm leading-5 text-ink placeholder-secondary focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                   <button
                     type="submit"
