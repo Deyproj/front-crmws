@@ -45,6 +45,86 @@ const RECONNECT_DELAY_MS = 4000;
 // el polling de 8s/5s de antes, solo protege contra un stream que no llegó a conectar.
 const POLL_INTERVAL_MS = 45000;
 
+// Un solo AudioContext compartido para toda la sesión — crear uno nuevo por cada aviso
+// agota el cupo que imponen algunos navegadores tras varios cientos de instancias.
+let sharedAudioContext: AudioContext | null = null;
+
+function getAudioContext(): AudioContext | null {
+  if (typeof window === 'undefined') return null;
+  const AudioContextClass =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioContextClass) return null;
+  if (!sharedAudioContext) sharedAudioContext = new AudioContextClass();
+  return sharedAudioContext;
+}
+
+// Un AudioContext creado/reanudado fuera de un gesto real del usuario arranca (o se queda)
+// en 'suspended' — el `ctx.resume()` de scheduleNote/playNotificationSound corre dentro del
+// handler del SSE, que el navegador no cuenta como gesto, así que ese resume() no alcanza a
+// destrabarlo. Enganchamos el primer click/tecla de la sesión para crear y reanudar el
+// contexto compartido apenas el asesor toca la página, bien antes de que llegue el primer
+// `conversation.waiting` — si no, el primer aviso puede sonar cortado o no sonar.
+if (typeof window !== 'undefined') {
+  const unlockAudioContext = () => {
+    const ctx = getAudioContext();
+    if (ctx && ctx.state === 'suspended') ctx.resume();
+  };
+  window.addEventListener('pointerdown', unlockAudioContext, { once: true });
+  window.addEventListener('keydown', unlockAudioContext, { once: true });
+}
+
+/**
+ * `exponentialRampToValueAtTime` arranca a decaer justo después del ataque — con eso solo,
+ * una nota de 1s ya suena casi en silencio a los pocos cientos de ms (el tramo audible real
+ * es mucho más corto que la duración programada). Este envelope agrega un tramo de sostenido
+ * a volumen plano antes del apagado, para que la nota se escuche llena durante casi toda su
+ * duración en vez de apagarse enseguida.
+ */
+function scheduleNote(ctx: AudioContext, freq: number, startTime: number, duration: number, peak = 0.2) {
+  const oscillator = ctx.createOscillator();
+  const gain = ctx.createGain();
+  oscillator.type = 'sine';
+  oscillator.frequency.setValueAtTime(freq, startTime);
+
+  const attack = 0.02;
+  const release = Math.min(0.18, duration * 0.3);
+  const sustainEnd = startTime + duration - release;
+  gain.gain.setValueAtTime(0, startTime);
+  gain.gain.linearRampToValueAtTime(peak, startTime + attack);
+  gain.gain.setValueAtTime(peak, sustainEnd);
+  gain.gain.linearRampToValueAtTime(0.0001, startTime + duration);
+
+  oscillator.connect(gain);
+  gain.connect(ctx.destination);
+  oscillator.start(startTime);
+  oscillator.stop(startTime + duration);
+}
+
+/**
+ * Chime sintetizado (Web Audio API) en vez de un archivo de audio: evita empaquetar un
+ * asset y cubre el hueco que deja {@link notifyBrowser} cuando la pestaña está visible —
+ * ahí no dispara `Notification` (y por lo tanto tampoco el sonido del sistema operativo),
+ * así que sin esto un aviso en espera no se nota si el asesor no está mirando la pantalla.
+ */
+function playNotificationSound() {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  try {
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+    // Tres notas ascendentes sostenidas (~2.2s en total, peak 0.3) — validado escuchando
+    // varias variantes lado a lado en una página de prueba; esta fue la que se distinguió
+    // claramente de las versiones cortas anteriores.
+    scheduleNote(ctx, 523.25, now, 0.5, 0.3);
+    scheduleNote(ctx, 659.25, now + 0.45, 0.6, 0.3);
+    scheduleNote(ctx, 880, now + 1.0, 1.2, 0.3);
+  } catch {
+    // Bloqueado por la política de autoplay del navegador u otro error de Web Audio — el
+    // aviso visual (badge/lista o Notification) sigue funcionando sin el sonido.
+  }
+}
+
 function notifyBrowser(title: string, body: string, tag: string, onOpen: () => void) {
   if (typeof window === 'undefined' || !('Notification' in window)) return;
   if (Notification.permission !== 'granted') return;
@@ -82,7 +162,9 @@ function notifyBrowser(title: string, body: string, tag: string, onOpen: () => v
  * el asesor ya está mirando la bandeja, el badge/lista que refresca `conversationsSignal`
  * ya es aviso suficiente. `conversation.taken`/`.released` no disparan notificación: no son
  * una alerta que requiera atención, solo el aviso de que otra bandeja ya abierta debe
- * reflejar el movimiento del chat.
+ * reflejar el movimiento del chat. Esos mismos dos eventos además reproducen un chime propio
+ * (`playNotificationSound`) sin importar la visibilidad de la pestaña, porque `Notification`
+ * solo trae el sonido del sistema operativo cuando la pestaña está oculta.
  *
  * Con el permiso concedido, además suscribe el navegador a Web Push
  * (`pushSubscriptionClient.ts`) — a diferencia de la notificación de arriba, esa
@@ -137,6 +219,7 @@ export function ConversationRealtimeProvider({ children }: { children: React.Rea
       if (eventName === 'conversation.waiting') {
         setConversationsSignal((n) => n + 1);
         setContactsSignal((n) => n + 1);
+        playNotificationSound();
         try {
           const { conversationId } = JSON.parse(data) as { conversationId: string };
           notifyBrowser(
@@ -162,6 +245,7 @@ export function ConversationRealtimeProvider({ children }: { children: React.Rea
           const payload = JSON.parse(data) as { conversationId: string; targetMembershipId?: string };
           const myMembershipId = getSession()?.user.membershipId;
           if (myMembershipId && payload.targetMembershipId === myMembershipId) {
+            playNotificationSound();
             notifyBrowser(
               'Conversación transferida',
               'Te transfirieron una conversación.',
