@@ -125,6 +125,7 @@ export function ConversationsView() {
               onRelease={thread.release}
               onTransfer={thread.transfer}
               onSend={thread.send}
+              onSendMedia={thread.sendMedia}
               outsideServiceWindow={thread.outsideServiceWindow}
               onSendTemplate={thread.sendTemplate}
               onDismissTemplateRequirement={thread.dismissOutsideServiceWindow}

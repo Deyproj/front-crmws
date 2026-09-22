@@ -5,6 +5,7 @@ import {
   getConversation,
   listMessages,
   releaseConversationToAi,
+  sendMediaMessage,
   sendMessage,
   sendTemplateMessage,
   takeOverConversation,
@@ -159,6 +160,26 @@ export function useConversationThread(conversationId: string | null, onConversat
     }
   }
 
+  /** Mismo contrato que `send` (devuelve si tuvo éxito) pero para un adjunto en vez de texto libre. */
+  async function sendMedia(file: File, caption: string): Promise<boolean> {
+    if (!conversationId) return false;
+    setActionPending(true);
+    setActionError(null);
+    try {
+      const message = await sendMediaMessage(conversationId, file, caption);
+      setMessages((prev) => [...prev, message]);
+      setOutsideServiceWindow(false);
+      onConversationChanged?.();
+      return true;
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 422) setOutsideServiceWindow(true);
+      setActionError(err instanceof Error ? err.message : 'No se pudo enviar el adjunto');
+      return false;
+    } finally {
+      setActionPending(false);
+    }
+  }
+
   /** Único envío posible fuera de la ventana de 24h de un canal Meta (ver `outsideServiceWindow`). */
   async function sendTemplate(templateId: string, parameters: string[]): Promise<boolean> {
     if (!conversationId) return false;
@@ -194,6 +215,7 @@ export function useConversationThread(conversationId: string | null, onConversat
     release,
     transfer,
     send,
+    sendMedia,
     sendTemplate,
   };
 }

@@ -13,9 +13,24 @@ import type { QuickReply } from '@/features/quickReplies';
 import { TemplateSendPanel } from './TemplateSendPanel';
 import { initials } from '@/lib/utils/initials';
 import { formatWhatsAppText } from '@/lib/utils/formatWhatsAppText';
-import { SendIcon, BotIcon, UserIcon, UsersIcon, ChevronLeftIcon, InfoIcon, MessageSquareIcon, ZoomInIcon, XIcon } from '@/components/ui/icons';
+import {
+  SendIcon,
+  BotIcon,
+  UserIcon,
+  UsersIcon,
+  ChevronLeftIcon,
+  InfoIcon,
+  MessageSquareIcon,
+  ZoomInIcon,
+  XIcon,
+  PaperclipIcon,
+  FileIcon,
+} from '@/components/ui/icons';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
+
+/** Debe coincidir con spring.servlet.multipart.max-file-size en api-crmws — feedback inmediato en vez de esperar un 413. */
+const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
 
 export function ChatPanel({
   conversation,
@@ -32,6 +47,7 @@ export function ChatPanel({
   onRelease,
   onTransfer,
   onSend,
+  onSendMedia,
   outsideServiceWindow,
   onSendTemplate,
   onDismissTemplateRequirement,
@@ -55,6 +71,8 @@ export function ChatPanel({
   onRelease: () => void;
   onTransfer: (targetMembershipId: string) => void;
   onSend: (text: string) => Promise<boolean>;
+  /** Adjunto (imagen/video/audio/documento) — mismo contrato de retorno que `onSend`. */
+  onSendMedia: (file: File, caption: string) => Promise<boolean>;
   /** true = el último envío manual falló por estar fuera de la ventana de 24h de Meta Cloud API (BR-030). */
   outsideServiceWindow: boolean;
   onSendTemplate: (templateId: string, parameters: string[]) => Promise<boolean>;
@@ -65,6 +83,9 @@ export function ChatPanel({
 }) {
   const [draft, setDraft] = useState('');
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const [attachError, setAttachError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   // Alto del hilo justo antes de pedir mensajes anteriores, para que al insertarlos arriba la
@@ -118,9 +139,10 @@ export function ChatPanel({
   }
 
   function handleDraftKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    // Enter envía y Shift+Enter inserta salto de línea (como WhatsApp Web); durante la
-    // composición de un IME (acentos, etc.) Enter confirma el carácter, no envía.
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && !quickReplyOpen) {
+    // Enter inserta un salto de línea (comportamiento nativo del textarea, sin interceptar) —
+    // enviar es Ctrl+Enter/Cmd+Enter o el botón, a pedido explícito del usuario (2026-09-22),
+    // para poder escribir un mensaje de varias líneas sin arriesgar un envío a medio escribir.
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.nativeEvent.isComposing) {
       e.preventDefault();
       e.currentTarget.form?.requestSubmit();
       return;
@@ -183,6 +205,39 @@ export function ChatPanel({
     onLoadOlder?.();
   }
 
+  // URL local (blob:) solo para la vista previa antes de enviar — no tiene relación con
+  // `message.mediaUrl` (ese lo sirve el backend recién después de que el envío se confirma).
+  const attachedPreviewUrl = useMemo(() => {
+    if (!attachedFile || !attachedFile.type.startsWith('image/')) return null;
+    return URL.createObjectURL(attachedFile);
+  }, [attachedFile]);
+  useEffect(() => {
+    return () => {
+      if (attachedPreviewUrl) URL.revokeObjectURL(attachedPreviewUrl);
+    };
+  }, [attachedPreviewUrl]);
+
+  function handleAttachClick() {
+    fileInputRef.current?.click();
+  }
+
+  function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    e.target.value = '';
+    if (!file) return;
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      setAttachError('El archivo supera el límite de 20MB.');
+      return;
+    }
+    setAttachError(null);
+    setAttachedFile(file);
+  }
+
+  function clearAttachment() {
+    setAttachedFile(null);
+    setAttachError(null);
+  }
+
   if (!conversation) {
     return (
       <div className={`flex-1 flex-col bg-app ${className}`}>
@@ -217,6 +272,15 @@ export function ChatPanel({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (attachedFile) {
+      const sent = await onSendMedia(attachedFile, draft);
+      // Solo se limpia si de verdad se envió — si falla, el asesor no pierde el archivo ni el caption.
+      if (sent) {
+        setDraft('');
+        clearAttachment();
+      }
+      return;
+    }
     if (!draft.trim()) return;
     const sent = await onSend(draft);
     // Solo se limpia si de verdad se envió — si falla, el asesor no pierde lo que escribió.
@@ -352,23 +416,44 @@ export function ChatPanel({
             )}
             <form onSubmit={handleSubmit}>
               {canSend ? (
-                <div className="flex items-end gap-[var(--space-6)]">
-                  <textarea
-                    ref={draftInputRef}
-                    rows={1}
-                    value={draft}
-                    onChange={(e) => handleDraftChange(e.target.value)}
-                    onKeyDown={handleDraftKeyDown}
-                    placeholder="Escribe un mensaje... (usa / para mensajes rápidos)"
-                    className="min-h-10 flex-1 resize-none rounded-[var(--radius-lg)] bg-app px-[var(--space-8)] py-[var(--space-5)] text-sm leading-5 text-ink placeholder-secondary focus:outline-none focus:ring-2 focus:ring-brand"
-                  />
-                  <button
-                    type="submit"
-                    disabled={actionPending || !draft.trim()}
-                    className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand text-on-brand hover:bg-brand-hover disabled:opacity-50"
-                  >
-                    <SendIcon className="size-[18px]" />
-                  </button>
+                <div className="flex flex-col gap-[var(--space-4)]">
+                  {attachError && <p className="text-xs text-danger">{attachError}</p>}
+                  {attachedFile && (
+                    <AttachmentPreview file={attachedFile} previewUrl={attachedPreviewUrl} onRemove={clearAttachment} />
+                  )}
+                  <div className="flex items-end gap-[var(--space-6)]">
+                    <input ref={fileInputRef} type="file" hidden onChange={handleFileSelected} />
+                    <button
+                      type="button"
+                      onClick={handleAttachClick}
+                      disabled={actionPending}
+                      aria-label="Adjuntar imagen o archivo"
+                      className="flex size-10 shrink-0 items-center justify-center rounded-full text-secondary hover:bg-app hover:text-ink disabled:opacity-50"
+                    >
+                      <PaperclipIcon className="size-[18px]" />
+                    </button>
+                    <textarea
+                      ref={draftInputRef}
+                      rows={1}
+                      value={draft}
+                      onChange={(e) => handleDraftChange(e.target.value)}
+                      onKeyDown={handleDraftKeyDown}
+                      placeholder={
+                        attachedFile
+                          ? 'Agrega un mensaje (opcional)...'
+                          : 'Escribe un mensaje... (usa / para mensajes rápidos)'
+                      }
+                      className="min-h-10 flex-1 resize-none rounded-[var(--radius-lg)] bg-app px-[var(--space-8)] py-[var(--space-5)] text-sm leading-5 text-ink placeholder-secondary focus:outline-none focus:ring-2 focus:ring-brand"
+                    />
+                    <button
+                      type="submit"
+                      disabled={actionPending || (!attachedFile && !draft.trim())}
+                      className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand text-on-brand hover:bg-brand-hover disabled:opacity-50"
+                    >
+                      <SendIcon className="size-[18px]" />
+                    </button>
+                  </div>
+                  <p className="pl-[52px] text-[10px] text-secondary">Enter para salto de línea · Ctrl+Enter para enviar</p>
                 </div>
               ) : (
                 <p className="text-center text-xs text-secondary">
@@ -618,6 +703,47 @@ function ImageLightbox({ url, onClose }: { url: string | null; onClose: () => vo
       />
     </div>
   );
+}
+
+function AttachmentPreview({
+  file,
+  previewUrl,
+  onRemove,
+}: {
+  file: File;
+  previewUrl: string | null;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-[var(--space-5)] rounded-[var(--radius-lg)] bg-app px-[var(--space-6)] py-[var(--space-4)]">
+      {previewUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- vista previa local (blob:) antes de enviar, no un asset del sitio
+        <img src={previewUrl} alt="" className="size-10 shrink-0 rounded-[var(--radius-sm)] object-cover" />
+      ) : (
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-surface text-secondary">
+          <FileIcon className="size-4" />
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-xs font-medium text-ink">{file.name}</p>
+        <p className="text-[10px] text-secondary">{formatFileSize(file.size)}</p>
+      </div>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label="Quitar adjunto"
+        className="flex size-6 shrink-0 items-center justify-center rounded-full text-secondary hover:bg-surface hover:text-ink"
+      >
+        <XIcon className="size-3.5" />
+      </button>
+    </div>
+  );
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function documentLabel(mediaUrl: string): string {

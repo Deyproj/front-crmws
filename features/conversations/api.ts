@@ -141,6 +141,22 @@ export async function sendMessage(conversationId: string, text: string): Promise
 }
 
 /**
+ * Adjunto (imagen/video/audio/documento) enviado manualmente desde el panel. `caption` es
+ * opcional, igual que un mensaje de WhatsApp con solo adjunto. El body va como
+ * `multipart/form-data` — `apiFetch` detecta que es un `FormData` y deja que el navegador ponga
+ * su propio `Content-Type` con el boundary, en vez del `application/json` que fuerza por defecto.
+ */
+export async function sendMediaMessage(conversationId: string, file: File, caption?: string): Promise<Message> {
+  const form = new FormData();
+  form.set('file', file);
+  if (caption?.trim()) form.set('caption', caption.trim());
+  return apiFetch<Message>(`/api/conversations/${conversationId}/messages/media`, {
+    method: 'POST',
+    body: form,
+  });
+}
+
+/**
  * Único camino para reabrir una conversación de un canal Meta Cloud API fuera de la ventana de
  * servicio de 24h — `sendMessage` con texto libre falla con 422 en ese caso (BR-030,
  * OutsideServiceWindowException en api-crmws). `templateId` viene del catálogo de

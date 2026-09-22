@@ -54,10 +54,14 @@ function extractErrorMessage(text: string, status: number): string {
  * al cargar la página.
  */
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  // Un body FormData (subida de adjuntos, ver features/conversations/api.ts#sendMediaMessage)
+  // necesita que el navegador ponga su propio Content-Type con el boundary del multipart — si se
+  // fuerza 'application/json' acá, el backend no puede parsear las partes.
+  const isFormData = typeof FormData !== 'undefined' && init?.body instanceof FormData;
   const res = await fetch(`${BASE_PATH}${path}`, {
     ...init,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...buildAuthHeaders(),
       ...(init?.headers as Record<string, string>),
     },
