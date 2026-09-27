@@ -673,20 +673,23 @@ function MessageAttachment({
         </audio>
       );
     case 'DOCUMENT':
-    default:
+    default: {
       // El default (messageType OTHER con mediaUrl igual presente) cubre un adjunto que sí se
       // descargó pero cuyo tipo no reconoce este switch — mejor ofrecer el link crudo que
       // esconderlo del todo.
+      const label = message.mediaFilename || documentLabel(message.mediaUrl);
       return (
         <a
-          href={message.mediaUrl}
+          href={downloadUrl(message.mediaUrl, message.mediaFilename)}
           target="_blank"
           rel="noreferrer"
+          download={message.mediaFilename ?? undefined}
           className="text-sm text-info underline"
         >
-          {message.mediaFilename || documentLabel(message.mediaUrl)}
+          {label}
         </a>
       );
+    }
   }
 }
 
@@ -765,6 +768,19 @@ function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/**
+ * El nombre en disco es interno (aleatorio en Meta, prefijado con el id del mensaje en Baileys) —
+ * sin decirle al servidor qué nombre real usar, Chrome ignora el atributo `download` en un enlace
+ * de otro origen (el media se sirve desde el backend/gateway, no desde este propio sitio) y guarda
+ * la descarga con un nombre distinto al que el chat muestra (reportado en vivo 2026-09-27).
+ * `MetaMediaController`/`service-whatsapp` leen este query param y mandan `Content-Disposition`.
+ */
+function downloadUrl(mediaUrl: string, mediaFilename: string | null): string {
+  if (!mediaFilename) return mediaUrl;
+  const separator = mediaUrl.includes('?') ? '&' : '?';
+  return `${mediaUrl}${separator}download=${encodeURIComponent(mediaFilename)}`;
 }
 
 function documentLabel(mediaUrl: string): string {
