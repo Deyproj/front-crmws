@@ -684,7 +684,7 @@ function MessageAttachment({
           rel="noreferrer"
           className="text-sm text-info underline"
         >
-          {documentLabel(message.mediaUrl)}
+          {message.mediaFilename || documentLabel(message.mediaUrl)}
         </a>
       );
   }

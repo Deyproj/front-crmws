@@ -59,6 +59,9 @@ export interface Message {
   messageType: MessageType;
   /** Solo presente cuando messageType no es TEXT — archivo servido por service-whatsapp. */
   mediaUrl: string | null;
+  /** Nombre original del archivo (el que traía el documento) — nulo si el gateway no lo reportó
+   * (imagen/video/audio, o un adjunto ya guardado antes de este campo). */
+  mediaFilename: string | null;
   /** Orden real del hilo (asignado por Postgres) y cursor para pedir mensajes anteriores. */
   sequenceNumber: number | null;
 }
