@@ -284,3 +284,32 @@ export function FileIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+/** Un solo check — usado para el indicativo de entrega "enviado" (WhatsApp). */
+export function CheckIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)}>
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+/** Doble check — "entregado"/"leído" según el color con el que se pinte. */
+export function CheckCheckIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)}>
+      <path d="M18 6 7 17l-5-5" />
+      <path d="m22 10-7.5 7.5L13 16" />
+    </svg>
+  );
+}
+
+export function AlertTriangleIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)}>
+      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  );
+}

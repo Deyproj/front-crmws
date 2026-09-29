@@ -21,6 +21,10 @@ export type SenderType = (typeof SENDER_TYPES)[number];
 export const MESSAGE_TYPES = ['TEXT', 'IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT', 'STICKER', 'OTHER'] as const;
 export type MessageType = (typeof MESSAGE_TYPES)[number];
 
+/** Refleja MessageDeliveryStatus (api-crmws) — reportado por el webhook `statuses` de Meta. */
+export const MESSAGE_DELIVERY_STATUSES = ['SENT', 'DELIVERED', 'READ', 'FAILED'] as const;
+export type MessageDeliveryStatus = (typeof MESSAGE_DELIVERY_STATUSES)[number];
+
 export const MODE_LABELS: Record<ConversationMode, string> = {
   AI: 'IA',
   HUMAN: 'Asesor',
@@ -64,6 +68,12 @@ export interface Message {
   mediaFilename: string | null;
   /** Orden real del hilo (asignado por Postgres) y cursor para pedir mensajes anteriores. */
   sequenceNumber: number | null;
+  /** Solo presente en mensajes OUTBOUND por canal Meta Cloud API — null en Baileys, entrantes,
+   * o mientras Meta no haya mandado ningún callback de `statuses` todavía. */
+  deliveryStatus: MessageDeliveryStatus | null;
+  deliveryStatusUpdatedAt: string | null;
+  /** Solo presente cuando deliveryStatus es FAILED — motivo reportado por Meta. */
+  deliveryFailureReason: string | null;
 }
 
 export interface ConversationFilters {
