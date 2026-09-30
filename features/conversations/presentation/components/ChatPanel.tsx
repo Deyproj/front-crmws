@@ -578,7 +578,19 @@ function ChatBubble({
       : 'bg-success-bg text-ink self-end rounded-tr-[var(--radius-sm)]';
 
   return (
-    <div className={`flex max-w-[70%] flex-col gap-1 rounded-[var(--radius-lg)] p-[var(--space-6)] ${bubbleClass}`}>
+    <div
+      className={`relative flex max-w-[70%] flex-col gap-1 rounded-[var(--radius-lg)] p-[var(--space-6)] ${bubbleClass}`}
+    >
+      {message.reactionEmoji && (
+        // Pegada a la burbuja reaccionada, como en WhatsApp real — antes se guardaba como un
+        // mensaje suelto sin relación con el original (hallazgo en vivo 2026-09-30).
+        <span
+          className="absolute -bottom-2 -right-2 flex size-5 items-center justify-center rounded-full border border-border bg-surface text-xs shadow-sm"
+          title={`Reaccionó con ${message.reactionEmoji}`}
+        >
+          {message.reactionEmoji}
+        </span>
+      )}
       {isAi && (
         <span className="flex items-center gap-1 text-[10px] font-semibold uppercase text-info">
           <BotIcon className="size-3" /> {agentName}

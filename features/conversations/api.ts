@@ -74,6 +74,8 @@ export interface Message {
   deliveryStatusUpdatedAt: string | null;
   /** Solo presente cuando deliveryStatus es FAILED — motivo reportado por Meta. */
   deliveryFailureReason: string | null;
+  /** Emoji con el que el contacto reaccionó a ESTE mensaje (webhook `reaction` de Meta). */
+  reactionEmoji: string | null;
 }
 
 export interface ConversationFilters {
