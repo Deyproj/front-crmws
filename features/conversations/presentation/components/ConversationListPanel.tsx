@@ -248,8 +248,22 @@ export function ConversationListPanel({
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-[var(--space-4)]">
-                    <p className="truncate text-sm font-semibold text-ink">{label}</p>
-                    <p className="shrink-0 text-[11px] text-secondary">{formatRelativeTime(conversation.lastMessageAt)}</p>
+                    <p className="flex min-w-0 items-center gap-[var(--space-3)] text-sm font-semibold text-ink">
+                      {conversation.awaitingReply && (
+                        <span
+                          className="size-2 shrink-0 rounded-full bg-danger"
+                          title="El cliente escribió y aún no tiene respuesta"
+                          aria-label="Sin responder"
+                        />
+                      )}
+                      <span className="truncate">{label}</span>
+                    </p>
+                    <p
+                      className={`shrink-0 text-[11px] ${conversation.awaitingReply ? 'font-semibold text-danger' : 'text-secondary'}`}
+                      title={conversation.awaitingReply ? 'Hace cuánto escribió el cliente' : undefined}
+                    >
+                      {formatRelativeTime(conversation.awaitingReply ? conversation.lastInboundAt : conversation.lastMessageAt)}
+                    </p>
                   </div>
                   <div className="mt-1 flex items-center justify-between gap-[var(--space-4)]">
                     <span className="truncate text-xs text-secondary">{contact?.phone}</span>

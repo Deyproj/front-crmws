@@ -47,6 +47,10 @@ export interface Conversation {
   status: ConversationStatus;
   currentAssigneeMembershipId: string | null;
   lastMessageAt: string | null;
+  /** Último mensaje del contacto; null si nunca ha escrito. */
+  lastInboundAt: string | null;
+  /** El contacto escribió y nadie le ha respondido después (no es lo mismo que status WAITING). */
+  awaitingReply: boolean;
 }
 
 /** Refleja MessageResponse (api-crmws, conversation/presentation/MessageResponse.java). */

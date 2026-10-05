@@ -14,10 +14,23 @@ function uniqueById(conversations: Conversation[]): Conversation[] {
   return Array.from(new Map(conversations.map((c) => [c.id, c])).values());
 }
 
-function mergeAndSort(conversations: Conversation[], contactsById: Map<string, Contact>): ConversationListItem[] {
+function mergeAndSort(
+  conversations: Conversation[],
+  contactsById: Map<string, Contact>,
+  prioritizeAwaitingReply: boolean
+): ConversationListItem[] {
   return conversations
     .map((conversation) => ({ conversation, contact: contactsById.get(conversation.contactId) ?? null }))
     .sort((a, b) => {
+      if (prioritizeAwaitingReply && a.conversation.awaitingReply !== b.conversation.awaitingReply) {
+        return a.conversation.awaitingReply ? -1 : 1;
+      }
+      if (prioritizeAwaitingReply && a.conversation.awaitingReply && b.conversation.awaitingReply) {
+        // Entre las pendientes, primero la que lleva más tiempo esperando.
+        const ai = a.conversation.lastInboundAt ? new Date(a.conversation.lastInboundAt).getTime() : 0;
+        const bi = b.conversation.lastInboundAt ? new Date(b.conversation.lastInboundAt).getTime() : 0;
+        return ai - bi;
+      }
       const at = a.conversation.lastMessageAt ? new Date(a.conversation.lastMessageAt).getTime() : 0;
       const bt = b.conversation.lastMessageAt ? new Date(b.conversation.lastMessageAt).getTime() : 0;
       return bt - at;
@@ -88,7 +101,7 @@ export function useConversationsList(filters: ConversationFilters = {}) {
         }
         if (seq !== requestSeq.current) return;
         conversationsRef.current = conversations;
-        setItems(mergeAndSort(conversations, contactsRef.current));
+        setItems(mergeAndSort(conversations, contactsRef.current, !!assignedTo));
         setHasMore(totalElements > conversations.length);
         setError(null);
       } catch (err) {
@@ -159,7 +172,7 @@ export function useConversationsList(filters: ConversationFilters = {}) {
       pageCountRef.current += 1;
       const conversations = uniqueById([...conversationsRef.current, ...next.content]);
       conversationsRef.current = conversations;
-      setItems(mergeAndSort(conversations, contactsRef.current));
+      setItems(mergeAndSort(conversations, contactsRef.current, !!assignedTo));
       setHasMore(next.totalElements > conversations.length);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudieron cargar más conversaciones');
