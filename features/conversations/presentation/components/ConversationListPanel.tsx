@@ -266,7 +266,12 @@ export function ConversationListPanel({
                     </p>
                   </div>
                   <div className="mt-1 flex items-center justify-between gap-[var(--space-4)]">
-                    <span className="truncate text-xs text-secondary">{contact?.phone}</span>
+                    <span className="flex min-w-0 items-baseline gap-[var(--space-3)] text-xs text-secondary">
+                      <span className="truncate">{contact?.phone}</span>
+                      {conversation.awaitingReply && (
+                        <span className="shrink-0 text-[10px] text-danger opacity-80">· Sin responder</span>
+                      )}
+                    </span>
                     <span className="shrink-0 rounded-full bg-info-bg px-[var(--space-5)] py-[2px] text-[10px] font-semibold uppercase text-info">
                       {MODE_LABELS[conversation.mode]} · {STATUS_LABELS[conversation.status]}
                     </span>
